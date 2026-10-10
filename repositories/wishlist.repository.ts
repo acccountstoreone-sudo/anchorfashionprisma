@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server-client";
+import prisma from "@/lib/prisma";
 import { Wishlist, WishlistItem } from "@/types/checkout.types";
 
 export class WishlistRepository {
@@ -6,98 +6,95 @@ export class WishlistRepository {
    * Fetch wishlist by user ID
    */
   async getWishlistByUserId(userId: string): Promise<Wishlist | null> {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("wishlists")
-      .select(
-        `
-        *,
-        items:wishlist_items(
-          *,
-          product:products(id, name, slug, base_price, sale_price, product_media(url, is_primary))
-        )
-      `
-      )
-      .eq("user_id", userId)
-      .single();
-
-    if (error) {
-      if (error.code === "PGRST116") return null;
+    try {
+      const data = await prisma.wishlist.findUnique({
+        where: { userId },
+        include: {
+          items: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  basePrice: true,
+                  salePrice: true,
+                  media: {
+                    select: {
+                      url: true,
+                      isPrimary: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+      return data as unknown as Wishlist;
+    } catch (error) {
       console.error("Error fetching wishlist:", error);
       throw new Error("Failed to fetch wishlist");
     }
-
-    return data as Wishlist;
   }
 
   /**
    * Create a new wishlist
    */
   async createWishlist(userId: string): Promise<Wishlist> {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("wishlists")
-      .insert({
-        user_id: userId,
-        is_public: false,
-      })
-      .select()
-      .single();
-
-    if (error) {
+    try {
+      const data = await prisma.wishlist.create({
+        data: {
+          userId: userId,
+        }
+      });
+      return data as unknown as Wishlist;
+    } catch (error) {
       console.error("Error creating wishlist:", error);
       throw new Error("Failed to create wishlist");
     }
-
-    return data as Wishlist;
   }
 
   /**
    * Add item to wishlist
    */
   async addItem(wishlistId: string, productId: string): Promise<WishlistItem> {
-    const supabase = await createClient();
+    try {
+      // Check if exists
+      const existing = await prisma.wishlistItem.findFirst({
+        where: {
+          wishlistId,
+          productId,
+        }
+      });
 
-    // Check if exists
-    const { data: existing } = await supabase
-      .from("wishlist_items")
-      .select("id")
-      .eq("wishlist_id", wishlistId)
-      .eq("product_id", productId)
-      .single();
+      if (existing) {
+        return existing as unknown as WishlistItem; // Already added
+      }
 
-    if (existing) {
-      return existing as WishlistItem; // Already added
-    }
+      const data = await prisma.wishlistItem.create({
+        data: {
+          wishlistId,
+          productId,
+        }
+      });
 
-    const { data, error } = await supabase
-      .from("wishlist_items")
-      .insert({
-        wishlist_id: wishlistId,
-        product_id: productId,
-      })
-      .select()
-      .single();
-
-    if (error) {
+      return data as unknown as WishlistItem;
+    } catch (error) {
       console.error("Error adding wishlist item:", error);
       throw new Error("Failed to add item to wishlist");
     }
-
-    return data as WishlistItem;
   }
 
   /**
    * Remove item from wishlist
    */
   async removeItem(itemId: string): Promise<void> {
-    const supabase = await createClient();
-    const { error } = await supabase
-      .from("wishlist_items")
-      .delete()
-      .eq("id", itemId);
-
-    if (error) {
+    try {
+      await prisma.wishlistItem.delete({
+        where: { id: itemId }
+      });
+    } catch (error) {
       console.error("Error removing wishlist item:", error);
       throw new Error("Failed to remove item from wishlist");
     }
@@ -110,14 +107,17 @@ export class WishlistRepository {
     wishlistId: string,
     productId: string
   ): Promise<void> {
-    const supabase = await createClient();
-    const { error } = await supabase
-      .from("wishlist_items")
-      .delete()
-      .eq("wishlist_id", wishlistId)
-      .eq("product_id", productId);
-
-    if (error) {
+    try {
+      const item = await prisma.wishlistItem.findFirst({
+        where: { wishlistId, productId }
+      });
+      
+      if (item) {
+        await prisma.wishlistItem.delete({
+          where: { id: item.id }
+        });
+      }
+    } catch (error) {
       console.error("Error removing wishlist item by product id:", error);
       throw new Error("Failed to remove item from wishlist");
     }

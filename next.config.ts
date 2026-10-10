@@ -1,15 +1,5 @@
 import type { NextConfig } from "next";
-import withSerwistInit from "@serwist/next";
 import path from "path";
-
-process.env.SERWIST_SUPPRESS_TURBOPACK_WARNING = "1";
-
-const withSerwist = withSerwistInit({
-  swSrc: "app/sw.ts",
-  swDest: "public/sw.js",
-  // Only enable the service worker in production to avoid Turbopack conflicts in dev
-  disable: process.env.NODE_ENV !== "production",
-});
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -93,4 +83,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSerwist(nextConfig);
+export default nextConfig;
