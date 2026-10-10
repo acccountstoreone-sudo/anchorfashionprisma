@@ -1,0 +1,650 @@
+{
+  "info": {
+    "_postman_id": "anchor-fashion-api-collection-v1",
+    "name": "Anchor Fashion API Collection",
+    "description": "Comprehensive, production-grade Postman collection for Anchor Fashion eCommerce platform covering Storefront, Customer, Checkout, Payment Gateways, Shipping & Logistics, AI Suite, Admin Operations, Background Crons, and Webhooks.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Health & Observability",
+      "item": [
+        {
+          "name": "System Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Checks system operational status, database connectivity, and environment uptime."
+          },
+          "response": []
+        },
+        {
+          "name": "Observability Ingest",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"level\": \"info\",\n  \"event\": \"client_page_view\",\n  \"message\": \"Customer navigated to /products\",\n  \"context\": {\n    \"path\": \"/products\",\n    \"userAgent\": \"Mozilla/5.0\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/observability/ingest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "observability", "ingest"]
+            },
+            "description": "Ingests client-side telemetries, operational logs, and performance metrics."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication & Verification",
+      "item": [
+        {
+          "name": "Send OTP (Email)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/otp/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "otp", "send"]
+            },
+            "description": "Sends a 6-digit one-time password to the specified email address with rate limiting and brute force protection."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP (Email)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@example.com\",\n  \"code\": \"123456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/otp/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "otp", "verify"]
+            },
+            "description": "Verifies the email OTP and issues session / authentication token."
+          },
+          "response": []
+        },
+        {
+          "name": "Send Registration OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"full_name\": \"Jane Doe\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/send-register-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "send-register-otp"]
+            },
+            "description": "Initiates user onboarding and sends verification code."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Registration OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"code\": \"123456\",\n  \"password\": \"SecurePass123!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify-register-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "verify-register-otp"]
+            },
+            "description": "Completes registration and creates user profile."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Storefront Catalog",
+      "item": [
+        {
+          "name": "List Store Products (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/store/products?page=1&limit=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "store", "products"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "12" }
+              ]
+            },
+            "description": "Fetches paginated list of active storefront products with variants and media."
+          },
+          "response": []
+        },
+        {
+          "name": "Search & Filter Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/store/products?search=shirt&category=apparel&minPrice=500&maxPrice=10000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "store", "products"],
+              "query": [
+                { "key": "search", "value": "shirt" },
+                { "key": "category", "value": "apparel" },
+                { "key": "minPrice", "value": "500" },
+                { "key": "maxPrice", "value": "10000" }
+              ]
+            },
+            "description": "Filters products by search keywords, category slug, and price range."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Orders & Checkout",
+      "item": [
+        {
+          "name": "Get Customer Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/store/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "store", "orders"]
+            },
+            "description": "Retrieves the authenticated customer's order history."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Store Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_name\": \"Sophia Al-Rahman\",\n  \"customer_phone\": \"+8801712345678\",\n  \"customer_email\": \"customer@example.com\",\n  \"delivery_address\": \"House 14, Road 5, Dhanmondi\",\n  \"city\": \"Dhaka\",\n  \"payment_method\": \"COD\",\n  \"total_amount\": 3500,\n  \"delivery_fee\": 60,\n  \"items\": [\n    {\n      \"product_id\": \"{{productId}}\",\n      \"product_name\": \"Silk Evening Gown\",\n      \"quantity\": 1,\n      \"unit_price\": 3500\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/store/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "store", "orders"]
+            },
+            "description": "Places a new customer order with line items and delivery address."
+          },
+          "response": []
+        },
+        {
+          "name": "Initialize Payment Gateway",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payment/init?order_id={{orderId}}&method=BKASH",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payment", "init"],
+              "query": [
+                { "key": "order_id", "value": "{{orderId}}" },
+                { "key": "method", "value": "BKASH" }
+              ]
+            },
+            "description": "Initiates payment session for bKash, SSLCommerz, Stripe, or PayPal and redirects customer to the gateway."
+          },
+          "response": []
+        },
+        {
+          "name": "bKash Payment Callback",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payment/bkash/callback?paymentID=TEST_PAYMENT_ID&status=success",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payment", "bkash", "callback"],
+              "query": [
+                { "key": "paymentID", "value": "TEST_PAYMENT_ID" },
+                { "key": "status", "value": "success" }
+              ]
+            },
+            "description": "Handles return redirect from bKash, validates transaction amount and updates order."
+          },
+          "response": []
+        },
+        {
+          "name": "SSLCommerz Payment Callback",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "status", "value": "VALID", "type": "text" },
+                { "key": "tran_id", "value": "ORD-TEST-12345", "type": "text" },
+                { "key": "val_id", "value": "VAL_TEST_9999", "type": "text" },
+                { "key": "amount", "value": "3500.00", "type": "text" },
+                { "key": "currency", "value": "BDT", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payment/sslcommerz/callback?action=success",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payment", "sslcommerz", "callback"],
+              "query": [
+                { "key": "action", "value": "success" }
+              ]
+            },
+            "description": "Handles return POST from SSLCommerz hosted gateway, verifies server signature, amount and currency."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Logistics & Shipping",
+      "item": [
+        {
+          "name": "Get Shipping Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping/providers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping", "providers"]
+            },
+            "description": "Lists configured courier partners (Steadfast, Pathao, RedX, Paperfly) with active statuses."
+          },
+          "response": []
+        },
+        {
+          "name": "Calculate Shipping Rates",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"city\": \"Dhaka\",\n  \"postal_code\": \"1205\",\n  \"weight_kg\": 1.2,\n  \"subtotal\": 3500\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping/rates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping", "rates"]
+            },
+            "description": "Calculates real-time delivery fees and estimated delivery times across available couriers."
+          },
+          "response": []
+        },
+        {
+          "name": "Track Shipment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping/track/{{trackingNumber}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping", "track", "{{trackingNumber}}"]
+            },
+            "description": "Fetches live parcel tracking events from the designated courier partner."
+          },
+          "response": []
+        },
+        {
+          "name": "Shipping Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "shipping", "analytics"]
+            },
+            "description": "Aggregates fulfillment times, courier SLA compliance, and delivery success rates."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. AI Suite",
+      "item": [
+        {
+          "name": "AI Gateway Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    { \"role\": \"user\", \"content\": \"What are the top trending dress styles for summer?\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/gateway",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "gateway"]
+            },
+            "description": "Unified streaming AI chat gateway leveraging Gemini for shopping recommendations."
+          },
+          "response": []
+        },
+        {
+          "name": "Customer Shopping Assistant",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Show me silk gowns under 5000 BDT in size Medium\",\n  \"history\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/customer-assistant",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "customer-assistant"]
+            },
+            "description": "Product finder assistant with catalog grounding."
+          },
+          "response": []
+        },
+        {
+          "name": "Business Assistant",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prompt\": \"Summarize sales performance and identify low-inventory apparel items\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/business-assistant",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "business-assistant"]
+            },
+            "description": "Executive BI assistant for business analytics, inventory insights, and revenue projections."
+          },
+          "response": []
+        },
+        {
+          "name": "Product Content Generator",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_name\": \"Silk Evening Gown\",\n  \"category\": \"Dresses\",\n  \"features\": [\"100% Mulberry Silk\", \"Hand Embroidered\", \"Backless\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/content-generator",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "content-generator"]
+            },
+            "description": "Generates marketing descriptions, bullet points, and SEO metadata."
+          },
+          "response": []
+        },
+        {
+          "name": "List AI Prompts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/prompts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "prompts"]
+            },
+            "description": "Fetches custom prompt templates stored in the database."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Admin Operations & Settings",
+      "item": [
+        {
+          "name": "Get Payment Gateway Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/settings/payment",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "settings", "payment"]
+            },
+            "description": "Fetches masked gateway credentials and enablement flags."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Payment Gateway Settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"bkash\",\n  \"is_enabled\": true,\n  \"is_sandbox\": true,\n  \"credentials\": {\n    \"app_key\": \"test_app_key\",\n    \"app_secret\": \"test_app_secret\",\n    \"username\": \"test_username\",\n    \"password\": \"test_password\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/settings/payment",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "settings", "payment"]
+            },
+            "description": "Updates payment gateway credentials in the database."
+          },
+          "response": []
+        },
+        {
+          "name": "Trigger ETL Sync",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/etl/sync",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "etl", "sync"]
+            },
+            "description": "Refreshes data warehouse rollups and BI materialized views."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. Scheduled Crons & Workers",
+      "item": [
+        {
+          "name": "Release Expired Reservations",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{cronSecret}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cron/release-expired-reservations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cron", "release-expired-reservations"]
+            },
+            "description": "Releases uncommitted cart and order inventory reservations that exceeded TTL."
+          },
+          "response": []
+        },
+        {
+          "name": "Process Task Queue",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{cronSecret}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cron/process-queue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cron", "process-queue"]
+            },
+            "description": "Pulls pending background tasks (notifications, webhook dispatches) from the jobs queue."
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Marketing Campaigns",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{cronSecret}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cron/campaigns",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cron", "campaigns"]
+            },
+            "description": "Evaluates customer segments and sends scheduled push and email campaigns."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "9. Webhooks & Integrations",
+      "item": [
+        {
+          "name": "Payment Webhook (Generic)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.success\",\n  \"payment_id\": \"PAY_12345\",\n  \"order_id\": \"{{orderId}}\",\n  \"amount\": 3500,\n  \"currency\": \"BDT\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/payment/bkash",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "payment", "bkash"]
+            },
+            "description": "Asynchronous IPN webhook listener for payment providers."
+          },
+          "response": []
+        },
+        {
+          "name": "Courier Webhook (Steadfast / Pathao)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"consignment_id\": \"{{trackingNumber}}\",\n  \"status\": \"delivered\",\n  \"updated_at\": \"2026-09-19T10:00:00Z\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/courier/steadfast",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "courier", "steadfast"]
+            },
+            "description": "Receives real-time delivery status updates from couriers."
+          },
+          "response": []
+        },
+        {
+          "name": "SSLCommerz IPN",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "val_id", "value": "VAL_12345", "type": "text" },
+                { "key": "tran_id", "value": "ORD-12345", "type": "text" },
+                { "key": "status", "value": "VALID", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/sslcommerz/ipn",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "webhooks", "sslcommerz", "ipn"]
+            },
+            "description": "Direct Instant Payment Notification from SSLCommerz server."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

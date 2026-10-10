@@ -1,0 +1,33 @@
+"use server";
+
+import prisma from "@/lib/prisma";
+
+export async function getAuditLogsAction() {
+  try {
+    const logs = await prisma.auditLog.findMany({
+      select: {
+        id: true,
+        action: true,
+        tableName: true,
+        userId: true,
+        ipAddress: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+    
+    // Map to the expected format
+    return logs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      table_name: log.tableName,
+      user_id: log.userId,
+      ip_address: log.ipAddress,
+      created_at: log.createdAt.toISOString(),
+    }));
+  } catch (error) {
+    console.error("Failed to fetch audit logs:", error);
+    return [];
+  }
+}

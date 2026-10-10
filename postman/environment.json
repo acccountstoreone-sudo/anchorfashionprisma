@@ -1,0 +1,55 @@
+{
+  "id": "anchor-fashion-env-local",
+  "name": "Anchor Fashion (Local & Staging)",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "productId",
+      "value": "912d3816-0a38-4e91-8941-5dcd6cc83e29",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "productSlug",
+      "value": "linen-blend-blazer",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "orderId",
+      "value": "56d75250-b525-4f05-a238-d65f003e4610",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "trackingNumber",
+      "value": "TRK-EXP-12345",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "cronSecret",
+      "value": "dev_cron_secret",
+      "type": "secret",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

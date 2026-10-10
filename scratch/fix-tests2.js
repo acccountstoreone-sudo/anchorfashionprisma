@@ -1,0 +1,10 @@
+const fs = require('fs');
+const path = require('path');
+const dir = 'tests/integration';
+fs.readdirSync(dir).filter(f => f.startsWith('returns.') && f.endsWith('.ts')).forEach(f => {
+  const p = path.join(dir, f);
+  let content = fs.readFileSync(p, 'utf8');
+  content = content.replace(/let\s+customerId\s*=\s*uuidv4\(\);/g, "let customerId = '86f2ca0e-6c38-4314-adf3-ff0cc88d7f6e';");
+  fs.writeFileSync(p, content);
+});
+console.log('Done');
