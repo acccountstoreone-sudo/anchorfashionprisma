@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { cookies } from "next/headers";
+import { auth } from "@/lib/auth/server";
+import { cookies, headers } from "next/headers";
 import { CartService } from "@/lib/services/cart.service";
+import { STAFF_ROLES } from "@/lib/constants/auth";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  // if "next" is in param, use it as the redirect URL
   const rawNext = searchParams.get("next") ?? "/account/profile";
   const next = rawNext === "/reset-password" ? "/auth/reset-password" : rawNext;
 
-  // Check if Supabase sent error params directly in the query string
+  // Check if error params are in the query string
   const errorParam = searchParams.get("error");
   const errorCode = searchParams.get("error_code");
   const errorDesc = searchParams.get("error_description");
@@ -20,47 +20,73 @@ export async function GET(request: Request) {
     if (errorParam) errParams.set("error", errorParam);
     if (errorCode) errParams.set("error_code", errorCode);
     if (errorDesc) errParams.set("error_description", errorDesc);
-    return NextResponse.redirect(`${origin}/auth/auth-code-error?${errParams.toString()}`);
+    return NextResponse.redirect(
+      `${origin}/auth/auth-code-error?${errParams.toString()}`
+    );
   }
 
-  if (code) {
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      if (data?.user) {
-        try {
-          const cookieStore = await cookies();
-          const guestSessionId = cookieStore.get("af_guest_session")?.value;
-          if (guestSessionId) {
-            await CartService.mergeGuestCart(guestSessionId, data.user.id);
-            cookieStore.delete("af_guest_session");
-          }
-        } catch (mergeErr) {
-          console.error("Cart merge error in auth callback:", mergeErr);
+  try {
+    const session = await auth.getSession({
+      headers: await headers(),
+    });
+
+    if (session?.user) {
+      try {
+        const cookieStore = await cookies();
+        const guestSessionId = cookieStore.get("af_guest_session")?.value;
+        if (guestSessionId) {
+          await CartService.mergeGuestCart(guestSessionId, session.user.id);
+          cookieStore.delete("af_guest_session");
         }
+      } catch (mergeErr) {
+        console.error("Cart merge error in auth callback:", mergeErr);
+      }
+
+      const role = String((session.user as any)?.role || "").toUpperCase();
+      const isStaffOrAdmin =
+        (STAFF_ROLES as readonly string[]).includes(role) ||
+        [
+          "SUPERADMIN",
+          "SUPER_ADMIN",
+          "ADMIN",
+          "STAFF",
+          "MANAGER",
+          "WAREHOUSE_MANAGER",
+          "MARKETING_MANAGER",
+          "FINANCE_MANAGER",
+          "MARKETING",
+          "SUPPORT",
+        ].includes(role);
+
+      let target = next;
+      if (isStaffOrAdmin && (!rawNext || rawNext === "/account/profile")) {
+        target = "/admin";
       }
 
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocalhost = process.env.NODE_ENV === "development";
       if (isLocalhost) {
-        return NextResponse.redirect(`${origin}${next}`);
+        return NextResponse.redirect(`${origin}${target}`);
       } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
+        return NextResponse.redirect(`https://${forwardedHost}${target}`);
       } else {
-        return NextResponse.redirect(`${origin}${next}`);
+        return NextResponse.redirect(`${origin}${target}`);
       }
     }
-
-    // Exchange failed: pass error details
-    const errParams = new URLSearchParams();
-    if (error) {
-      errParams.set("error", error.name || "auth_error");
-      errParams.set("error_code", error.code || "exchange_failed");
-      errParams.set("error_description", error.message);
-    }
-    return NextResponse.redirect(`${origin}/auth/auth-code-error?${errParams.toString()}`);
+  } catch (err) {
+    console.error("Auth callback session verification error:", err);
   }
 
-  // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  // If no active session was resolved, redirect to next or login
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const isLocalhost = process.env.NODE_ENV === "development";
+  const finalDest = next || "/auth/login";
+
+  if (isLocalhost) {
+    return NextResponse.redirect(`${origin}${finalDest}`);
+  } else if (forwardedHost) {
+    return NextResponse.redirect(`https://${forwardedHost}${finalDest}`);
+  } else {
+    return NextResponse.redirect(`${origin}${finalDest}`);
+  }
 }

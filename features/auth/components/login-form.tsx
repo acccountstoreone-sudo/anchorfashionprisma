@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import Link from "next/link";
 
 import { authClient } from "@/lib/auth/client";
+import { getPostLoginRedirectAction } from "@/actions/auth.actions";
 import { LoadingButton } from "@/components/ui/loading-button";
 import {
   Form,
@@ -21,6 +23,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema";
 
 export function LoginForm() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -72,15 +75,14 @@ export function LoginForm() {
     const params = new URLSearchParams(window.location.search);
     const next = params.get("next");
 
-    let targetPath = "/account/profile";
-    if (next) {
-      targetPath = next;
-    } else {
-      // For now, redirect everyone to profile. We can add role checks later via API.
-      targetPath = "/account/profile";
+    try {
+      const { redirectUrl } = await getPostLoginRedirectAction(next);
+      router.push(redirectUrl);
+      router.refresh();
+    } catch {
+      router.push(next || "/account/profile");
+      router.refresh();
     }
-
-    window.location.href = targetPath;
   }
 
   return (

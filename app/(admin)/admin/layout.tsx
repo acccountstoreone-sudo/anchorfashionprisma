@@ -1,9 +1,11 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { ClientAdminSidebar } from "@/features/admin/components/ClientAdminSidebar";
 import { AdminHeader } from "@/features/admin/components/AdminHeader";
 import { MobileAppBanner } from "@/features/admin/components/MobileAppBanner";
-import { createClient } from "@/lib/supabase/server";
+import { auth } from "@/lib/auth/server";
+import { prisma } from "@/lib/prisma";
 import { STAFF_ROLES } from "@/lib/constants/auth";
 
 export const dynamic = "force-dynamic";
@@ -18,32 +20,62 @@ export default async function AdminLayout({
 }: {
   children: ReactNode;
 }) {
-  // Server-side auth guard — second layer of protection
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Server-side auth guard with Neon Auth
+  const session = await auth.getSession({
+    headers: await headers(),
+  });
+  const user = session?.user;
 
   if (!user) {
     redirect("/auth/login?next=/admin");
   }
 
-  let role = user.user_metadata?.role || user.app_metadata?.role;
-  if (!role) {
+  let role = String((user as any).role || "").toUpperCase();
+
+  if (!role || role === "CUSTOMER") {
     try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("roles(name)")
-        .eq("id", user.id)
-        .single();
-      role = (profile?.roles as any)?.name;
-    } catch {
-      role = "CUSTOMER";
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          user.id
+        );
+      const profile = await prisma.profile.findFirst({
+        where: {
+          OR: [
+            ...(isUuid ? [{ id: user.id }] : []),
+            ...(user.email ? [{ email: user.email }] : []),
+          ],
+        },
+        include: {
+          role: true,
+        },
+      });
+
+      if (profile?.role?.name) {
+        role = profile.role.name.toUpperCase();
+      }
+    } catch (err) {
+      console.error("[Admin Layout] Error fetching role from database:", err);
     }
   }
+
   if (!role) role = "CUSTOMER";
 
-  if (!STAFF_ROLES.includes(role)) {
+  const isStaff =
+    (STAFF_ROLES as readonly string[]).includes(role) ||
+    [
+      "SUPERADMIN",
+      "SUPER_ADMIN",
+      "ADMIN",
+      "STAFF",
+      "MANAGER",
+      "WAREHOUSE_MANAGER",
+      "MARKETING_MANAGER",
+      "FINANCE_MANAGER",
+      "MARKETING",
+      "SUPPORT",
+    ].includes(role);
+
+  if (!isStaff) {
     redirect("/account/profile");
   }
 

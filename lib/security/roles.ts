@@ -2,20 +2,31 @@ import { createClient } from "@/lib/supabase/server";
 import { AUTH_ROLES, ADMIN_ROLES, MARKETING_ROLES, STAFF_ROLES } from "@/lib/constants/auth";
 
 async function getRoleForUser(supabase: any, user: any): Promise<string> {
-  let role = user.user_metadata?.role || user.app_metadata?.role;
-  if (!role) {
+  let role = user.user_metadata?.role || user.app_metadata?.role || user.role;
+  if (!role || String(role).toUpperCase() === "CUSTOMER") {
     try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("roles(name)")
-        .eq("id", user.id)
-        .single();
-      role = (profile?.roles as any)?.name || "CUSTOMER";
+      const { prisma } = await import("@/lib/prisma");
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          user.id
+        );
+      const profile = await prisma.profile.findFirst({
+        where: {
+          OR: [
+            ...(isUuid ? [{ id: user.id }] : []),
+            ...(user.email ? [{ email: user.email }] : []),
+          ],
+        },
+        include: { role: true },
+      });
+      if (profile?.role?.name) {
+        role = profile.role.name;
+      }
     } catch {
       role = "CUSTOMER";
     }
   }
-  return role || "CUSTOMER";
+  return String(role || "CUSTOMER").toUpperCase();
 }
 
 export async function verifySuperAdmin() {

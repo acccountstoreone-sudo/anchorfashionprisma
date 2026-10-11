@@ -1,10 +1,12 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth/server";
+import { prisma } from "@/lib/prisma";
+import { ADMIN_ROLES } from "@/lib/constants/auth";
 
 import { LogoutButton } from "@/components/auth/logout-button";
-
 import { AccountNav } from "@/components/customer/account-nav";
 
 export const dynamic = "force-dynamic";
@@ -14,32 +16,43 @@ export default async function AccountLayout({
 }: {
   children: ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const session = await auth.getSession({
+    headers: await headers(),
+  });
+  const user = session?.user;
 
   if (!user) {
-    redirect("/auth/login");
+    redirect("/auth/login?next=/account");
   }
 
-  let role = user.user_metadata?.role || user.app_metadata?.role;
-  if (!role) {
+  let role = String((user as any).role || "").toUpperCase();
+
+  if (!role || role === "CUSTOMER") {
     try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("roles(name)")
-        .eq("id", user.id)
-        .single();
-      role = (profile?.roles as any)?.name;
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          user.id
+        );
+      const profile = await prisma.profile.findFirst({
+        where: {
+          OR: [
+            ...(isUuid ? [{ id: user.id }] : []),
+            ...(user.email ? [{ email: user.email }] : []),
+          ],
+        },
+        include: { role: true },
+      });
+      if (profile?.role?.name) {
+        role = profile.role.name.toUpperCase();
+      }
     } catch {
       role = "CUSTOMER";
     }
   }
+
   if (!role) role = "CUSTOMER";
 
-  const { ADMIN_ROLES } = await import("@/lib/constants/auth");
-  if (ADMIN_ROLES.includes(role)) {
+  if ((ADMIN_ROLES as readonly string[]).includes(role)) {
     redirect("/admin");
   }
 

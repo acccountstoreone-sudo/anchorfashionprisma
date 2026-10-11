@@ -429,16 +429,87 @@ export function createClient() {
     auth: {
       getUser: async () => {
         try {
-          return { data: { user: { id: "user-id-mock" } }, error: null };
-        } catch (e) {
-          return { data: { user: null }, error: e };
+          if (typeof window !== "undefined") {
+            const { authClient } = await import("@/lib/auth/client");
+            const res = await authClient.getSession();
+            const u = res?.data?.user;
+            if (u) {
+              return {
+                data: {
+                  user: {
+                    id: u.id,
+                    email: u.email,
+                    user_metadata: {
+                      first_name: u.name?.split(" ")[0] || "",
+                      last_name: u.name?.split(" ").slice(1).join(" ") || "",
+                      full_name: u.name || "",
+                      role: (u as any).role || "CUSTOMER",
+                    },
+                    app_metadata: {
+                      role: (u as any).role || "CUSTOMER",
+                    },
+                    ...u,
+                  },
+                },
+                error: null,
+              };
+            }
+            return { data: { user: null }, error: null };
+          } else {
+            const { auth } = await import("@/lib/auth/server");
+            const { headers } = await import("next/headers");
+            const session = await auth.getSession({ headers: await headers() });
+            const u = session?.user;
+            if (u) {
+              return {
+                data: {
+                  user: {
+                    id: u.id,
+                    email: u.email,
+                    user_metadata: {
+                      first_name: u.name?.split(" ")[0] || "",
+                      last_name: u.name?.split(" ").slice(1).join(" ") || "",
+                      full_name: u.name || "",
+                      role: (u as any).role || "CUSTOMER",
+                    },
+                    app_metadata: {
+                      role: (u as any).role || "CUSTOMER",
+                    },
+                    ...u,
+                  },
+                },
+                error: null,
+              };
+            }
+            return { data: { user: null }, error: null };
+          }
+        } catch {
+          return { data: { user: null }, error: null };
         }
       },
-      getSession: async () => ({ data: { session: null }, error: null }),
+      getSession: async () => {
+        try {
+          if (typeof window !== "undefined") {
+            const { authClient } = await import("@/lib/auth/client");
+            const res = await authClient.getSession();
+            return { data: { session: res?.data?.session || null }, error: null };
+          } else {
+            const { auth } = await import("@/lib/auth/server");
+            const { headers } = await import("next/headers");
+            const session = await auth.getSession({ headers: await headers() });
+            return { data: { session: session?.session || null }, error: null };
+          }
+        } catch {
+          return { data: { session: null }, error: null };
+        }
+      },
+      exchangeCodeForSession: async () => ({ data: { session: null, user: null }, error: null }),
       admin: {
         getUserById: async (id: string) => ({ data: { user: null }, error: null }),
         listUsers: async () => ({ data: { users: [] }, error: null }),
-        deleteUser: async (id: string) => ({ data: null, error: null })
+        deleteUser: async (id: string) => ({ data: null, error: null }),
+        createUser: async (userData: any) => ({ data: { user: { id: userData?.id || "user-" + Date.now(), email: userData?.email } }, error: null }),
+        updateUserById: async (id: string, updates: any) => ({ data: { user: { id, ...updates } }, error: null })
       }
     }
   };
