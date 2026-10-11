@@ -1,15 +1,12 @@
 "use server";
 
 import { CartService } from "../services/cart.service";
-import { auth } from "@/lib/auth/server";
-import { cookies, headers } from "next/headers";
+import { auth, getServerSession } from "@/lib/auth/server";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 async function getSessionIdentifiers() {
-  const session = await auth.getSession({
-    headers: await headers(),
-  });
-  const user = session?.user;
+  const { user } = await getServerSession();
 
   const cookieStore = await cookies();
   let guestSessionId = cookieStore.get("af_guest_session")?.value;
@@ -122,10 +119,7 @@ export async function clearCartAction(cartId?: string) {
 
 export async function mergeGuestCartAction() {
   try {
-    const session = await auth.getSession({
-      headers: await headers(),
-    });
-    const user = session?.user;
+    const { user } = await getServerSession();
 
     if (!user) return { success: false, error: "User not logged in" };
 

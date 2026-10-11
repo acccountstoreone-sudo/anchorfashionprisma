@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth/server";
-import { cookies, headers } from "next/headers";
+import { getServerSession } from "@/lib/auth/server";
+import { cookies } from "next/headers";
 import { CartService } from "@/lib/services/cart.service";
 import { STAFF_ROLES } from "@/lib/constants/auth";
 
@@ -26,23 +26,21 @@ export async function GET(request: Request) {
   }
 
   try {
-    const session = await auth.getSession({
-      headers: await headers(),
-    });
+    const { user } = await getServerSession();
 
-    if (session?.user) {
+    if (user) {
       try {
         const cookieStore = await cookies();
         const guestSessionId = cookieStore.get("af_guest_session")?.value;
         if (guestSessionId) {
-          await CartService.mergeGuestCart(guestSessionId, session.user.id);
+          await CartService.mergeGuestCart(guestSessionId, user.id);
           cookieStore.delete("af_guest_session");
         }
       } catch (mergeErr) {
         console.error("Cart merge error in auth callback:", mergeErr);
       }
 
-      const role = String((session.user as any)?.role || "").toUpperCase();
+      const role = String((user as any)?.role || "").toUpperCase();
       const isStaffOrAdmin =
         (STAFF_ROLES as readonly string[]).includes(role) ||
         [

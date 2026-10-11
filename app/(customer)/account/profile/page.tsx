@@ -1,8 +1,7 @@
 import { Metadata } from "next";
 import { CustomerService } from "@/lib/services/customer.service";
 import { ProfileEditor } from "@/components/customer/ProfileEditor";
-import { auth } from "@/lib/auth/server";
-import { headers } from "next/headers";
+import { getServerSession } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -13,10 +12,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
-  const session = await auth.getSession({
-    headers: await headers(),
-  });
-  const user = session?.user;
+  const { user } = await getServerSession();
 
   if (!user) {
     redirect("/auth/login?next=/account/profile");

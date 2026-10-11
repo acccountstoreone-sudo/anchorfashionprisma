@@ -8,18 +8,14 @@ import { PromotionPopupBanner } from "@/components/marketing/PromotionPopupBanne
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { PromotionRepository } from "@/lib/repositories/marketing/promotion.repository";
 
-import { auth } from "@/lib/auth/server";
-import { headers } from "next/headers";
+import { getServerSession } from "@/lib/auth/server";
 
 export default async function ShopLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth.getSession({
-    headers: await headers(),
-  });
-  const user = session?.user || null;
+  const { user } = await getServerSession();
 
   const [categories, storeInfo, activePromotion] = await Promise.all([
     CatalogRepository.getCategories(),

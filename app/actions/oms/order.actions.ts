@@ -10,8 +10,7 @@ import {
   createOrderSchema,
 } from "@/lib/validations/oms";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth/server";
-import { headers } from "next/headers";
+import { auth, getServerSession } from "@/lib/auth/server";
 import { ADMIN_ROLES, MANAGER_ROLES, STAFF_ROLES } from "@/lib/constants/auth";
 import { InventoryService } from "@/services/inventory.service";
 import { PaymentService } from "@/services/payment/payment.service";
@@ -33,10 +32,7 @@ export async function createOrderAction(input: CreateOrderInput) {
 export async function updateOrderStatusAction(input: UpdateOrderStatusInput) {
   try {
     const validatedData = updateOrderStatusSchema.parse(input);
-    const session = await auth.getSession({
-      headers: await headers(),
-    });
-    const user = session?.user;
+    const { user } = await getServerSession();
 
     // Use session role or default to 'admin' if they reached this admin action
     const role = user?.role || "admin";
@@ -98,10 +94,7 @@ export async function updateOrderStatusAction(input: UpdateOrderStatusInput) {
 
 export async function getOrderDetailsAction(id: string) {
   try {
-    const session = await auth.getSession({
-      headers: await headers(),
-    });
-    const user = session?.user;
+    const { user } = await getServerSession();
     
     let isStaffOrManager = false;
     if (user) {
@@ -141,10 +134,7 @@ export async function fetchOrdersAction(params: {
   limit?: number;
 }) {
   try {
-    const session = await auth.getSession({
-      headers: await headers(),
-    });
-    const user = session?.user;
+    const { user } = await getServerSession();
     
     let isStaffOrManager = false;
     if (user) {
@@ -195,10 +185,7 @@ export async function cancelCustomerOrderAction(
   note?: string
 ) {
   try {
-    const session = await auth.getSession({
-      headers: await headers(),
-    });
-    const user = session?.user;
+    const { user } = await getServerSession();
     if (!user) {
       return { success: false, error: "Unauthorized" };
     }

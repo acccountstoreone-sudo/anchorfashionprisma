@@ -5,18 +5,14 @@ import { getStoreInfo } from "@/lib/actions/settings.actions";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 
-import { auth } from "@/lib/auth/server";
-import { headers } from "next/headers";
+import { getServerSession } from "@/lib/auth/server";
 
 export default async function CustomerLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth.getSession({
-    headers: await headers(),
-  });
-  const user = session?.user || null;
+  const { user } = await getServerSession();
 
   const [categories, storeInfo] = await Promise.all([
     CatalogRepository.getCategories(),

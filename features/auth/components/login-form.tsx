@@ -76,12 +76,10 @@ export function LoginForm() {
     const next = params.get("next");
 
     try {
-      const { redirectUrl } = await getPostLoginRedirectAction(next);
-      router.push(redirectUrl);
-      router.refresh();
+      const { redirectUrl } = await getPostLoginRedirectAction(next, data?.user);
+      window.location.href = redirectUrl;
     } catch {
-      router.push(next || "/account/profile");
-      router.refresh();
+      window.location.href = next || "/account/profile";
     }
   }
 

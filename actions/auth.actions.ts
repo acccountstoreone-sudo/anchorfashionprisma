@@ -1,18 +1,16 @@
 "use server";
 
-import { auth } from "@/lib/auth/server";
-import { headers } from "next/headers";
+import { getServerSession } from "@/lib/auth/server";
 import { prisma } from "@/lib/prisma";
 import { STAFF_ROLES } from "@/lib/constants/auth";
 
 export async function getPostLoginRedirectAction(
-  nextUrl?: string | null
+  nextUrl?: string | null,
+  clientUser?: any
 ): Promise<{ redirectUrl: string; role: string }> {
   try {
-    const session = await auth.getSession({
-      headers: await headers(),
-    });
-    const user = session?.user;
+    const { user: serverUser } = await getServerSession();
+    const user = serverUser || clientUser;
 
     if (!user) {
       return {
@@ -28,6 +26,7 @@ export async function getPostLoginRedirectAction(
     if (!role || role === "CUSTOMER") {
       try {
         const isUuid =
+          user.id &&
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
             user.id
           );

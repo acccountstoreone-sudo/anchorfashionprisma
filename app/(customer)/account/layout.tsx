@@ -2,9 +2,9 @@ import { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { auth } from "@/lib/auth/server";
+import { getServerSession } from "@/lib/auth/server";
 import { prisma } from "@/lib/prisma";
-import { ADMIN_ROLES } from "@/lib/constants/auth";
+import { ADMIN_ROLES, STAFF_ROLES } from "@/lib/constants/auth";
 
 import { LogoutButton } from "@/components/auth/logout-button";
 import { AccountNav } from "@/components/customer/account-nav";
@@ -16,10 +16,7 @@ export default async function AccountLayout({
 }: {
   children: ReactNode;
 }) {
-  const session = await auth.getSession({
-    headers: await headers(),
-  });
-  const user = session?.user;
+  const { user } = await getServerSession();
 
   if (!user) {
     redirect("/auth/login?next=/account");
@@ -52,7 +49,22 @@ export default async function AccountLayout({
 
   if (!role) role = "CUSTOMER";
 
-  if ((ADMIN_ROLES as readonly string[]).includes(role)) {
+  const isStaff =
+    (STAFF_ROLES as readonly string[]).includes(role) ||
+    [
+      "SUPERADMIN",
+      "SUPER_ADMIN",
+      "ADMIN",
+      "STAFF",
+      "MANAGER",
+      "WAREHOUSE_MANAGER",
+      "MARKETING_MANAGER",
+      "FINANCE_MANAGER",
+      "MARKETING",
+      "SUPPORT",
+    ].includes(role);
+
+  if (isStaff) {
     redirect("/admin");
   }
 

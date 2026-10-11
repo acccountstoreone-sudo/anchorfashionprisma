@@ -456,10 +456,8 @@ export function createClient() {
             }
             return { data: { user: null }, error: null };
           } else {
-            const { auth } = await import("@/lib/auth/server");
-            const { headers } = await import("next/headers");
-            const session = await auth.getSession({ headers: await headers() });
-            const u = session?.user;
+            const { getServerSession } = await import("@/lib/auth/server");
+            const { user: u } = await getServerSession();
             if (u) {
               return {
                 data: {
@@ -494,10 +492,9 @@ export function createClient() {
             const res = await authClient.getSession();
             return { data: { session: res?.data?.session || null }, error: null };
           } else {
-            const { auth } = await import("@/lib/auth/server");
-            const { headers } = await import("next/headers");
-            const session = await auth.getSession({ headers: await headers() });
-            return { data: { session: session?.session || null }, error: null };
+            const { getServerSession } = await import("@/lib/auth/server");
+            const { session } = await getServerSession();
+            return { data: { session: session || null }, error: null };
           }
         } catch {
           return { data: { session: null }, error: null };

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { auth } from "@/lib/auth/server";
+import { auth, getServerSession } from "@/lib/auth/server";
 import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 
@@ -60,8 +60,7 @@ export function createProtectedAction<Input, Output>(
 ) {
   return async (input: Input): Promise<ActionState<Output>> => {
     try {
-      const session = await auth.api.getSession({ headers: await headers() });
-      const user = session?.user;
+      const { user } = await getServerSession();
 
       if (!user) {
         return { success: false, error: "Unauthorized. Please log in." };
@@ -97,8 +96,7 @@ export function createAdminAction<Input, Output>(
 ) {
   return async (input: Input): Promise<ActionState<Output>> => {
     try {
-      const session = await auth.api.getSession({ headers: await headers() });
-      const user = session?.user;
+      const { user } = await getServerSession();
 
       if (!user) {
         return { success: false, error: "Unauthorized. Please log in." };

@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { ClientAdminSidebar } from "@/features/admin/components/ClientAdminSidebar";
 import { AdminHeader } from "@/features/admin/components/AdminHeader";
 import { MobileAppBanner } from "@/features/admin/components/MobileAppBanner";
-import { auth } from "@/lib/auth/server";
+import { getServerSession } from "@/lib/auth/server";
 import { prisma } from "@/lib/prisma";
 import { STAFF_ROLES } from "@/lib/constants/auth";
 
@@ -21,10 +21,7 @@ export default async function AdminLayout({
   children: ReactNode;
 }) {
   // Server-side auth guard with Neon Auth
-  const session = await auth.getSession({
-    headers: await headers(),
-  });
-  const user = session?.user;
+  const { user } = await getServerSession();
 
   if (!user) {
     redirect("/auth/login?next=/admin");

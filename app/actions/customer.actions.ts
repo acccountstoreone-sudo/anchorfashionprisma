@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { CustomerService } from "@/lib/services/customer.service";
-import { auth } from "@/lib/auth/server";
-import { headers } from "next/headers";
+import { auth, getServerSession } from "@/lib/auth/server";
 // Storage needs migration from Supabase to Neon/S3, temporarily keeping createAdminClient for image upload only if it exists
 import { createAdminClient } from "@/lib/supabase/admin";
 import { WalletService } from "@/services/wallet.service";
@@ -12,20 +11,15 @@ import { LoyaltyService } from "@/services/loyalty.service";
 const customerService = new CustomerService();
 
 async function getUserId() {
-  const session = await auth.getSession({
-    headers: await headers(),
-  });
-  if (!session?.user) {
+  const { user } = await getServerSession();
+  if (!user) {
     throw new Error("Unauthorized");
   }
-  return session.user.id;
+  return user.id;
 }
 
 export async function updateProfileAction(formData: FormData) {
-  const session = await auth.getSession({
-    headers: await headers(),
-  });
-  const user = session?.user;
+  const { user } = await getServerSession();
 
   if (!user) {
     throw new Error("Unauthorized");
@@ -50,10 +44,7 @@ export async function updateProfileAction(formData: FormData) {
 
 export async function uploadAvatarAction(formData: FormData) {
   try {
-    const session = await auth.getSession({
-      headers: await headers(),
-    });
-    const user = session?.user;
+    const { user } = await getServerSession();
 
     if (!user) {
       return { success: false, error: "Unauthorized" };

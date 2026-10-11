@@ -2,8 +2,8 @@
 
 import { CheckoutService } from "../services/checkout.service";
 import { OrderService } from "../services/order.service";
-import { auth } from "@/lib/auth/server";
-import { cookies, headers } from "next/headers";
+import { auth, getServerSession } from "@/lib/auth/server";
+import { cookies } from "next/headers";
 import {
   CheckoutFormValues,
   checkoutFormSchema,
@@ -13,10 +13,7 @@ import { CodRiskService, CodRiskEvaluation } from "../services/fraud/cod-risk.se
 import { CodOtpService } from "../services/fraud/cod-otp.service";
 
 async function getSessionIdentifiers() {
-  const session = await auth.getSession({
-    headers: await headers(),
-  });
-  const user = session?.user;
+  const { user } = await getServerSession();
 
   const cookieStore = await cookies();
   const guestSessionId = cookieStore.get("af_guest_session")?.value;
