@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { CustomerService } from "@/lib/services/customer.service";
 import { auth, getServerSession } from "@/lib/auth/server";
+import { createClient } from "@/lib/supabase/server";
 // Storage needs migration from Supabase to Neon/S3, temporarily keeping createAdminClient for image upload only if it exists
 import { createAdminClient } from "@/lib/supabase/admin";
 import { WalletService } from "@/services/wallet.service";

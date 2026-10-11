@@ -13,11 +13,20 @@ import { redirect } from "next/navigation";
 import { CouponService } from "@/services/coupon.service";
 
 async function getUserId() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.id;
+  try {
+    const { getServerSession } = await import("@/lib/auth/server");
+    const { user } = await getServerSession();
+    if (user?.id) return user.id;
+  } catch (_) {}
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user?.id;
+  } catch (_) {
+    return null;
+  }
 }
 
 export async function initializeCheckoutSessionAction(

@@ -4,6 +4,8 @@ import { CheckoutService } from "../services/checkout.service";
 import { OrderService } from "../services/order.service";
 import { auth, getServerSession } from "@/lib/auth/server";
 import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
 import {
   CheckoutFormValues,
   checkoutFormSchema,
@@ -160,16 +162,31 @@ export async function processCheckoutAction(
     }
 
     if (userId) {
-      const supabase = await createClient();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("roles(name)")
-        .eq("id", userId)
-        .single();
-      const roleName = (profile?.roles as any)?.name;
-      const { ADMIN_ROLES } = await import("@/lib/constants/auth");
-      if (ADMIN_ROLES.includes(roleName)) {
-        throw new Error("Admin accounts cannot place customer orders. Please use a customer account.");
+      try {
+        const { user: currentUser } = await getServerSession();
+        let roleName = (currentUser as any)?.role || currentUser?.user_metadata?.role;
+        if (!roleName) {
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+          const profile = await prisma.profile.findFirst({
+            where: {
+              OR: [
+                ...(isUuid ? [{ id: userId }] : []),
+                ...(parsedData.information.email ? [{ email: parsedData.information.email }] : []),
+              ],
+            },
+            include: { role: true },
+          });
+          roleName = profile?.role?.name;
+        }
+
+        const upperRole = String(roleName || "").toUpperCase();
+        const { ADMIN_ROLES } = await import("@/lib/constants/auth");
+        if (upperRole && (ADMIN_ROLES as readonly string[]).includes(upperRole)) {
+          throw new Error("Admin accounts cannot place customer orders. Please use a customer account.");
+        }
+      } catch (err: any) {
+        if (err.message?.includes("Admin accounts")) throw err;
+        console.warn("[processCheckoutAction] Role verification notice:", err);
       }
     }
 
