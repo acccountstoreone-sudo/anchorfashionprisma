@@ -1,39 +1,30 @@
 "use server";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { CourierProviderCode } from "@/types/shipping.types";
 import { ShippingService } from "@/services/shipping/shipping.service";
 import { OrderService } from "@/lib/services/oms/order.service";
 import { revalidatePath } from "next/cache";
-import { ADMIN_ROLES, MANAGER_ROLES, STAFF_ROLES } from "@/lib/constants/auth";
+import { getServerSession } from "@/lib/auth/server";
+import { isStaffOrManager, getRoleForUser } from "@/lib/security/roles";
 
 export async function dispatchOrderAction(
   orderId: string,
   courierCode: CourierProviderCode
 ) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await getServerSession();
 
     if (!user) {
       return { success: false, error: "Unauthorized" };
     }
 
-    const role = String(
-      user.user_metadata?.role || user.app_metadata?.role || ""
-    ).toUpperCase();
-    
-    // Verify Staff / Manager / Admin
-    const isStaffOrManager = 
-      (ADMIN_ROLES as readonly string[]).includes(role) ||
-      (MANAGER_ROLES as readonly string[]).includes(role) ||
-      (STAFF_ROLES as readonly string[]).includes(role);
-
-    if (!isStaffOrManager) {
+    const isStaff = await isStaffOrManager(user);
+    if (!isStaff) {
       return { success: false, error: "Unauthorized. Insufficient permissions." };
     }
+
+    const role = await getRoleForUser(user);
 
     const adminSupabase = await createAdminClient();
     const orderService = new OrderService();

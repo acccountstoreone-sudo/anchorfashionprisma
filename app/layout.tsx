@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { jost } from "@/lib/fonts";
+import { jost, playfair, inter } from "@/lib/fonts";
 import "./globals.css";
 import { GlobalProviders } from "@/providers/GlobalProviders";
 import { AnalyticsProviders } from "@/components/analytics/AnalyticsProviders";
@@ -90,7 +90,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${jost.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased`}
+        className={`${jost.variable} ${playfair.variable} ${inter.variable} ${jost.className} min-h-screen overflow-x-hidden bg-background text-foreground antialiased`}
         suppressHydrationWarning
       >
         <GlobalProviders>{children}</GlobalProviders>

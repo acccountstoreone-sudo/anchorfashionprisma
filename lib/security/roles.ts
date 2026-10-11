@@ -1,12 +1,14 @@
-import { createClient } from "@/lib/supabase/server";
+import { getServerSession } from "@/lib/auth/server";
 import { AUTH_ROLES, ADMIN_ROLES, MARKETING_ROLES, STAFF_ROLES } from "@/lib/constants/auth";
 
-async function getRoleForUser(supabase: any, user: any): Promise<string> {
-  let role = user.user_metadata?.role || user.app_metadata?.role || user.role;
+export async function getRoleForUser(user: any): Promise<string> {
+  if (!user) return "CUSTOMER";
+  let role = user.role || user.user_metadata?.role || user.app_metadata?.role;
   if (!role || String(role).toUpperCase() === "CUSTOMER") {
     try {
       const { prisma } = await import("@/lib/prisma");
       const isUuid =
+        user.id &&
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           user.id
         );
@@ -29,18 +31,33 @@ async function getRoleForUser(supabase: any, user: any): Promise<string> {
   return String(role || "CUSTOMER").toUpperCase();
 }
 
-export async function verifySuperAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+export async function isStaffOrManager(user: any): Promise<boolean> {
+  const role = await getRoleForUser(user);
+  return (
+    (ADMIN_ROLES as readonly string[]).includes(role) ||
+    (STAFF_ROLES as readonly string[]).includes(role) ||
+    [
+      "SUPERADMIN",
+      "SUPER_ADMIN",
+      "ADMIN",
+      "MANAGER",
+      "WAREHOUSE_MANAGER",
+      "MARKETING_MANAGER",
+      "FINANCE_MANAGER",
+      "STAFF",
+      "SUPPORT",
+    ].includes(role)
+  );
+}
 
-  if (error || !user) {
+export async function verifySuperAdmin() {
+  const { user } = await getServerSession();
+
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const role = await getRoleForUser(supabase, user);
+  const role = await getRoleForUser(user);
   
   if (!(ADMIN_ROLES as readonly string[]).includes(role)) {
     throw new Error("Forbidden: Administrator access required");
@@ -50,17 +67,13 @@ export async function verifySuperAdmin() {
 }
 
 export async function verifyAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  const { user } = await getServerSession();
 
-  if (error || !user) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const role = await getRoleForUser(supabase, user);
+  const role = await getRoleForUser(user);
   
   if (!(ADMIN_ROLES as readonly string[]).includes(role)) {
     throw new Error("Forbidden: Admin access required");
@@ -70,17 +83,13 @@ export async function verifyAdmin() {
 }
 
 export async function verifyMarketing() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  const { user } = await getServerSession();
 
-  if (error || !user) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const role = await getRoleForUser(supabase, user);
+  const role = await getRoleForUser(user);
   
   if (!(MARKETING_ROLES as readonly string[]).includes(role)) {
     throw new Error("Forbidden: Marketing access required");
@@ -90,17 +99,13 @@ export async function verifyMarketing() {
 }
 
 export async function verifyStaff() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  const { user } = await getServerSession();
 
-  if (error || !user) {
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const role = await getRoleForUser(supabase, user);
+  const role = await getRoleForUser(user);
   
   if (!(STAFF_ROLES as readonly string[]).includes(role)) {
     throw new Error("Forbidden: Staff access required");

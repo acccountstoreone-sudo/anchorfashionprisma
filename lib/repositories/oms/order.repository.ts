@@ -170,7 +170,39 @@ export class OrderRepository {
   async createOrder(
     orderData: Partial<Order> & { order_number: string }
   ): Promise<Order> {
-    throw new Error("Use lib/repositories/order.repository.ts for authoritative order creation");
+    const isProfileUuid =
+      orderData.user_id &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        orderData.user_id
+      );
+
+    const created = await prisma.order.create({
+      data: {
+        orderNumber: orderData.order_number,
+        profileId: isProfileUuid ? orderData.user_id : undefined,
+        customerId: orderData.customer_id || undefined,
+        status: (orderData.status || "CONFIRMED").toUpperCase(),
+        subtotal: orderData.subtotal || 0,
+        shippingFee: orderData.shipping_fee || orderData.shipping_total || 0,
+        discount: orderData.discount_amount || orderData.discount_total || 0,
+        totalAmount: orderData.total_amount || orderData.grand_total || 0,
+        currency: orderData.currency || "BDT",
+        paymentMethod: orderData.payment_method || "COD",
+        paymentStatus: orderData.payment_status || "UNPAID",
+        shippingAddress: (orderData.shipping_address as any) || {},
+        billingAddress: (orderData.billing_address as any) || undefined,
+        notes: orderData.notes,
+        statusHistory: {
+          create: {
+            status: (orderData.status || "CONFIRMED").toUpperCase(),
+            notes: "Order created via OMS",
+          },
+        },
+      },
+      include: { items: true, statusHistory: true },
+    });
+
+    return mapPrismaOrderToOms(created);
   }
 
   async updateOrderStatus(

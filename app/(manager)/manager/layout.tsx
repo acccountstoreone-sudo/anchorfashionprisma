@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { ManagerSidebar } from "@/components/manager/layout/ManagerSidebar";
 import { ManagerHeader } from "@/components/manager/layout/ManagerHeader";
 import { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
-import { MANAGER_ROLES } from "@/lib/constants/auth";
+import { getServerSession } from "@/lib/auth/server";
+import { prisma } from "@/lib/prisma";
+import { MANAGER_ROLES, ADMIN_ROLES } from "@/lib/constants/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,29 +15,68 @@ export const metadata: Metadata = {
 };
 
 export default async function ManagerLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getServerSession();
 
   if (!user) {
     redirect("/auth/login?next=/manager");
   }
 
-  const role =
-    user.user_metadata?.role || user.app_metadata?.role || "CUSTOMER";
-    
-  // Sub-admins must have a role included in MANAGER_ROLES
-  if (!MANAGER_ROLES.includes(role)) {
+  let role = String((user as any).role || "").toUpperCase();
+
+  if (!role || role === "CUSTOMER") {
+    try {
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          user.id
+        );
+      const profile = await prisma.profile.findFirst({
+        where: {
+          OR: [
+            ...(isUuid ? [{ id: user.id }] : []),
+            ...(user.email ? [{ email: user.email }] : []),
+          ],
+        },
+        include: {
+          role: true,
+        },
+      });
+
+      if (profile?.role?.name) {
+        role = profile.role.name.toUpperCase();
+      }
+    } catch (err) {
+      console.error("[Manager Layout] Error fetching role from database:", err);
+    }
+  }
+
+  if (!role) role = "CUSTOMER";
+
+  const isManagerOrAdmin =
+    (MANAGER_ROLES as readonly string[]).includes(role) ||
+    (ADMIN_ROLES as readonly string[]).includes(role) ||
+    [
+      "SUPERADMIN",
+      "SUPER_ADMIN",
+      "ADMIN",
+      "MANAGER",
+      "WAREHOUSE_MANAGER",
+      "MARKETING_MANAGER",
+      "FINANCE_MANAGER",
+      "STAFF",
+    ].includes(role);
+
+  if (!isManagerOrAdmin) {
     redirect("/account/profile");
   }
+
+  const sanitizedUser = JSON.parse(JSON.stringify(user));
 
   return (
     <div className="fixed inset-0 flex h-full w-full overflow-hidden bg-muted/20">
       <style>{`html, body { overflow: hidden !important; height: 100% !important; margin: 0 !important; padding: 0 !important; }`}</style>
       <ManagerSidebar />
       <div className="flex min-w-0 min-h-0 flex-1 flex-col h-full overflow-hidden">
-        <ManagerHeader user={user} />
+        <ManagerHeader user={sanitizedUser} />
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6 overscroll-contain">
           <div className="mx-auto w-full max-w-[1600px] flex-1 flex flex-col gap-6">
             {children}

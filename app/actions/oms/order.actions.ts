@@ -11,7 +11,7 @@ import {
 } from "@/lib/validations/oms";
 import { revalidatePath } from "next/cache";
 import { auth, getServerSession } from "@/lib/auth/server";
-import { ADMIN_ROLES, MANAGER_ROLES, STAFF_ROLES } from "@/lib/constants/auth";
+import { isStaffOrManager, getRoleForUser } from "@/lib/security/roles";
 import { InventoryService } from "@/services/inventory.service";
 import { PaymentService } from "@/services/payment/payment.service";
 
@@ -34,8 +34,7 @@ export async function updateOrderStatusAction(input: UpdateOrderStatusInput) {
     const validatedData = updateOrderStatusSchema.parse(input);
     const { user } = await getServerSession();
 
-    // Use session role or default to 'admin' if they reached this admin action
-    const role = user?.role || "admin";
+    const role = await getRoleForUser(user);
     const userId = user?.id;
 
     const updatedOrder = await orderService.updateOrderStatus(
@@ -95,18 +94,7 @@ export async function updateOrderStatusAction(input: UpdateOrderStatusInput) {
 export async function getOrderDetailsAction(id: string) {
   try {
     const { user } = await getServerSession();
-    
-    let isStaffOrManager = false;
-    if (user) {
-      const role = String(user.role || "").toUpperCase();
-      if (
-        (ADMIN_ROLES as readonly string[]).includes(role) ||
-        (MANAGER_ROLES as readonly string[]).includes(role) ||
-        (STAFF_ROLES as readonly string[]).includes(role)
-      ) {
-        isStaffOrManager = true;
-      }
-    }
+    const isStaff = await isStaffOrManager(user);
 
     const details = await orderService.getOrderDetails(id, null);
     if (!details) {
@@ -114,7 +102,7 @@ export async function getOrderDetailsAction(id: string) {
     }
 
     // Authorization: If not staff/manager and order has a customer_id, ensure caller owns it
-    if (!isStaffOrManager && details.customer_id && details.customer_id !== user?.id) {
+    if (!isStaff && details.customer_id && details.customer_id !== user?.id) {
       return { success: false, error: "Unauthorized" };
     }
 
@@ -135,20 +123,9 @@ export async function fetchOrdersAction(params: {
 }) {
   try {
     const { user } = await getServerSession();
-    
-    let isStaffOrManager = false;
-    if (user) {
-      const role = String(user.role || "").toUpperCase();
-      if (
-        (ADMIN_ROLES as readonly string[]).includes(role) ||
-        (MANAGER_ROLES as readonly string[]).includes(role) ||
-        (STAFF_ROLES as readonly string[]).includes(role)
-      ) {
-        isStaffOrManager = true;
-      }
-    }
+    const isStaff = await isStaffOrManager(user);
 
-    if (!isStaffOrManager && user) {
+    if (!isStaff && user) {
       params.customerId = user.id;
     }
 

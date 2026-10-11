@@ -1,18 +1,22 @@
-// Mocked fonts to prevent build failures when offline or unable to reach Google Fonts
-export const jost = {
-  className: "font-sans",
+import { Jost, Playfair_Display, Inter } from "next/font/google";
+
+export const jost = Jost({
+  subsets: ["latin"],
+  display: "swap",
   variable: "--font-jost",
-  style: { fontFamily: "sans-serif" },
-};
+  fallback: ["system-ui", "sans-serif"],
+});
 
-export const playfair = {
-  className: "font-serif",
+export const playfair = Playfair_Display({
+  subsets: ["latin"],
+  display: "swap",
   variable: "--font-playfair",
-  style: { fontFamily: "serif" },
-};
+  fallback: ["Georgia", "serif"],
+});
 
-export const inter = {
-  className: "font-sans",
+export const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
   variable: "--font-inter",
-  style: { fontFamily: "sans-serif" },
-};
+  fallback: ["system-ui", "sans-serif"],
+});

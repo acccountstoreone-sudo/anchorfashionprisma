@@ -21,8 +21,8 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        heading: ["var(--font-heading)", "system-ui", "sans-serif"],
+        sans: ["var(--font-jost)", "var(--font-sans)", "system-ui", "sans-serif"],
+        heading: ["var(--font-playfair)", "var(--font-heading)", "Georgia", "serif"],
         mono: ["var(--font-mono)", "monospace"],
       },
       colors: {
