@@ -115,28 +115,34 @@ const DEFAULTS: {
 };
 
 export async function getStoreInfo(): Promise<StoreInfo> {
-  const supabase = await createClient();
   try {
+    const supabase = await createClient();
     const { data } = await supabase
       .from("settings")
       .select("value")
       .eq("key", "store_info")
       .single();
-    return (data?.value as StoreInfo) ?? DEFAULTS.store_info;
+    if (data?.value && typeof data.value === "object") {
+      return { ...DEFAULTS.store_info, ...(data.value as Partial<StoreInfo>) };
+    }
+    return DEFAULTS.store_info;
   } catch {
     return DEFAULTS.store_info;
   }
 }
 
 export async function getSocialLinks(): Promise<SocialLinks> {
-  const supabase = await createClient();
   try {
+    const supabase = await createClient();
     const { data } = await supabase
       .from("settings")
       .select("value")
       .eq("key", "social_links")
       .single();
-    return (data?.value as SocialLinks) ?? DEFAULTS.social_links;
+    if (data?.value && typeof data.value === "object") {
+      return { ...DEFAULTS.social_links, ...(data.value as Partial<SocialLinks>) };
+    }
+    return DEFAULTS.social_links;
   } catch {
     return DEFAULTS.social_links;
   }

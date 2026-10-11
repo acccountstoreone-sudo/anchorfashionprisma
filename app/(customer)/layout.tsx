@@ -15,22 +15,43 @@ export default async function CustomerLayout({
   const { user } = await getServerSession();
 
   const [categories, storeInfo] = await Promise.all([
-    CatalogRepository.getCategories(),
-    getStoreInfo(),
+    CatalogRepository.getCategories().catch(() => []),
+    getStoreInfo().catch(() => ({
+      store_name: "Anchor Fashion Enterprise",
+      store_description: "",
+      phone: "+880 1711-223344",
+      email: "support@anchorfashion.com",
+      address: "Dhaka, Bangladesh",
+      announcement_bar: "🚚 Free Shipping On Orders Over ৳999 | Easy Returns & Exchanges",
+      free_shipping_threshold: "999",
+    })),
   ]);
+
+  const safeStoreInfo = storeInfo || {
+    store_name: "Anchor Fashion Enterprise",
+    store_description: "",
+    phone: "+880 1711-223344",
+    email: "support@anchorfashion.com",
+    address: "Dhaka, Bangladesh",
+    announcement_bar: "🚚 Free Shipping On Orders Over ৳999 | Easy Returns & Exchanges",
+    free_shipping_threshold: "999",
+  };
+
+  const safeUser = user ? JSON.parse(JSON.stringify(user)) : null;
+  const safeCategories = Array.isArray(categories) ? categories : [];
 
   return (
     <div className="flex min-h-screen flex-col pb-20 md:pb-0">
       <StoreHeader
-        dbCategories={categories}
-        contactPhone={storeInfo.phone}
-        contactEmail={storeInfo.email}
-        announcementBar={storeInfo.announcement_bar}
-        user={user}
+        dbCategories={safeCategories}
+        contactPhone={safeStoreInfo.phone}
+        contactEmail={safeStoreInfo.email}
+        announcementBar={safeStoreInfo.announcement_bar}
+        user={safeUser}
       />
       <main className="w-full flex-1 bg-background">{children}</main>
       <StoreFooter />
-      <MobileBottomNav user={user} />
+      <MobileBottomNav user={safeUser} />
       <CartDrawer />
     </div>
   );

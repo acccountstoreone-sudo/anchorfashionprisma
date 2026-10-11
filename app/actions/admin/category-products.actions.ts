@@ -2,11 +2,9 @@
 
 import { z } from "zod";
 import { createAdminAction } from "@/lib/actions/safe-action";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { invalidateCategoryCache } from "@/lib/cache/invalidate-catalog";
-
-const prisma = new PrismaClient();
 
 // Add products to category (Many-to-Many)
 export const addProductsToCategoryAction = createAdminAction(
