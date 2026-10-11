@@ -38,16 +38,12 @@ export async function getUsersByRoleAction(roleNames: string[]) {
     if (profilesError) throw profilesError;
 
     // 3. Get auth users (admin API) to get emails
-    const {
-      data: { users },
-      error: authError,
-    } = await supabase.auth.admin.listUsers();
-
-    if (authError) throw authError;
+    const authRes = await supabase.auth.admin.listUsers();
+    const users = authRes?.data?.users || [];
 
     // Merge data
-    const mappedUsers: UserData[] = profiles.map((profile) => {
-      const authUser = users.find((u) => u.id === profile.id);
+    const mappedUsers: UserData[] = (profiles || []).map((profile: any) => {
+      const authUser = users.find((u: any) => u.id === profile.id);
       
       const roleName = Array.isArray(profile.roles) 
         ? profile.roles[0]?.name 

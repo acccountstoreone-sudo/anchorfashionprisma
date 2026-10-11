@@ -22,52 +22,61 @@ export class FlashSaleService {
    * "Active" means is_active=true AND now() between start_time and end_time.
    */
   static async getActiveFlashSales(): Promise<FlashSaleRecord[]> {
-    const supabase = this.getAdminClient();
-    const now = new Date().toISOString();
+    try {
+      const supabase = this.getAdminClient();
+      const now = new Date().toISOString();
 
-    const { data, error } = await supabase
-      .from("flash_sales")
-      .select("*")
-      .eq("is_active", true)
-      .lte("start_time", now)
-      .gt("end_time", now);
+      const { data, error } = await supabase
+        .from("flash_sales")
+        .select("*")
+        .eq("is_active", true)
+        .lte("start_time", now)
+        .gt("end_time", now);
 
-    if (error) {
-      console.error("Error fetching active flash sales:", error);
+      if (error) {
+        console.error("Error fetching active flash sales:", error);
+        return [];
+      }
+      return (data || []) as FlashSaleRecord[];
+    } catch (err) {
+      console.error("getActiveFlashSales caught error:", err);
       return [];
     }
-    return data as FlashSaleRecord[];
   }
 
   /**
    * Fetches an active flash sale for a specific product.
    */
   static async getFlashSaleForProduct(productId: string): Promise<FlashSaleRecord | null> {
-    const supabase = this.getAdminClient();
-    const now = new Date().toISOString();
+    try {
+      const supabase = this.getAdminClient();
+      const now = new Date().toISOString();
 
-    const { data, error } = await supabase
-      .from("flash_sales")
-      .select("*")
-      .eq("product_id", productId)
-      .eq("is_active", true)
-      .lte("start_time", now)
-      .gt("end_time", now)
-      .single();
+      const { data, error } = await supabase
+        .from("flash_sales")
+        .select("*")
+        .eq("product_id", productId)
+        .eq("is_active", true)
+        .lte("start_time", now)
+        .gt("end_time", now)
+        .single();
 
-    if (error) {
-      if (error.code !== "PGRST116") {
-        console.error(`Error fetching flash sale for product ${productId}:`, error);
+      if (error) {
+        if (error.code !== "PGRST116") {
+          console.error(`Error fetching flash sale for product ${productId}:`, error);
+        }
+        return null;
       }
+
+      // Double check stock remaining
+      if (data && data.stock_sold >= data.stock_allocated) {
+        return null;
+      }
+
+      return data as FlashSaleRecord;
+    } catch {
       return null;
     }
-
-    // Double check stock remaining
-    if (data.stock_sold >= data.stock_allocated) {
-      return null;
-    }
-
-    return data as FlashSaleRecord;
   }
 
   /**

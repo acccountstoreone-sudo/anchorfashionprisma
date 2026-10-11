@@ -16,13 +16,8 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+
   experimental: {
-    serverActions: {
-      bodySizeLimit: "50mb",
-    },
     optimizePackageImports: [
       "lucide-react",
       "framer-motion",
@@ -30,9 +25,7 @@ const nextConfig: NextConfig = {
       "recharts",
     ],
   },
-  turbopack: {
-    root: path.resolve(__dirname),
-  },
+
   async headers() {
     return [
       {

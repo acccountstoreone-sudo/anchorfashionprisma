@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:webpack": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -115,6 +116,6 @@
     "prettier-plugin-tailwindcss": "^0.6.6",
     "serwist": "^9.5.12",
     "tailwindcss": "^3.4.10",
-    "typescript": "^5.5.4"
+    "typescript": "^5.8.2"
   }
 }

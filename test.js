@@ -1,10 +1,17 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-Promise.all([
-  supabase.from('categories').select('*'),
-  supabase.from('brands').select('*')
-]).then(([cats, brands]) => {
-  console.log('categories:', JSON.stringify(cats.data, null, 2));
-  console.log('brands:', JSON.stringify(brands.data, null, 2));
-}).catch(console.error);
+require('dotenv').config();
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+async function main() {
+  console.log('Testing Neon connection via Prisma...');
+  const result = await prisma.$queryRawUnsafe('SELECT 1 as connected');
+  console.log('Database query result:', result);
+}
+
+main()
+  .catch(err => {
+    console.error('Connection failed:', err);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

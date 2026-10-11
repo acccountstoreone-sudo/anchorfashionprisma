@@ -1,22 +1,18 @@
-import { Jost, Playfair_Display, Inter } from "next/font/google";
-
-export const jost = Jost({
-  subsets: ["latin"],
-  display: "swap",
+// Mocked fonts to prevent build failures when offline or unable to reach Google Fonts
+export const jost = {
+  className: "font-sans",
   variable: "--font-jost",
-  fallback: ["system-ui", "sans-serif"],
-});
+  style: { fontFamily: "sans-serif" },
+};
 
-export const playfair = Playfair_Display({
-  subsets: ["latin"],
-  display: "swap",
+export const playfair = {
+  className: "font-serif",
   variable: "--font-playfair",
-  fallback: ["Georgia", "serif"],
-});
+  style: { fontFamily: "serif" },
+};
 
-export const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
+export const inter = {
+  className: "font-sans",
   variable: "--font-inter",
-  fallback: ["system-ui", "sans-serif"],
-});
+  style: { fontFamily: "sans-serif" },
+};
