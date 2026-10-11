@@ -120,4 +120,37 @@ export class CheckoutRepository {
       where: { id: sessionId },
     }).catch(() => {});
   }
+
+  static async getCheckoutSessionById(id: string): Promise<CheckoutSession | null> {
+    try {
+      const record = await prisma.checkoutSession.findUnique({
+        where: { id },
+      });
+      if (!record) return null;
+      return mapToCheckoutSession(record);
+    } catch {
+      return null;
+    }
+  }
+
+  // Instance method compatibility
+  async getCheckoutSessionById(id: string): Promise<CheckoutSession | null> {
+    return CheckoutRepository.getCheckoutSessionById(id);
+  }
+  async createCheckoutSession(
+    cartId: string,
+    userId?: string,
+    guestEmail?: string
+  ): Promise<CheckoutSession> {
+    return CheckoutRepository.createSession(cartId, userId, guestEmail);
+  }
+  async updateCheckoutSession(
+    id: string,
+    updates: Partial<Omit<CheckoutSession, "id" | "created_at" | "updated_at">>
+  ): Promise<CheckoutSession> {
+    return CheckoutRepository.updateSession(id, updates);
+  }
+  async deleteCheckoutSession(id: string): Promise<void> {
+    return CheckoutRepository.deleteSession(id);
+  }
 }

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCartStore } from "@/stores/use-cart-store";
 import { useSession } from "@/hooks/use-session";
-import { createClient } from "@/lib/supabase/client";
+import { authClient } from "@/lib/auth/client";
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -59,9 +59,8 @@ export function FloatingPurchaseCard({
   const handleAddToCart = async () => {
     let currentUser = user;
     if (!currentUser) {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      currentUser = data?.user ?? null;
+      const res = await authClient.getSession();
+      currentUser = res?.data?.user ?? null;
     }
 
     if (!currentUser) {
@@ -98,9 +97,8 @@ export function FloatingPurchaseCard({
   const handleBuyNow = async () => {
     let currentUser = user;
     if (!currentUser) {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      currentUser = data?.user ?? null;
+      const res = await authClient.getSession();
+      currentUser = res?.data?.user ?? null;
     }
 
     if (!currentUser) {

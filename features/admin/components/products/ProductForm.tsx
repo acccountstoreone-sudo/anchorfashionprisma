@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Plus, Trash2, Upload, ImagePlus, X, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";

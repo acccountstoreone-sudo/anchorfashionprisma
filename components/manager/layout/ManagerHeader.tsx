@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { createClient } from "@/lib/supabase/client";
+import { authClient } from "@/lib/auth/client";
 import { toast } from "sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -61,7 +61,6 @@ const mobileNavItems = [
 export function ManagerHeader({ user }: { user?: any }) {
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = createClient();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -72,10 +71,10 @@ export function ManagerHeader({ user }: { user?: any }) {
   }, []);
 
   async function handleLogout() {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Failed to log out. Please try again.");
-      return;
+    try {
+      await authClient.signOut();
+    } catch (e) {
+      console.warn("Logout notice:", e);
     }
     toast.success("Logged out successfully.");
     window.location.href = "/auth/login";

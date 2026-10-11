@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { LogOut, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { authClient } from "@/lib/auth/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/use-cart-store";
@@ -14,7 +14,6 @@ interface LogoutButtonProps {
 
 export function LogoutButton({ className, hideText }: LogoutButtonProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const supabase = createClient();
 
   async function handleLogout() {
     if (isLoggingOut) return;
@@ -24,12 +23,11 @@ export function LogoutButton({ className, hideText }: LogoutButtonProps) {
       // Clear client-side cart store immediately
       useCartStore.setState({ cart: null, error: null });
 
-      // Sign out from Supabase auth session
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        toast.error("Failed to log out. Please try again.");
-        setIsLoggingOut(false);
-        return;
+      // Sign out from Neon auth session
+      try {
+        await authClient.signOut();
+      } catch (authErr) {
+        console.warn("SignOut notice:", authErr);
       }
 
       // Clear local storage and stale guest cookies safely

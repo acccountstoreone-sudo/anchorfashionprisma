@@ -5,7 +5,7 @@ import { Heart, Minus, Plus, ShoppingBag, Zap, ShieldCheck } from "lucide-react"
 import { useCartStore } from "@/stores/use-cart-store";
 import { useWishlistStore } from "@/stores/use-wishlist-store";
 import { useSession } from "@/hooks/use-session";
-import { createClient } from "@/lib/supabase/client";
+import { authClient } from "@/lib/auth/client";
 import { ADMIN_ROLES } from "@/lib/constants/auth";
 import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -65,9 +65,8 @@ export function ProductActions({
 
     let currentUser = user;
     if (!currentUser) {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      currentUser = data?.user ?? null;
+      const res = await authClient.getSession();
+      currentUser = res?.data?.user ?? null;
     }
 
     if (!currentUser) {
@@ -112,9 +111,8 @@ export function ProductActions({
 
     let currentUser = user;
     if (!currentUser) {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      currentUser = data?.user ?? null;
+      const res = await authClient.getSession();
+      currentUser = res?.data?.user ?? null;
     }
 
     if (!currentUser) {
@@ -157,9 +155,8 @@ export function ProductActions({
   const handleToggleWishlist = async () => {
     let currentUser = user;
     if (!currentUser) {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      currentUser = data?.user ?? null;
+      const res = await authClient.getSession();
+      currentUser = res?.data?.user ?? null;
     }
 
     if (!currentUser) {

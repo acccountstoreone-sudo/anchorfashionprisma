@@ -38,7 +38,6 @@ import {
   createReviewAction,
   fetchPurchasedProductsAction,
 } from "@/app/actions/customer.actions";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const reviewSchema = z.object({

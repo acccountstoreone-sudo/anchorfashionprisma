@@ -25,7 +25,6 @@ import { ArrowDownRight, Loader2, PackagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { Warehouse, WarehouseZone, WarehouseBin } from "@/types/inventory.types";
 import { stockInAction, getWarehouseZones, getZoneBins } from "@/actions/warehouse.actions";
-import { createAdminClient } from "@/lib/supabase/admin-client";
 import { getVariants, getSupplierProfiles } from "@/app/actions/admin/procurement.actions";
 
 interface StockInDialogProps {

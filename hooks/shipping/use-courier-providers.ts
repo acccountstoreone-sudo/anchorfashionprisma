@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { createAdminClient } from "@/lib/supabase/admin-client";
 
 // Note: This hook is admin-only. The admin client is only available server-side,
 // so we use a fetch to an internal API or server action in the client.

@@ -221,24 +221,41 @@ export class OrderRepository {
   }
 
   /**
-   * Update order status
+   * Get all orders by User/Customer ID
    */
-  static async updateOrderStatus(
-    orderId: string,
-    status: string,
-    notes?: string
-  ): Promise<void> {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: status.toUpperCase(),
-        statusHistory: {
-          create: {
-            status: status.toUpperCase(),
-            notes: notes || `Order status updated to ${status}`,
-          },
-        },
+  static async getOrdersByUserId(userId: string): Promise<Order[]> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+    const records = await prisma.order.findMany({
+      where: {
+        OR: [
+          ...(isUuid ? [{ profileId: userId }, { customerId: userId }] : [{ customerId: userId }]),
+        ],
       },
+      include: { items: true, statusHistory: true },
+      orderBy: { createdAt: "desc" },
     });
+    return records.map(mapPrismaOrderToCheckoutOrder);
+  }
+
+  // Instance method compatibility
+  async getOrderById(id: string): Promise<Order | null> {
+    return OrderRepository.getOrderById(id);
+  }
+  async getOrderByNumber(orderNumber: string): Promise<Order | null> {
+    return OrderRepository.getOrderByNumber(orderNumber);
+  }
+  async getOrdersByUserId(userId: string): Promise<Order[]> {
+    return OrderRepository.getOrdersByUserId(userId);
+  }
+  async createOrder(
+    orderData: Partial<Order>,
+    items: Partial<OrderItem>[],
+    shippingAddress: Partial<OrderAddress>,
+    billingAddress?: Partial<OrderAddress>
+  ): Promise<Order> {
+    return OrderRepository.createOrder(orderData, items, shippingAddress, billingAddress);
+  }
+  async updateOrderStatus(id: string, status: string, notes?: string): Promise<void> {
+    return OrderRepository.updateOrderStatus(id, status, notes);
   }
 }

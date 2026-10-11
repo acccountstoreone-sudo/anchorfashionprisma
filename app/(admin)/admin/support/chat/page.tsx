@@ -35,7 +35,6 @@ import {
   SupportTicketRecord,
   TicketMessageRecord,
 } from "@/repositories/support.repository";
-import { createClient } from "@/lib/supabase/client";
 
 export default function LiveChatInterfacePage() {
   const [tickets, setTickets] = useState<SupportTicketRecord[]>([]);

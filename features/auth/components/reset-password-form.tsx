@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { toast } from "sonner";
 
-import { createClient } from "@/lib/supabase/client";
+import { updateUserPasswordAction } from "@/actions/users.actions";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -34,7 +34,6 @@ const formSchema = z
 export function ResetPasswordForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,12 +46,10 @@ export function ResetPasswordForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
-    const { error } = await supabase.auth.updateUser({
-      password: values.password,
-    });
+    const res = await updateUserPasswordAction(values.password);
 
-    if (error) {
-      toast.error(error.message);
+    if (!res.success) {
+      toast.error(res.error || "Failed to reset password");
       setIsLoading(false);
       return;
     }

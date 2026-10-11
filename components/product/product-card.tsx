@@ -8,7 +8,7 @@ import { jost } from "@/lib/fonts";
 import { useWishlistStore } from "@/stores/use-wishlist-store";
 import { useCartStore } from "@/stores/use-cart-store";
 import { useSession } from "@/hooks/use-session";
-import { createClient } from "@/lib/supabase/client";
+import { authClient } from "@/lib/auth/client";
 import { useRouter, usePathname } from "next/navigation";
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
@@ -76,9 +76,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
     let currentUser = user;
     if (!currentUser) {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      currentUser = data?.user ?? null;
+      const res = await authClient.getSession();
+      currentUser = res?.data?.user ?? null;
     }
 
     if (!currentUser) {
@@ -121,9 +120,8 @@ export function ProductCard({ product, className }: ProductCardProps) {
 
     let currentUser = user;
     if (!currentUser) {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      currentUser = data?.user ?? null;
+      const res = await authClient.getSession();
+      currentUser = res?.data?.user ?? null;
     }
 
     if (!currentUser) {

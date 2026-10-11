@@ -14,7 +14,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/stores/use-cart-store";
 import { useWishlistStore } from "@/stores/use-wishlist-store";
 import { useSession } from "@/hooks/use-session";
-import { createClient } from "@/lib/supabase/client";
+import { authClient } from "@/lib/auth/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ADMIN_ROLES } from "@/lib/constants/auth";
@@ -102,9 +102,8 @@ export function ProductQuickView({
   const handleToggleWishlist = async () => {
     let currentUser = user;
     if (!currentUser) {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      currentUser = data?.user ?? null;
+      const res = await authClient.getSession();
+      currentUser = res?.data?.user ?? null;
     }
 
     if (!currentUser) {
@@ -142,9 +141,8 @@ export function ProductQuickView({
 
     let currentUser = user;
     if (!currentUser) {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      currentUser = data?.user ?? null;
+      const res = await authClient.getSession();
+      currentUser = res?.data?.user ?? null;
     }
 
     if (!currentUser) {

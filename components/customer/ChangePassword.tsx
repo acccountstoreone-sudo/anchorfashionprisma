@@ -18,7 +18,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { updateUserPasswordAction } from "@/actions/users.actions";
-import { createClient } from "@/lib/supabase/client";
 
 const changePasswordSchema = z
   .object({
@@ -87,17 +86,10 @@ export function ChangePassword() {
   const onSubmit = (values: ChangePasswordValues) => {
     startTransition(async () => {
       try {
-        const supabase = createClient();
-        const { error: clientAuthError } = await supabase.auth.updateUser({
-          password: values.new_password,
-        });
-
-        if (clientAuthError) {
-          const res = await updateUserPasswordAction(values.new_password);
-          if (!res.success) {
-            toast.error(res.error || clientAuthError.message || "Failed to update password");
-            return;
-          }
+        const res = await updateUserPasswordAction(values.new_password);
+        if (!res.success) {
+          toast.error(res.error || "Failed to update password");
+          return;
         }
 
         toast.success("Password updated successfully!");
