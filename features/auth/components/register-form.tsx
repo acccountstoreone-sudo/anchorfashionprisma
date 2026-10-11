@@ -21,7 +21,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { mergeGuestCartAction } from "@/lib/actions/cart.actions";
-import { useCartStore } from "@/stores/use-cart-store";
 
 const formSchema = z
   .object({
@@ -63,14 +62,30 @@ export function RegisterForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
-    const { data, error } = await authClient.signUp.email({
-      email: values.email,
-      password: values.password,
-      name: `${values.firstName} ${values.lastName}`.trim(),
-    });
+    let data: any = null;
+    let error: any = null;
+
+    try {
+      // Timeout after 20 seconds
+      const signUpPromise = authClient.signUp.email({
+        email: values.email,
+        password: values.password,
+        name: `${values.firstName} ${values.lastName}`.trim(),
+      });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out. Please try again.")), 20000)
+      );
+      const result = await Promise.race([signUpPromise, timeoutPromise]) as any;
+      data = result.data;
+      error = result.error;
+    } catch (e: any) {
+      toast.error(e.message || "Account creation failed. Please try again.");
+      setIsLoading(false);
+      return;
+    }
 
     if (error) {
-      toast.error(error.message);
+      toast.error(error.message || "Account creation failed.");
       setIsLoading(false);
       return;
     }
@@ -79,23 +94,18 @@ export function RegisterForm() {
       localStorage.setItem("anchor_user_password", values.password);
     } catch {}
 
-    // With Better Auth, sign up usually logs you in automatically if email verification is not strictly required before login.
-    if (data?.user) {
-      try {
-        await mergeGuestCartAction();
-        await useCartStore.getState().fetchCart();
-      } catch (mergeErr) {
-        console.debug("Non-critical cart merge during registration deferred:", mergeErr);
-      }
-      setIsLoading(false);
-      toast.success("Account created successfully!");
-      router.push("/");
-      return;
-    }
+    // Merge cart in background — do NOT await, so navigation is instant
+    mergeGuestCartAction().catch(() => {});
 
     setIsLoading(false);
-    toast.success("Account created! Please check your email to verify.");
-    router.push("/auth/login");
+
+    if (data?.user) {
+      toast.success("Account created successfully!");
+      router.push("/");
+    } else {
+      toast.success("Account created! Please check your email to verify.");
+      router.push("/auth/login");
+    }
   }
 
   return (
@@ -231,7 +241,7 @@ export function RegisterForm() {
             className="w-full h-12 bg-[#C9A86A] hover:bg-[#b09156] text-white shadow-md transition-all rounded-lg mt-6 font-semibold" 
             disabled={isLoading}
           >
-            {isLoading ? "Creating account..." : "Register"}
+            {isLoading ? "Please wait..." : "Register"}
           </Button>
         </form>
       </Form>
