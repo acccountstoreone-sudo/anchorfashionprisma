@@ -536,11 +536,18 @@ export function CategoriesClientPage({
                         <span className="italic text-muted-foreground/60">Root</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm">{category.display_order}</TableCell>
+                    <TableCell className="text-sm font-mono">{category.display_order}</TableCell>
                     <TableCell>
-                      <Badge variant={category.is_active ? "default" : "secondary"}>
-                        {category.is_active ? "Active" : "Inactive"}
-                      </Badge>
+                      <div className="flex flex-col gap-1 items-start">
+                        <Badge variant={category.is_active ? "default" : "secondary"}>
+                          {category.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                        {!category.parent_id && category.is_active && (
+                          <span className="text-[10px] text-zinc-500 font-medium">
+                            {category.display_order < 8 ? "Navbar Bar" : "Navbar More"}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
@@ -693,7 +700,10 @@ export function CategoriesClientPage({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cat-order">Display Order</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="cat-order">Display Order</Label>
+                <span className="text-xs text-muted-foreground font-mono">Lower = higher priority</span>
+              </div>
               <Input
                 id="cat-order"
                 type="number"
@@ -702,12 +712,15 @@ export function CategoriesClientPage({
                   setForm((f) => ({ ...f, display_order: Number(e.target.value) }))
                 }
               />
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Controls navigation bar sequence. The top 8 root categories with the lowest values appear directly on the main header bar; additional ones appear in the &ldquo;MORE&rdquo; menu.
+              </p>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div>
-                <p className="text-sm font-medium">Active</p>
+                <p className="text-sm font-medium">Active Status</p>
                 <p className="text-xs text-muted-foreground">
-                  Inactive categories are hidden from the store.
+                  Controls visibility on the store website and navbar menu.
                 </p>
               </div>
               <Switch

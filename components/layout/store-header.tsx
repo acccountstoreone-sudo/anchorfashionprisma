@@ -46,6 +46,8 @@ interface Category {
   slug: string;
   parent_id?: string | null;
   image_url?: string | null;
+  display_order?: number;
+  is_active?: boolean;
 }
 
 interface MegaMenuColumn {
@@ -91,43 +93,43 @@ function NavItem({ link, setActiveMenu }: { link: NavLinkItem, setActiveMenu: (l
       <Link
         href={link.href}
         className={cn(
-          "relative group flex items-center py-4 text-[13px] font-bold uppercase tracking-[0.1em] transition-colors",
-          open ? "text-gray-900" : "text-gray-600 hover:text-gray-900"
+          "relative group flex items-center py-3.5 text-[12.5px] lg:text-[13px] font-semibold uppercase tracking-[0.14em] transition-colors duration-200",
+          open ? "text-[#1a1a1a]" : "text-[#1a1a1a]/85 hover:text-[#C9A86A]"
         )}
       >
         {link.label}
-        {link.megaMenu && (
-          <span
-            className={cn(
-              "absolute bottom-0 left-0 h-0.5 transition-all duration-300 bg-gray-900",
-              open ? "w-full" : "w-0"
-            )}
-          />
-        )}
+        <span
+          className={cn(
+            "absolute bottom-0 left-0 h-[2px] transition-all duration-300 ease-out bg-[#1A1A1A]",
+            open ? "w-full" : "w-0 group-hover:w-full"
+          )}
+        />
       </Link>
 
       {link.megaMenu && (
         <div
           className={cn(
-            "absolute left-0 right-0 top-full w-full bg-white shadow-2xl transition-all duration-300 z-50",
+            "absolute left-0 right-0 top-full w-full bg-white shadow-xl border-t border-gray-100 transition-all duration-300 z-50",
             open
               ? "translate-y-0 opacity-100 visible pointer-events-auto"
               : "-translate-y-2 opacity-0 invisible pointer-events-none"
           )}
         >
-          <div className="mx-auto grid max-w-7xl grid-cols-12 gap-8 px-6 py-10 lg:px-8">
+          <div className="mx-auto grid max-w-7xl grid-cols-12 gap-8 px-6 py-8 lg:px-8">
             <div className="col-span-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
               {link.megaMenu.columns.map((col, idx) => (
                 <div key={idx} className="flex flex-col">
-                  <h3 className="mb-5 text-sm font-bold uppercase tracking-wider text-gray-900 h-5">
-                    {col.title}
-                  </h3>
-                  <div className="flex flex-col gap-3">
+                  {col.title && (
+                    <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#1a1a1a]">
+                      {col.title}
+                    </h3>
+                  )}
+                  <div className="flex flex-col gap-2.5">
                     {col.links.map((subItem) => (
                       <Link
                         key={subItem.href}
                         href={subItem.href}
-                        className="text-[13px] font-medium text-gray-500 transition-colors hover:text-[#C9A86A]"
+                        className="text-[13px] font-medium text-gray-600 transition-colors hover:text-[#C9A86A]"
                         onClick={() => setOpen(false)}
                       >
                         {subItem.label}
@@ -145,7 +147,7 @@ function NavItem({ link, setActiveMenu }: { link: NavLinkItem, setActiveMenu: (l
                     key={idx}
                     href={img.href}
                     onClick={() => setOpen(false)}
-                    className="group relative block flex-1 aspect-[4/5] overflow-hidden rounded-sm bg-gray-100"
+                    className="group relative block flex-1 aspect-[4/5] overflow-hidden rounded-md bg-gray-100 shadow-sm"
                   >
                     <img
                       src={img.src}
@@ -160,6 +162,85 @@ function NavItem({ link, setActiveMenu }: { link: NavLinkItem, setActiveMenu: (l
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function MoreNavItem({
+  links,
+  setActiveMenu,
+}: {
+  links: NavLinkItem[];
+  setActiveMenu: (label: string, isHovered: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setActiveMenu("MORE", open);
+  }, [open, setActiveMenu]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        className={cn(
+          "relative group flex items-center gap-1 py-3.5 text-[12.5px] lg:text-[13px] font-semibold uppercase tracking-[0.14em] transition-colors duration-200 cursor-pointer",
+          open ? "text-[#1a1a1a]" : "text-[#1a1a1a]/85 hover:text-[#C9A86A]"
+        )}
+      >
+        <span>MORE</span>
+        <ChevronDown
+          className={cn(
+            "h-3.5 w-3.5 transition-transform duration-200 text-gray-500",
+            open && "rotate-180 text-black"
+          )}
+        />
+        <span
+          className={cn(
+            "absolute bottom-0 left-0 h-[2px] transition-all duration-300 ease-out bg-[#1A1A1A]",
+            open ? "w-full" : "w-0 group-hover:w-full"
+          )}
+        />
+      </button>
+
+      <div
+        className={cn(
+          "absolute right-0 top-full w-60 rounded-lg bg-white p-2 shadow-2xl border border-gray-100 transition-all duration-200 z-50",
+          open
+            ? "translate-y-0 opacity-100 visible pointer-events-auto"
+            : "-translate-y-2 opacity-0 invisible pointer-events-none"
+        )}
+      >
+        <div className="flex flex-col py-1">
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between px-3.5 py-2.5 text-[12.5px] font-semibold uppercase tracking-wider text-gray-800 hover:text-[#C9A86A] hover:bg-gray-50 rounded-md transition-colors"
+            >
+              <span>{link.label}</span>
+              <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -245,12 +326,18 @@ export function StoreHeader({
     .toUpperCase();
 
   // Dynamically build navLinks from dbCategories
-  const navLinks: NavLinkItem[] = useMemo(() => {
-    const topLevelCategories = dbCategories.filter(c => !c.parent_id);
-    const links: NavLinkItem[] = [];
+  const { primaryNavLinks, moreNavLinks, allNavLinks } = useMemo(() => {
+    // 1. Filter out inactive and sort root categories by display_order
+    const topLevelCategories = dbCategories
+      .filter((c) => !c.parent_id && c.is_active !== false)
+      .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
 
-    topLevelCategories.forEach(topCat => {
-      const children = dbCategories.filter(c => c.parent_id === topCat.id);
+    const allLinks: NavLinkItem[] = [];
+
+    topLevelCategories.forEach((topCat) => {
+      const children = dbCategories.filter(
+        (c) => c.parent_id === topCat.id && c.is_active !== false
+      );
       let megaMenu;
 
       if (children.length > 0) {
@@ -258,13 +345,18 @@ export function StoreHeader({
 
         // Check for 3rd level categories
         let hasSubChildren = false;
-        children.forEach(child => {
-          const grandChildren = dbCategories.filter(c => c.parent_id === child.id);
+        children.forEach((child) => {
+          const grandChildren = dbCategories.filter(
+            (c) => c.parent_id === child.id && c.is_active !== false
+          );
           if (grandChildren.length > 0) {
             hasSubChildren = true;
             columns.push({
               title: child.name,
-              links: grandChildren.map(gc => ({ label: gc.name, href: `/categories/${gc.slug}` }))
+              links: grandChildren.map((gc) => ({
+                label: gc.name,
+                href: `/categories/${gc.slug}`,
+              })),
             });
           }
         });
@@ -275,7 +367,10 @@ export function StoreHeader({
           for (let i = 0; i < children.length; i += chunkSize) {
             columns.push({
               title: i === 0 ? `ALL ${topCat.name.toUpperCase()}` : "",
-              links: children.slice(i, i + chunkSize).map(c => ({ label: c.name, href: `/categories/${c.slug}` }))
+              links: children.slice(i, i + chunkSize).map((c) => ({
+                label: c.name,
+                href: `/categories/${c.slug}`,
+              })),
             });
           }
         }
@@ -285,24 +380,33 @@ export function StoreHeader({
           featuredImages.push({
             src: topCat.image_url,
             alt: topCat.name,
-            href: `/categories/${topCat.slug}`
+            href: `/categories/${topCat.slug}`,
           });
         }
 
         megaMenu = {
           columns,
-          featuredImages: featuredImages.length > 0 ? featuredImages : undefined
+          featuredImages: featuredImages.length > 0 ? featuredImages : undefined,
         };
       }
 
-      links.push({
+      allLinks.push({
         label: topCat.name.toUpperCase(),
         href: `/categories/${topCat.slug}`,
-        megaMenu
+        megaMenu,
       });
     });
 
-    return links;
+    // Keep primary menu focused and uncluttered (up to 8 items, matching Sailor's clean aesthetic)
+    const MAX_PRIMARY = 8;
+    const primary = allLinks.slice(0, MAX_PRIMARY);
+    const more = allLinks.slice(MAX_PRIMARY);
+
+    return {
+      primaryNavLinks: primary,
+      moreNavLinks: more,
+      allNavLinks: allLinks,
+    };
   }, [dbCategories]);
 
 
@@ -363,7 +467,7 @@ export function StoreHeader({
                   </SheetHeader>
                   <nav className="flex-1 overflow-y-auto px-4 py-2">
                     <div className="divide-y divide-gray-50">
-                      {navLinks.map((link) => (
+                      {allNavLinks.map((link) => (
                         <div key={link.label} className="py-1">
                           {link.megaMenu ? (
                             <div>
@@ -548,15 +652,21 @@ export function StoreHeader({
         </div>
 
         {/* Bottom Row: Desktop Navigation */}
-        <div className="hidden lg:block border-t border-gray-100 relative">
-          <nav className="mx-auto flex max-w-7xl items-center justify-center gap-10">
-            {navLinks.map((link) => (
+        <div className="hidden lg:block border-t border-b border-gray-100 bg-white relative">
+          <nav className="mx-auto flex max-w-7xl items-center justify-center gap-6 lg:gap-8 xl:gap-9 px-4">
+            {primaryNavLinks.map((link) => (
               <NavItem 
                 key={link.label} 
                 link={link} 
                 setActiveMenu={handleMenuHover} 
               />
             ))}
+            {moreNavLinks.length > 0 && (
+              <MoreNavItem
+                links={moreNavLinks}
+                setActiveMenu={handleMenuHover}
+              />
+            )}
           </nav>
         </div>
       </header>
