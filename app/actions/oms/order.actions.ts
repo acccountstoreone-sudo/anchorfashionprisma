@@ -34,6 +34,15 @@ export async function updateOrderStatusAction(input: UpdateOrderStatusInput) {
     const validatedData = updateOrderStatusSchema.parse(input);
     const { user } = await getServerSession();
 
+    if (!user) {
+      return { success: false, error: "Unauthorized. Authentication required." };
+    }
+
+    const isStaff = await isStaffOrManager(user);
+    if (!isStaff) {
+      return { success: false, error: "Unauthorized. Staff privileges required." };
+    }
+
     const role = await getRoleForUser(user);
     const userId = user?.id;
 

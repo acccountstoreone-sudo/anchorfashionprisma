@@ -200,6 +200,7 @@ export type Category = {
   slug: string;
   description?: string | null;
   image_url?: string | null;
+  imageUrl?: string | null;
   parent_id: string | null;
   icon_url: string | null;
   is_active: boolean;
@@ -215,6 +216,7 @@ export type Brand = {
   name: string;
   slug: string;
   logo_url: string | null;
+  logoUrl?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

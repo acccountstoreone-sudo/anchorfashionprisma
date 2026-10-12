@@ -422,6 +422,10 @@ export function CategoriesClientPage({
         form.parent_id.trim() !== ""
           ? form.parent_id
           : null,
+      image_url:
+        form.icon_url && form.icon_url.trim() !== ""
+          ? form.icon_url.trim()
+          : null,
       icon_url:
         form.icon_url && form.icon_url.trim() !== ""
           ? form.icon_url.trim()
@@ -519,6 +523,7 @@ export function CategoriesClientPage({
                             fill
                             className="object-cover"
                             sizes="40px"
+                            unoptimized={category.icon_url.startsWith("data:") || category.icon_url.startsWith("http")}
                           />
                         </div>
                       ) : (
@@ -610,6 +615,7 @@ export function CategoriesClientPage({
                       alt="Category Preview"
                       fill
                       className="object-cover"
+                      unoptimized={form.icon_url.startsWith("data:") || form.icon_url.startsWith("http")}
                     />
                     <button
                       type="button"

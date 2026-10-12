@@ -32,10 +32,11 @@ export class FulfillmentService {
 
   async assignShipmentTracking(data: FulfillShipmentInput): Promise<boolean> {
     const supabase = await createClient();
-    const { error } = await supabase.from("order_shipments").insert({
+    const { error } = await supabase.from("shipments").insert({
       order_id: data.order_id,
       tracking_number: data.tracking_number,
       courier: data.courier,
+      courier_provider_code: data.courier,
       status: "pending",
     });
 

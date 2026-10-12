@@ -46,9 +46,11 @@ export async function createCouponAction(
       return { success: false, error: "Code, discount type, and value are required" };
     }
     const coupon = await CouponRepository.createCoupon(data);
-    revalidatePath("/admin/marketing/coupons");
-    revalidatePath("/manager/marketing/coupons");
-    revalidatePath("/manager/marketing");
+    try {
+      revalidatePath("/admin/marketing/coupons");
+      revalidatePath("/manager/marketing/coupons");
+      revalidatePath("/manager/marketing");
+    } catch {}
     return { success: true, data: coupon };
   } catch (error: any) {
     console.error("[createCouponAction] Error:", error);
@@ -63,9 +65,11 @@ export async function toggleCouponStatusAction(
   try {
     if (!id) return { success: false, error: "Coupon ID is required" };
     const coupon = await CouponRepository.toggleCouponStatus(id, is_active);
-    revalidatePath("/admin/marketing/coupons");
-    revalidatePath("/manager/marketing/coupons");
-    revalidatePath("/manager/marketing");
+    try {
+      revalidatePath("/admin/marketing/coupons");
+      revalidatePath("/manager/marketing/coupons");
+      revalidatePath("/manager/marketing");
+    } catch {}
     return { success: true, data: coupon };
   } catch (error: any) {
     console.error("[toggleCouponStatusAction] Error:", error);
@@ -79,9 +83,11 @@ export async function deleteCouponAction(
   try {
     if (!id) return { success: false, error: "Coupon ID is required" };
     await CouponRepository.deleteCoupon(id);
-    revalidatePath("/admin/marketing/coupons");
-    revalidatePath("/manager/marketing/coupons");
-    revalidatePath("/manager/marketing");
+    try {
+      revalidatePath("/admin/marketing/coupons");
+      revalidatePath("/manager/marketing/coupons");
+      revalidatePath("/manager/marketing");
+    } catch {}
     return { success: true };
   } catch (error: any) {
     console.error("[deleteCouponAction] Error:", error);
@@ -99,9 +105,11 @@ export async function createPromotionAction(
   try {
     const validated = promotionSchema.parse(data);
     const promo = await PromotionRepository.createPromotion(validated);
-    revalidatePath("/admin/marketing/promotions");
-    revalidatePath("/");
-    revalidatePath("/products");
+    try {
+      revalidatePath("/admin/marketing/promotions");
+      revalidatePath("/");
+      revalidatePath("/products");
+    } catch {}
     return { success: true, data: promo };
   } catch (error: any) {
     console.error("[createPromotionAction] Error:", error);

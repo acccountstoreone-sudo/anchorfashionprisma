@@ -30,8 +30,10 @@ import {
   updateBrandAction,
   deleteBrandAction,
 } from "@/lib/actions/admin/catalog.actions";
+import { uploadImageAction } from "@/lib/actions/upload.actions";
 import { Brand } from "@/types/catalog.types";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Upload, X, Loader2, Image as ImageIcon } from "lucide-react";
+import Image from "next/image";
 
 interface BrandsClientPageProps {
   initialBrands: Brand[];
@@ -51,6 +53,7 @@ export function BrandsClientPage({ initialBrands }: BrandsClientPageProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Brand | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Brand | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -61,6 +64,32 @@ export function BrandsClientPage({ initialBrands }: BrandsClientPageProps) {
     logo_url: "",
     is_active: true,
   });
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!e.target.files || e.target.files.length === 0) return;
+      const file = e.target.files[0];
+      setIsUploading(true);
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("bucket", "brands");
+      formData.append("folder", "logos");
+
+      const res = await uploadImageAction(formData);
+      if (res.success && res.url) {
+        setForm((f) => ({ ...f, logo_url: res.url }));
+        toast.success("Brand logo uploaded successfully");
+      } else {
+        toast.error(res.error || "Failed to upload logo");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload logo");
+    } finally {
+      setIsUploading(false);
+      if (e.target) e.target.value = "";
+    }
+  };
 
   const filtered = useMemo(
     () =>
@@ -171,6 +200,7 @@ export function BrandsClientPage({ initialBrands }: BrandsClientPageProps) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-16">Logo</TableHead>
                 <TableHead>Brand Name</TableHead>
                 <TableHead>Slug</TableHead>
                 <TableHead>Status</TableHead>
@@ -181,7 +211,7 @@ export function BrandsClientPage({ initialBrands }: BrandsClientPageProps) {
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="h-24 text-center text-muted-foreground"
                   >
                     {search
@@ -192,6 +222,27 @@ export function BrandsClientPage({ initialBrands }: BrandsClientPageProps) {
               ) : (
                 filtered.map((brand) => (
                   <TableRow key={brand.id}>
+                    <TableCell>
+                      {(brand as any).logo_url || (brand as any).logoUrl ? (
+                        <div className="relative h-9 w-9 overflow-hidden rounded-md border bg-muted">
+                          <Image
+                            src={(brand as any).logo_url || (brand as any).logoUrl}
+                            alt={brand.name}
+                            fill
+                            className="object-contain p-0.5"
+                            sizes="36px"
+                            unoptimized={
+                              ((brand as any).logo_url || (brand as any).logoUrl).startsWith("data:") ||
+                              ((brand as any).logo_url || (brand as any).logoUrl).startsWith("http")
+                            }
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex h-9 w-9 items-center justify-center rounded-md border bg-muted/40 text-muted-foreground text-xs font-semibold">
+                          {brand.name.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium">{brand.name}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {brand.slug}
@@ -261,16 +312,83 @@ export function BrandsClientPage({ initialBrands }: BrandsClientPageProps) {
                 placeholder="e.g. nike"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="brand-logo">Logo URL (optional)</Label>
-              <Input
-                id="brand-logo"
-                value={form.logo_url}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, logo_url: e.target.value }))
-                }
-                placeholder="https://..."
-              />
+            {/* Brand Logo Upload & Preview */}
+            <div className="space-y-2">
+              <Label>Brand Logo</Label>
+              <div className="flex items-center gap-4">
+                {form.logo_url ? (
+                  <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border bg-muted">
+                    <Image
+                      src={form.logo_url}
+                      alt="Brand Logo Preview"
+                      fill
+                      className="object-contain p-1"
+                      unoptimized={form.logo_url.startsWith("data:") || form.logo_url.startsWith("http")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, logo_url: "" }))}
+                      className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white hover:bg-black/90 transition-colors cursor-pointer"
+                      title="Remove logo"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg border border-dashed bg-muted/30 text-muted-foreground">
+                    <ImageIcon className="h-6 w-6 opacity-40" />
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={handleLogoUpload}
+                      disabled={isUploading}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2 text-xs"
+                      disabled={isUploading}
+                      asChild
+                    >
+                      <span>
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-3.5 w-3.5" />
+                            Upload Logo Image
+                          </>
+                        )}
+                      </span>
+                    </Button>
+                  </label>
+                  <p className="text-[11px] text-muted-foreground">
+                    PNG, SVG, JPG or WebP (max 8MB)
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-1">
+                <Input
+                  id="brand-logo"
+                  value={form.logo_url}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, logo_url: e.target.value }))
+                  }
+                  placeholder="Or paste image URL (https://...)"
+                  className="text-xs"
+                />
+              </div>
             </div>
             <div className="flex items-center justify-between rounded-lg border p-3">
               <div>

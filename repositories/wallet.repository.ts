@@ -4,16 +4,18 @@ import { CustomerWallet, WalletTransaction } from "@/types/customer.types";
 export class WalletRepository {
   static async getWallet(userId: string): Promise<CustomerWallet | null> {
     try {
-      const data = await prisma.$queryRawUnsafe<CustomerWallet[]>(
-        `SELECT * FROM "customer_wallets" WHERE "customer_id" = $1 LIMIT 1`,
-        userId
-      );
-      return data[0] || null;
+      const data = await prisma.customer_wallets.findFirst({
+        where: { customer_id: userId },
+      });
+      if (!data) return null;
+      return {
+        ...data,
+        id: String(data.id),
+        balance: Number(data.balance),
+        created_at: data.created_at?.toISOString() ?? new Date().toISOString(),
+        updated_at: data.updated_at?.toISOString() ?? new Date().toISOString(),
+      } as CustomerWallet;
     } catch (error: any) {
-      if (error.code === '42P01') {
-        console.warn("customer_wallets table not found");
-        return null;
-      }
       console.error("Error fetching wallet:", error);
       return null;
     }
@@ -21,16 +23,22 @@ export class WalletRepository {
 
   static async getTransactions(walletId: string): Promise<WalletTransaction[]> {
     try {
-      const data = await prisma.$queryRawUnsafe<WalletTransaction[]>(
-        `SELECT * FROM "wallet_transactions" WHERE "wallet_id" = $1 ORDER BY "created_at" DESC`,
-        walletId
-      );
-      return data;
+      const data = await prisma.loyalty_transactions.findMany({
+        where: { loyalty_account_id: walletId },
+        orderBy: { created_at: "desc" },
+      });
+      return data.map((t) => ({
+        id: String(t.id),
+        wallet_id: t.loyalty_account_id,
+        type: t.type as "CREDIT" | "DEBIT",
+        amount: Number(t.points),
+        balance_after: 0,
+        reference_type: t.reference_type ?? "",
+        reference_id: t.reference_id ?? null,
+        description: t.description ?? null,
+        created_at: t.created_at?.toISOString() ?? new Date().toISOString(),
+      })) as WalletTransaction[];
     } catch (error: any) {
-      if (error.code === '42P01') {
-        console.warn("wallet_transactions table not found");
-        return [];
-      }
       console.error("Error fetching wallet transactions:", error);
       return [];
     }

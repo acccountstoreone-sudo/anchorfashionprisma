@@ -12,6 +12,7 @@ function toCategory(c: any): Category {
     slug: c.slug,
     description: c.description ?? null,
     image_url: c.imageUrl ?? null,
+    imageUrl: c.imageUrl ?? null,
     parent_id: c.parentId ?? null,
     icon_url: c.imageUrl ?? null,
     display_order: c.displayOrder ?? 0,
@@ -49,12 +50,13 @@ export class CategoryRepository {
    * Creates a new category in Neon PostgreSQL via Prisma.
    */
   static async createCategory(input: CreateCategoryInput): Promise<Category> {
+    const imageUrl = input.image_url || (input as any).icon_url || null;
     const created = await prisma.category.create({
       data: {
         name: input.name,
         slug: input.slug,
         description: input.description,
-        imageUrl: input.image_url,
+        imageUrl,
         parentId: input.parent_id,
         displayOrder: input.display_order ?? 0,
         isActive: input.is_active ?? true,
@@ -76,13 +78,14 @@ export class CategoryRepository {
     id: string,
     input: UpdateCategoryInput
   ): Promise<Category> {
+    const rawImage = input.image_url !== undefined ? input.image_url : (input as any).icon_url;
     const updated = await prisma.category.update({
       where: { id },
       data: {
         ...(input.name !== undefined && { name: input.name }),
         ...(input.slug !== undefined && { slug: input.slug }),
         ...(input.description !== undefined && { description: input.description }),
-        ...(input.image_url !== undefined && { imageUrl: input.image_url }),
+        ...(rawImage !== undefined && { imageUrl: rawImage }),
         ...(input.parent_id !== undefined && { parentId: input.parent_id }),
         ...(input.display_order !== undefined && { displayOrder: input.display_order }),
         ...(input.is_active !== undefined && { isActive: input.is_active }),

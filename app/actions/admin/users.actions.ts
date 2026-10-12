@@ -95,8 +95,12 @@ export async function createAdminUserAction(data: {
       email: data.email,
       password: finalPassword,
       email_confirm: true,
+      role_id: data.roleId,
+      roleId: data.roleId,
       user_metadata: {
         role: data.roleName,
+        role_id: data.roleId,
+        roleId: data.roleId,
         first_name: data.firstName,
         last_name: data.lastName,
       },
@@ -128,9 +132,9 @@ export async function createAdminUserAction(data: {
     }
 
     // 2. Insert or Update Profile
-    // Since Auth triggers might auto-create a profile, we do an upsert or update
     const { error: profileErr } = await supabase.from("profiles").upsert({
       id: userId,
+      email: data.email,
       first_name: data.firstName,
       last_name: data.lastName,
       role_id: data.roleId,
@@ -138,6 +142,22 @@ export async function createAdminUserAction(data: {
     }, { onConflict: "id" });
 
     if (profileErr) throw profileErr;
+
+    // Explicitly guarantee roleId on the profile record
+    if (data.roleId && userId) {
+      try {
+        const { prisma } = await import("@/lib/prisma");
+        await prisma.profile.update({
+          where: { id: userId },
+          data: {
+            roleId: data.roleId,
+            isActive: true,
+          },
+        });
+      } catch (directUpdateErr) {
+        console.warn("[createAdminUserAction] Profile role assignment note:", directUpdateErr);
+      }
+    }
 
     revalidatePath("/admin/users");
     return { success: true, password: finalPassword };

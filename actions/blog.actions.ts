@@ -69,25 +69,31 @@ export async function createPost(data: unknown): Promise<BlogPost> {
   };
 
   const post = await blogService.createPost(postData);
-  revalidatePath("/admin/cms/blogs");
-  revalidatePath("/blog");
+  try {
+    revalidatePath("/admin/cms/blogs");
+    revalidatePath("/blog");
+  } catch {}
   return post;
 }
 
 export async function updatePost(id: string, data: unknown): Promise<BlogPost> {
   const post = await blogService.updatePost(id, data);
-  revalidatePath("/admin/cms/blogs");
-  revalidatePath("/blog");
-  if (post?.slug) {
-    revalidatePath(`/blog/${post.slug}`);
-  }
+  try {
+    revalidatePath("/admin/cms/blogs");
+    revalidatePath("/blog");
+    if (post?.slug) {
+      revalidatePath(`/blog/${post.slug}`);
+    }
+  } catch {}
   return post;
 }
 
 export async function deletePost(id: string): Promise<void> {
   await blogService.deletePost(id);
-  revalidatePath("/admin/cms/blogs");
-  revalidatePath("/blog");
+  try {
+    revalidatePath("/admin/cms/blogs");
+    revalidatePath("/blog");
+  } catch {}
 }
 
 export async function getCategories(): Promise<BlogCategory[]> {

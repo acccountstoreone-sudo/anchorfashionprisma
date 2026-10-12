@@ -44,126 +44,58 @@ export async function uploadImageAction(formData: FormData): Promise<{
       return { success: false, error: `Invalid bucket: ${bucket}` };
     }
 
-    // 2. Validate file size (max 10MB)
-    const MAX_SIZE = 10 * 1024 * 1024;
+    // 2. Validate file size (max 8MB)
+    const MAX_SIZE = 8 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      return { success: false, error: "File size exceeds maximum allowed (10MB)" };
+      return { success: false, error: "File size exceeds maximum allowed (8MB)" };
     }
 
-    // 3. Generate secure file path
+    // 3. Generate secure file path & Data URI
     const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const uniqueId = crypto.randomUUID();
     const filePath = `${folder}/${uniqueId}.${fileExt}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+    const mimeType = file.type || "image/jpeg";
+    const dataUri = `data:${mimeType};base64,${buffer.toString("base64")}`;
 
-    // Attempt Supabase storage upload
-    try {
-      const supabase = createAdminClient();
-
-      let { data, error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(filePath, buffer, {
-          contentType: file.type || "image/jpeg",
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      // If bucket is missing, attempt to create it and retry upload
-      if (
-        uploadError &&
-        (uploadError.message?.toLowerCase().includes("not found") ||
-          uploadError.message?.toLowerCase().includes("bucket") ||
-          (uploadError as any).statusCode === "404")
-      ) {
-        try {
-          await supabase.storage.createBucket(bucket, { public: true });
-          const retryRes = await supabase.storage
-            .from(bucket)
-            .upload(filePath, buffer, {
-              contentType: file.type || "image/jpeg",
-              cacheControl: "3600",
-              upsert: true,
-            });
-          data = retryRes.data;
-          uploadError = retryRes.error;
-        } catch {
-          // Continue to fallback
-        }
-      }
-
-      if (!uploadError && data?.path) {
-        const { data: publicUrlData } = supabase.storage
-          .from(bucket)
-          .getPublicUrl(data.path);
-
-        if (publicUrlData?.publicUrl) {
-          // Save media metadata in Neon PostgreSQL via Prisma
-          try {
-            await prisma.media.create({
-              data: {
-                filename: file.name,
-                storagePath: data.path,
-                publicUrl: publicUrlData.publicUrl,
-                mimeType: file.type || "image/jpeg",
-                size: file.size,
-                bucket,
-              },
-            });
-          } catch (dbErr) {
-            console.warn("[uploadImageAction] Failed to save media metadata to Neon:", dbErr);
-          }
-
-          return {
-            success: true,
-            url: publicUrlData.publicUrl,
-            path: data.path,
-          };
-        }
-      }
-
-      if (uploadError) {
-        console.warn("[uploadImageAction] Supabase storage upload failed, saving to local fallback:", uploadError.message);
-      }
-    } catch (sbError: any) {
-      console.warn("[uploadImageAction] Supabase storage exception, falling back to local file:", sbError?.message);
-    }
-
-    // Local Disk Fallback: Save in public/uploads/${bucket}/${folder}
+    // 4. Try local disk save (works on local development / self-hosted)
+    let localPublicUrl: string | null = null;
     try {
       const uploadDir = path.join(process.cwd(), "public", "uploads", bucket, folder);
       await fs.mkdir(uploadDir, { recursive: true });
       const localFilePath = path.join(uploadDir, `${uniqueId}.${fileExt}`);
       await fs.writeFile(localFilePath, buffer);
-
-      const publicUrl = `/uploads/${bucket}/${folder}/${uniqueId}.${fileExt}`;
-
-      // Save media metadata in Neon PostgreSQL
-      try {
-        await prisma.media.create({
-          data: {
-            filename: file.name,
-            storagePath: filePath,
-            publicUrl,
-            mimeType: file.type || "image/jpeg",
-            size: file.size,
-            bucket,
-          },
-        });
-      } catch (dbErr) {
-        console.warn("[uploadImageAction] Failed to save fallback media metadata to Neon:", dbErr);
-      }
-
-      return {
-        success: true,
-        url: publicUrl,
-        path: filePath,
-      };
-    } catch (fsError: any) {
-      console.error("[uploadImageAction Local Save Error]:", fsError);
-      return { success: false, error: fsError.message || "Failed to upload image locally" };
+      localPublicUrl = `/uploads/${bucket}/${folder}/${uniqueId}.${fileExt}`;
+    } catch {
+      // Ephemeral or read-only filesystem (e.g. Vercel) — ignore filesystem error
     }
+
+    // On Vercel serverless, Data URI ensures images load everywhere without 404
+    const resolvedUrl = process.env.VERCEL ? dataUri : (localPublicUrl || dataUri);
+
+    // 5. Save media record in Neon PostgreSQL via Prisma
+    try {
+      await prisma.media.create({
+        data: {
+          filename: file.name,
+          storagePath: filePath,
+          publicUrl: resolvedUrl,
+          mimeType,
+          size: file.size,
+          bucket,
+        },
+      });
+    } catch (dbErr) {
+      console.warn("[uploadImageAction] Media record save warning:", dbErr);
+    }
+
+    return {
+      success: true,
+      url: resolvedUrl,
+      path: filePath,
+    };
   } catch (error: any) {
     console.error("[uploadImageAction Exception]:", error);
     return { success: false, error: error.message || "Failed to upload image" };

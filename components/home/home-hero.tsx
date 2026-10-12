@@ -109,6 +109,7 @@ export function HomeHero({ slides: propSlides }: { slides?: HeroSlide[] }) {
                     }`}
                     priority={index === 0}
                     loading={index === 0 ? "eager" : "lazy"}
+                    unoptimized={imageUrl.startsWith("data:") || imageUrl.startsWith("http")}
                   />
                 )}
               </div>

@@ -296,7 +296,7 @@ export function BannersManager({
                           alt={slide.title || `Slide ${index + 1}`}
                           fill
                           className="object-cover"
-                          unoptimized={slide.image_url.startsWith("http")}
+                          unoptimized={slide.image_url.startsWith("http") || slide.image_url.startsWith("data:")}
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-muted-foreground">
@@ -454,7 +454,7 @@ export function BannersManager({
                     alt="Preview"
                     fill
                     className="object-cover"
-                    unoptimized={previewUrl.startsWith("blob:") || previewUrl.startsWith("http")}
+                    unoptimized={previewUrl.startsWith("blob:") || previewUrl.startsWith("http") || previewUrl.startsWith("data:")}
                   />
                 </div>
               )}

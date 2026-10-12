@@ -33,9 +33,21 @@ export class ShipmentRepository {
   ): Promise<Shipment> {
     const supabase = this.getAdminClient();
 
+    const payload: any = { ...data };
+    if (payload.courier_provider_code && !payload.courier) {
+      payload.courier = payload.courier_provider_code;
+    } else if (payload.courier && !payload.courier_provider_code) {
+      payload.courier_provider_code = payload.courier;
+    }
+    if (payload.shipping_charge !== undefined && payload.shipping_cost === undefined) {
+      payload.shipping_cost = payload.shipping_charge;
+    } else if (payload.shipping_cost !== undefined && payload.shipping_charge === undefined) {
+      payload.shipping_charge = payload.shipping_cost;
+    }
+
     const { data: shipment, error } = await supabase
       .from("shipments")
-      .insert(data as any)
+      .insert(payload)
       .select()
       .single();
 
@@ -64,9 +76,21 @@ export class ShipmentRepository {
   ): Promise<Shipment> {
     const supabase = this.getAdminClient();
 
+    const payload: any = { ...data };
+    if (payload.courier_provider_code && !payload.courier) {
+      payload.courier = payload.courier_provider_code;
+    } else if (payload.courier && !payload.courier_provider_code) {
+      payload.courier_provider_code = payload.courier;
+    }
+    if (payload.shipping_charge !== undefined && payload.shipping_cost === undefined) {
+      payload.shipping_cost = payload.shipping_charge;
+    } else if (payload.shipping_cost !== undefined && payload.shipping_charge === undefined) {
+      payload.shipping_charge = payload.shipping_cost;
+    }
+
     const { data: updated, error } = await supabase
       .from("shipments")
-      .update(data as any)
+      .update(payload)
       .eq("id", id)
       .select()
       .single();

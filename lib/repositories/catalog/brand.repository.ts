@@ -7,6 +7,7 @@ function toBrand(b: any): Brand {
     name: b.name,
     slug: b.slug,
     logo_url: b.logoUrl ?? null,
+    logoUrl: b.logoUrl ?? null,
     is_active: b.isActive ?? true,
     created_at: b.createdAt ? new Date(b.createdAt).toISOString() : new Date().toISOString(),
     updated_at: b.updatedAt ? new Date(b.updatedAt).toISOString() : new Date().toISOString(),
@@ -34,11 +35,12 @@ export class BrandRepository {
    * Creates a new brand via Prisma.
    */
   static async createBrand(input: CreateBrandInput): Promise<Brand> {
+    const logo = input.logo_url || (input as any).logoUrl || null;
     const created = await prisma.brand.create({
       data: {
         name: input.name,
         slug: input.slug,
-        logoUrl: input.logo_url,
+        logoUrl: logo,
         description: input.description,
         isActive: input.is_active ?? true,
       },
@@ -50,12 +52,13 @@ export class BrandRepository {
    * Updates an existing brand by ID via Prisma.
    */
   static async updateBrand(id: string, input: UpdateBrandInput): Promise<Brand> {
+    const rawLogo = input.logo_url !== undefined ? input.logo_url : (input as any).logoUrl;
     const updated = await prisma.brand.update({
       where: { id },
       data: {
         ...(input.name !== undefined && { name: input.name }),
         ...(input.slug !== undefined && { slug: input.slug }),
-        ...(input.logo_url !== undefined && { logoUrl: input.logo_url }),
+        ...(rawLogo !== undefined && { logoUrl: rawLogo }),
         ...(input.description !== undefined && { description: input.description }),
         ...(input.is_active !== undefined && { isActive: input.is_active }),
       },

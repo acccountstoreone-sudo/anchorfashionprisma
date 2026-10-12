@@ -92,18 +92,20 @@ export async function updateWhyChooseUsSettings(
     }
 
     // Instantly invalidate public homepage and catalog caches
-    invalidateHomepageCache();
     try {
+      invalidateHomepageCache();
       revalidateTag(CACHE_TAGS.HOMEPAGE, "max");
       revalidateTag(CACHE_TAGS.CATALOG, "max");
       revalidateTag("homepage-why-choose-us", "max");
-    } catch {}
-    revalidatePath("/", "page");
-    revalidatePath("/", "layout");
-    revalidatePath("/(shop)", "page");
-    revalidatePath("/(shop)", "layout");
-    revalidatePath("/admin/cms/why-choose-us");
-    revalidatePath("/manager/cms/why-choose-us");
+      revalidatePath("/", "page");
+      revalidatePath("/", "layout");
+      revalidatePath("/(shop)", "page");
+      revalidatePath("/(shop)", "layout");
+      revalidatePath("/admin/cms/why-choose-us");
+      revalidatePath("/manager/cms/why-choose-us");
+    } catch (revalErr) {
+      // Non-fatal if invoked outside Next.js request store
+    }
 
     return { success: true };
   } catch (err: any) {

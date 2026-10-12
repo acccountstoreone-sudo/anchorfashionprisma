@@ -3,7 +3,7 @@
 import { createClient } from "../supabase/server";
 import { createAdminClient } from "../supabase/admin-client";
 import { verifySuperAdmin } from "../security/roles";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 
 export type StoreInfo = {
   store_name: string;
@@ -114,38 +114,33 @@ const DEFAULTS: {
   },
 };
 
-export async function getStoreInfo(): Promise<StoreInfo> {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("settings")
-      .select("value")
-      .eq("key", "store_info")
-      .single();
-    if (data?.value && typeof data.value === "object") {
-      return { ...DEFAULTS.store_info, ...(data.value as Partial<StoreInfo>) };
+const getCachedSetting = unstable_cache(
+  async (key: string, defaultValue: any): Promise<any> => {
+    try {
+      const supabase = await createClient();
+      const { data } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", key)
+        .single();
+      if (data?.value && typeof data.value === "object") {
+        return { ...defaultValue, ...(data.value as any) };
+      }
+      return (data?.value as any) ?? defaultValue;
+    } catch {
+      return defaultValue;
     }
-    return DEFAULTS.store_info;
-  } catch {
-    return DEFAULTS.store_info;
-  }
+  },
+  ["global-settings-cache"],
+  { tags: ["settings"], revalidate: 300 }
+);
+
+export async function getStoreInfo(): Promise<StoreInfo> {
+  return getCachedSetting("store_info", DEFAULTS.store_info);
 }
 
 export async function getSocialLinks(): Promise<SocialLinks> {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("settings")
-      .select("value")
-      .eq("key", "social_links")
-      .single();
-    if (data?.value && typeof data.value === "object") {
-      return { ...DEFAULTS.social_links, ...(data.value as Partial<SocialLinks>) };
-    }
-    return DEFAULTS.social_links;
-  } catch {
-    return DEFAULTS.social_links;
-  }
+  return getCachedSetting("social_links", DEFAULTS.social_links);
 }
 
 export async function updateStoreInfo(info: StoreInfo) {
@@ -166,7 +161,10 @@ export async function updateStoreInfo(info: StoreInfo) {
       
     if (error) throw error;
     
-    revalidatePath("/", "layout"); // Revalidate entire app to update announcement bar and footers
+    try {
+      revalidateTag("settings");
+      revalidatePath("/", "layout");
+    } catch {}
     return { success: true };
   } catch (error: any) {
     console.error("[updateStoreInfo]", error);
@@ -192,7 +190,10 @@ export async function updateSocialLinks(links: SocialLinks) {
       
     if (error) throw error;
     
-    revalidatePath("/", "layout");
+    try {
+      revalidateTag("settings");
+      revalidatePath("/", "layout");
+    } catch {}
     return { success: true };
   } catch (error: any) {
     console.error("[updateSocialLinks]", error);
@@ -201,17 +202,7 @@ export async function updateSocialLinks(links: SocialLinks) {
 }
 
 export async function getStoreConfig(): Promise<StoreConfig> {
-  const supabase = await createClient();
-  try {
-    const { data } = await supabase
-      .from("settings")
-      .select("value")
-      .eq("key", "store_config")
-      .single();
-    return (data?.value as StoreConfig) ?? DEFAULTS.store_config;
-  } catch {
-    return DEFAULTS.store_config;
-  }
+  return getCachedSetting("store_config", DEFAULTS.store_config);
 }
 
 export async function updateStoreConfig(config: StoreConfig) {
@@ -232,8 +223,11 @@ export async function updateStoreConfig(config: StoreConfig) {
       
     if (error) throw error;
     
-    revalidatePath("/admin/settings/store");
-    revalidatePath("/", "layout");
+    try {
+      revalidateTag("settings");
+      revalidatePath("/admin/settings/store");
+      revalidatePath("/", "layout");
+    } catch {}
     return { success: true };
   } catch (error: any) {
     console.error("[updateStoreConfig]", error);
@@ -242,17 +236,7 @@ export async function updateStoreConfig(config: StoreConfig) {
 }
 
 export async function getSeoSettings(): Promise<SeoSettings> {
-  const supabase = await createClient();
-  try {
-    const { data } = await supabase
-      .from("settings")
-      .select("value")
-      .eq("key", "seo_settings")
-      .single();
-    return (data?.value as SeoSettings) ?? DEFAULTS.seo_settings;
-  } catch {
-    return DEFAULTS.seo_settings;
-  }
+  return getCachedSetting("seo_settings", DEFAULTS.seo_settings);
 }
 
 export async function updateSeoSettings(settings: SeoSettings) {
@@ -273,8 +257,11 @@ export async function updateSeoSettings(settings: SeoSettings) {
 
     if (error) throw error;
 
-    revalidatePath("/", "layout");
-    revalidatePath("/admin/settings/seo");
+    try {
+      revalidateTag("settings");
+      revalidatePath("/", "layout");
+      revalidatePath("/admin/settings/seo");
+    } catch {}
     return { success: true };
   } catch (error: any) {
     console.error("[updateSeoSettings]", error);
