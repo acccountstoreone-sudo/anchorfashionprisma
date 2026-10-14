@@ -720,6 +720,7 @@ model Banner {
   mediaUrl       String?   @map("media_url")
   content        String?
   targetAudience String?   @default("all") @map("target_audience")
+  isVideo        Boolean   @default(false) @map("is_video")
 
   @@map("banners")
 }

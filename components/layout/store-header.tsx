@@ -83,112 +83,18 @@ function NavItem({ link, setActiveMenu }: { link: NavLinkItem, setActiveMenu: (l
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  return (
-    <div
-      ref={ref}
-      className="static"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <Link
-        href={link.href}
-        className={cn(
-          "relative group flex items-center py-3.5 text-[12.5px] lg:text-[13px] font-semibold uppercase tracking-[0.14em] transition-colors duration-200",
-          open ? "text-[#1a1a1a]" : "text-[#1a1a1a]/85 hover:text-[#C9A86A]"
-        )}
-      >
-        {link.label}
-        <span
-          className={cn(
-            "absolute bottom-0 left-0 h-[2px] transition-all duration-300 ease-out bg-[#1A1A1A]",
-            open ? "w-full" : "w-0 group-hover:w-full"
-          )}
-        />
-      </Link>
-
-      {link.megaMenu && (
-        <div
-          className={cn(
-            "absolute left-0 right-0 top-full w-full bg-white shadow-xl border-t border-gray-100 transition-all duration-300 z-50",
-            open
-              ? "translate-y-0 opacity-100 visible pointer-events-auto"
-              : "-translate-y-2 opacity-0 invisible pointer-events-none"
-          )}
-        >
-          <div className="mx-auto grid max-w-7xl grid-cols-12 gap-8 px-6 py-8 lg:px-8">
-            <div className="col-span-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {link.megaMenu.columns.map((col, idx) => (
-                <div key={idx} className="flex flex-col">
-                  {col.title && (
-                    <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-[#1a1a1a]">
-                      {col.title}
-                    </h3>
-                  )}
-                  <div className="flex flex-col gap-2.5">
-                    {col.links.map((subItem) => (
-                      <Link
-                        key={subItem.href}
-                        href={subItem.href}
-                        className="text-[13px] font-medium text-gray-600 transition-colors hover:text-[#C9A86A]"
-                        onClick={() => setOpen(false)}
-                      >
-                        {subItem.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {link.megaMenu.featuredImages && (
-              <div className="col-span-4 flex gap-4">
-                {link.megaMenu.featuredImages.map((img, idx) => (
-                  <Link
-                    key={idx}
-                    href={img.href}
-                    onClick={() => setOpen(false)}
-                    className="group relative block flex-1 aspect-[4/5] overflow-hidden rounded-md bg-gray-100 shadow-sm"
-                  >
-                    <img
-                      src={img.src}
-                      alt={img.alt}
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/10 transition-opacity group-hover:bg-transparent" />
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+  const hasSub = Boolean(link.megaMenu && link.megaMenu.columns.length > 0);
+  const isSingleCol = Boolean(
+    link.megaMenu &&
+      link.megaMenu.columns.length === 1 &&
+      !link.megaMenu.featuredImages
   );
-}
-
-function MoreNavItem({
-  links,
-  setActiveMenu,
-}: {
-  links: NavLinkItem[];
-  setActiveMenu: (label: string, isHovered: boolean) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setActiveMenu("MORE", open);
-  }, [open, setActiveMenu]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const isMultiCol = Boolean(
+    link.megaMenu &&
+      link.megaMenu.columns.length > 1 &&
+      link.megaMenu.columns.length <= 3 &&
+      !link.megaMenu.featuredImages
+  );
 
   return (
     <div
@@ -197,50 +103,142 @@ function MoreNavItem({
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
-      <button
-        type="button"
+      <Link
+        href={link.href}
         className={cn(
-          "relative group flex items-center gap-1 py-3.5 text-[12.5px] lg:text-[13px] font-semibold uppercase tracking-[0.14em] transition-colors duration-200 cursor-pointer",
+          "relative group flex items-center gap-1 py-3.5 text-[12px] lg:text-[12.5px] xl:text-[13px] font-semibold uppercase tracking-[0.14em] transition-colors duration-200",
           open ? "text-[#1a1a1a]" : "text-[#1a1a1a]/85 hover:text-[#C9A86A]"
         )}
       >
-        <span>MORE</span>
-        <ChevronDown
-          className={cn(
-            "h-3.5 w-3.5 transition-transform duration-200 text-gray-500",
-            open && "rotate-180 text-black"
-          )}
-        />
+        <span>{link.label}</span>
+        {hasSub && (
+          <ChevronDown
+            className={cn(
+              "h-3 w-3 text-gray-400 transition-transform duration-200",
+              open && "rotate-180 text-black"
+            )}
+          />
+        )}
         <span
           className={cn(
             "absolute bottom-0 left-0 h-[2px] transition-all duration-300 ease-out bg-[#1A1A1A]",
             open ? "w-full" : "w-0 group-hover:w-full"
           )}
         />
-      </button>
+      </Link>
 
-      <div
-        className={cn(
-          "absolute right-0 top-full w-60 rounded-lg bg-white p-2 shadow-2xl border border-gray-100 transition-all duration-200 z-50",
-          open
-            ? "translate-y-0 opacity-100 visible pointer-events-auto"
-            : "-translate-y-2 opacity-0 invisible pointer-events-none"
-        )}
-      >
-        <div className="flex flex-col py-1">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setOpen(false)}
-              className="flex items-center justify-between px-3.5 py-2.5 text-[12.5px] font-semibold uppercase tracking-wider text-gray-800 hover:text-[#C9A86A] hover:bg-gray-50 rounded-md transition-colors"
-            >
-              <span>{link.label}</span>
-              <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
-            </Link>
-          ))}
+      {hasSub && link.megaMenu && (
+        <div
+          className={cn(
+            "absolute top-full pt-1.5 transition-all duration-200 z-50",
+            isSingleCol
+              ? "left-0"
+              : "left-1/2 -translate-x-1/2",
+            open
+              ? "translate-y-0 opacity-100 visible pointer-events-auto"
+              : "-translate-y-1 opacity-0 invisible pointer-events-none"
+          )}
+        >
+          {isSingleCol ? (
+            /* Clean, elegant vertical dropdown list anchored directly beneath the parent category */
+            <div className="min-w-[210px] w-max max-w-xs rounded-b-lg bg-white p-2 shadow-xl border border-gray-100">
+              <div className="flex flex-col py-1">
+                {link.megaMenu.columns[0].links.map((subItem) => (
+                  <Link
+                    key={subItem.href}
+                    href={subItem.href}
+                    className="flex items-center justify-between px-3.5 py-2 text-[12.5px] font-medium text-gray-700 hover:text-[#C9A86A] hover:bg-gray-50 rounded-md transition-colors"
+                    onClick={() => setOpen(false)}
+                  >
+                    <span>{subItem.label}</span>
+                    <ChevronRight className="h-3 w-3 text-gray-300" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : isMultiCol ? (
+            /* Compact multi-column dropdown */
+            <div className="w-max min-w-[340px] max-w-2xl rounded-b-lg bg-white p-4 shadow-xl border border-gray-100">
+              <div className="flex gap-6">
+                {link.megaMenu.columns.map((col, idx) => (
+                  <div key={idx} className="flex flex-col min-w-[140px]">
+                    {col.title && (
+                      <h4 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-gray-900 border-b border-gray-100 pb-1">
+                        {col.title}
+                      </h4>
+                    )}
+                    <div className="flex flex-col gap-1">
+                      {col.links.map((subItem) => (
+                        <Link
+                          key={subItem.href}
+                          href={subItem.href}
+                          className="px-2.5 py-1.5 text-[12.5px] font-medium text-gray-700 hover:text-[#C9A86A] hover:bg-gray-50 rounded-md transition-colors"
+                          onClick={() => setOpen(false)}
+                        >
+                          {subItem.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* Rich mega-menu with featured images or 4+ columns */
+            <div className="w-[720px] max-w-[90vw] rounded-b-xl bg-white p-6 shadow-2xl border border-gray-100">
+              <div className="grid grid-cols-12 gap-6">
+                <div
+                  className={cn(
+                    "gap-6 grid",
+                    link.megaMenu.featuredImages ? "col-span-8 grid-cols-3" : "col-span-12 grid-cols-4"
+                  )}
+                >
+                  {link.megaMenu.columns.map((col, idx) => (
+                    <div key={idx} className="flex flex-col">
+                      {col.title && (
+                        <h4 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-gray-900 border-b border-gray-100 pb-1">
+                          {col.title}
+                        </h4>
+                      )}
+                      <div className="flex flex-col gap-1.5">
+                        {col.links.map((subItem) => (
+                          <Link
+                            key={subItem.href}
+                            href={subItem.href}
+                            className="px-2 py-1 text-[12.5px] font-medium text-gray-600 hover:text-[#C9A86A] hover:bg-gray-50 rounded transition-colors"
+                            onClick={() => setOpen(false)}
+                          >
+                            {subItem.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {link.megaMenu.featuredImages && (
+                  <div className="col-span-4 flex gap-3">
+                    {link.megaMenu.featuredImages.map((img, idx) => (
+                      <Link
+                        key={idx}
+                        href={img.href}
+                        onClick={() => setOpen(false)}
+                        className="group/img relative block flex-1 aspect-[4/5] overflow-hidden rounded-md bg-gray-100 shadow-xs"
+                      >
+                        <img
+                          src={img.src}
+                          alt={img.alt}
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover/img:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/10 transition-opacity group-hover/img:bg-transparent" />
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -326,7 +324,7 @@ export function StoreHeader({
     .toUpperCase();
 
   // Dynamically build navLinks from dbCategories
-  const { primaryNavLinks, moreNavLinks, allNavLinks } = useMemo(() => {
+  const allNavLinks = useMemo(() => {
     // 1. Filter out inactive and sort root categories by display_order
     const topLevelCategories = dbCategories
       .filter((c) => !c.parent_id && c.is_active !== false)
@@ -361,12 +359,18 @@ export function StoreHeader({
           }
         });
 
-        // If no 3rd level, distribute the 2nd level across multiple columns
+        // If no 3rd level, group subcategories cleanly
         if (!hasSubChildren) {
-          const chunkSize = 6;
+          const chunkSize =
+            children.length <= 6
+              ? children.length
+              : Math.ceil(children.length / 2);
           for (let i = 0; i < children.length; i += chunkSize) {
             columns.push({
-              title: i === 0 ? `ALL ${topCat.name.toUpperCase()}` : "",
+              title:
+                children.length > 6
+                  ? `${topCat.name} (Part ${Math.floor(i / chunkSize) + 1})`
+                  : "",
               links: children.slice(i, i + chunkSize).map((c) => ({
                 label: c.name,
                 href: `/categories/${c.slug}`,
@@ -397,16 +401,7 @@ export function StoreHeader({
       });
     });
 
-    // Keep primary menu focused and uncluttered (up to 8 items, matching Sailor's clean aesthetic)
-    const MAX_PRIMARY = 8;
-    const primary = allLinks.slice(0, MAX_PRIMARY);
-    const more = allLinks.slice(MAX_PRIMARY);
-
-    return {
-      primaryNavLinks: primary,
-      moreNavLinks: more,
-      allNavLinks: allLinks,
-    };
+    return allLinks;
   }, [dbCategories]);
 
 
@@ -653,20 +648,14 @@ export function StoreHeader({
 
         {/* Bottom Row: Desktop Navigation */}
         <div className="hidden lg:block border-t border-b border-gray-100 bg-white relative">
-          <nav className="mx-auto flex max-w-7xl items-center justify-center gap-6 lg:gap-8 xl:gap-9 px-4">
-            {primaryNavLinks.map((link) => (
+          <nav className="mx-auto flex max-w-7xl items-center justify-center gap-4 lg:gap-6 xl:gap-8 px-4 flex-wrap">
+            {allNavLinks.map((link) => (
               <NavItem 
                 key={link.label} 
                 link={link} 
                 setActiveMenu={handleMenuHover} 
               />
             ))}
-            {moreNavLinks.length > 0 && (
-              <MoreNavItem
-                links={moreNavLinks}
-                setActiveMenu={handleMenuHover}
-              />
-            )}
           </nav>
         </div>
       </header>
