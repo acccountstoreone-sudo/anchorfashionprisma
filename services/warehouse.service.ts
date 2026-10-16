@@ -5,7 +5,7 @@ import {
   WarehouseBin,
   WarehouseRack,
 } from "@/types/inventory.types";
-import { createAdminClient } from "@/lib/supabase/admin-client";
+import { prisma } from "@/lib/prisma";
 
 export class WarehouseService {
   private repository: WarehouseRepository;
@@ -23,15 +23,20 @@ export class WarehouseService {
     userId?: string
   ) {
     try {
-      const supabase = createAdminClient();
-      await supabase.from("audit_logs").insert({
-        table_name: tableName,
-        record_id: recordId,
-        action,
-        old_data: oldData ? JSON.stringify(oldData) : null,
-        new_data: newData ? JSON.stringify(newData) : null,
-        changed_by: userId || null,
-        changed_at: new Date().toISOString(),
+      const isUserUuid =
+        userId &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          userId
+        );
+      await prisma.auditLog.create({
+        data: {
+          entity: tableName,
+          entityId: recordId,
+          action,
+          oldValues: oldData ? (typeof oldData === "object" ? oldData : { value: oldData }) : undefined,
+          newValues: newData ? (typeof newData === "object" ? newData : { value: newData }) : undefined,
+          userId: isUserUuid ? userId : null,
+        },
       });
     } catch (e) {
       console.warn("Could not write to audit_logs:", e);

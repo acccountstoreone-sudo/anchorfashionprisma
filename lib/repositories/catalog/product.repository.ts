@@ -274,133 +274,137 @@ export class ProductRepository {
     // Primary image from media
     const primaryMediaUrl = media?.find((m: any) => m.isPrimary)?.url || media?.[0]?.url || null;
 
-    // Create the product in Neon
-    const createdProduct = await prisma.product.create({
-      data: {
-        name: productData.name,
-        slug: productData.slug,
-        shortDescription: productData.shortDescription,
-        description: productData.description,
-        categoryId: productData.categoryId,
-        brandId: productData.brandId || null,
-        basePrice: productData.basePrice,
-        costPrice: productData.costPrice ?? null,
-        salePrice: productData.salePrice ?? null,
-        sku: productData.sku && productData.sku.trim() ? productData.sku.trim() : null,
-        barcode: productData.barcode && productData.barcode.trim() ? productData.barcode.trim() : null,
-        status: productData.status || "DRAFT",
-        gender: productData.gender || null,
-        season: productData.season || null,
-        careInstructions: productData.careInstructions || null,
-        countryOfOrigin: productData.countryOfOrigin || null,
-        isFeatured: productData.isFeatured || false,
-        imageUrl: primaryMediaUrl,
-        galleryUrls: media?.map((m: any) => m.url) || [],
-      },
-    });
+    let productId = "";
 
-    const productId = createdProduct.id;
-
-    // Create SEO
-    if (seo) {
-      await prisma.productSeo.create({
+    await prisma.$transaction(async (tx) => {
+      // Create the product in Neon
+      const createdProduct = await tx.product.create({
         data: {
-          productId,
-          metaTitle: seo.metaTitle,
-          metaDescription: seo.metaDescription,
-          canonicalUrl: seo.canonicalUrl,
-          ogTitle: seo.ogTitle,
-          ogDescription: seo.ogDescription,
-          ogImageUrl: seo.ogImageUrl,
-          twitterCardType: seo.twitterCardType,
-          structuredData: seo.structuredData || {},
-          keywords: seo.keywords || [],
+          name: productData.name,
+          slug: productData.slug,
+          shortDescription: productData.shortDescription,
+          description: productData.description,
+          categoryId: productData.categoryId,
+          brandId: productData.brandId || null,
+          basePrice: productData.basePrice,
+          costPrice: productData.costPrice ?? null,
+          salePrice: productData.salePrice ?? null,
+          sku: productData.sku && productData.sku.trim() ? productData.sku.trim() : null,
+          barcode: productData.barcode && productData.barcode.trim() ? productData.barcode.trim() : null,
+          status: productData.status || "DRAFT",
+          gender: productData.gender || null,
+          season: productData.season || null,
+          careInstructions: productData.careInstructions || null,
+          countryOfOrigin: productData.countryOfOrigin || null,
+          isFeatured: productData.isFeatured || false,
+          imageUrl: primaryMediaUrl,
+          galleryUrls: media?.map((m: any) => m.url) || [],
         },
       });
-    }
 
-    // Link Tags
-    if (tags && tags.length > 0) {
-      await prisma.productTag.createMany({
-        data: tags.map((tagId) => ({
-          productId,
-          tagId,
-        })),
-        skipDuplicates: true,
-      });
-    }
+      productId = createdProduct.id;
 
-    // Create Media
-    if (media && media.length > 0) {
-      await prisma.productMedia.createMany({
-        data: media.map((m: any, idx: number) => ({
-          productId,
-          url: m.url,
-          urlWebp: m.urlWebp || null,
-          altText: m.altText || null,
-          displayOrder: m.displayOrder ?? idx,
-          isPrimary: m.isPrimary ?? idx === 0,
-          mediaType: m.mediaType || "IMAGE",
-        })),
-      });
-    }
-
-    // Create Variants & Inventory
-    if (variants && variants.length > 0) {
-      for (const [idx, v] of variants.entries()) {
-        const sku = v.sku?.trim() || `${createdProduct.slug.toUpperCase()}-V${idx + 1}`;
-        const createdVariant = await prisma.variant.create({
+      // Create SEO
+      if (seo) {
+        await tx.productSeo.create({
           data: {
             productId,
-            sku,
-            barcode: v.barcode && v.barcode.trim() ? v.barcode.trim() : null,
-            priceOverride: v.priceOverride ?? null,
-            salePrice: v.salePrice ?? null,
-            weight: v.weight ?? null,
-            attributes: v.attributes || {},
-            isActive: v.isActive ?? true,
+            metaTitle: seo.metaTitle,
+            metaDescription: seo.metaDescription,
+            canonicalUrl: seo.canonicalUrl,
+            ogTitle: seo.ogTitle,
+            ogDescription: seo.ogDescription,
+            ogImageUrl: seo.ogImageUrl,
+            twitterCardType: seo.twitterCardType,
+            structuredData: seo.structuredData || {},
+            keywords: seo.keywords || [],
+          },
+        });
+      }
+
+      // Link Tags
+      if (tags && tags.length > 0) {
+        await tx.productTag.createMany({
+          data: tags.map((tagId) => ({
+            productId,
+            tagId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      // Create Media
+      if (media && media.length > 0) {
+        await tx.productMedia.createMany({
+          data: media.map((m: any, idx: number) => ({
+            productId,
+            url: m.url,
+            urlWebp: m.urlWebp || null,
+            altText: m.altText || null,
+            displayOrder: m.displayOrder ?? idx,
+            isPrimary: m.isPrimary ?? idx === 0,
+            mediaType: m.mediaType || "IMAGE",
+          })),
+        });
+      }
+
+      // Create Variants & Inventory
+      if (variants && variants.length > 0) {
+        for (const [idx, v] of variants.entries()) {
+          const sku = v.sku?.trim() || `${createdProduct.slug.toUpperCase()}-V${idx + 1}`;
+          const createdVariant = await tx.variant.create({
+            data: {
+              productId,
+              sku,
+              barcode: v.barcode && v.barcode.trim() ? v.barcode.trim() : null,
+              priceOverride: v.priceOverride ?? null,
+              salePrice: v.salePrice ?? null,
+              weight: v.weight ?? null,
+              attributes: v.attributes || {},
+              isActive: v.isActive ?? true,
+            },
+          });
+
+          if (defaultWarehouseId) {
+            await tx.inventoryLevel.create({
+              data: {
+                variantId: createdVariant.id,
+                warehouseId: defaultWarehouseId,
+                quantityAvailable: Number(v.stockQuantity ?? 0),
+                quantityReserved: 0,
+                reorderPoint: 10,
+              },
+            });
+          }
+        }
+      } else {
+        // Single default variant
+        const defaultSku = productData.sku?.trim() || `${createdProduct.slug.toUpperCase()}-DEF`;
+        const createdVariant = await tx.variant.create({
+          data: {
+            productId,
+            sku: defaultSku,
+            barcode: productData.barcode && productData.barcode.trim() ? productData.barcode.trim() : null,
+            priceOverride: productData.basePrice,
+            salePrice: productData.salePrice ?? null,
+            attributes: { Standard: "Default" },
+            isActive: true,
           },
         });
 
         if (defaultWarehouseId) {
-          await prisma.inventoryLevel.create({
+          await tx.inventoryLevel.create({
             data: {
               variantId: createdVariant.id,
               warehouseId: defaultWarehouseId,
-              quantityAvailable: Number(v.stockQuantity ?? 0),
+              quantityAvailable: Number(productData.stockQuantity ?? 0),
               quantityReserved: 0,
               reorderPoint: 10,
             },
           });
         }
       }
-    } else {
-      // Single default variant
-      const defaultSku = productData.sku?.trim() || `${createdProduct.slug.toUpperCase()}-DEF`;
-      const createdVariant = await prisma.variant.create({
-        data: {
-          productId,
-          sku: defaultSku,
-          barcode: productData.barcode && productData.barcode.trim() ? productData.barcode.trim() : null,
-          priceOverride: productData.basePrice,
-          salePrice: productData.salePrice ?? null,
-          attributes: { Standard: "Default" },
-          isActive: true,
-        },
-      });
-
-      if (defaultWarehouseId) {
-        await prisma.inventoryLevel.create({
-          data: {
-            variantId: createdVariant.id,
-            warehouseId: defaultWarehouseId,
-            quantityAvailable: Number(productData.stockQuantity ?? 0),
-            quantityReserved: 0,
-            reorderPoint: 10,
-          },
-        });
-      }
-    }
+    });
 
     return this.getProductById(productId);
   }
@@ -413,159 +417,223 @@ export class ProductRepository {
 
     const primaryMediaUrl = media?.find((m: any) => m.isPrimary)?.url || media?.[0]?.url || undefined;
 
-    // 1. Update core product fields
-    await prisma.product.update({
-      where: { id },
-      data: {
-        ...(productData.name !== undefined && { name: productData.name }),
-        ...(productData.slug !== undefined && { slug: productData.slug }),
-        ...(productData.shortDescription !== undefined && { shortDescription: productData.shortDescription }),
-        ...(productData.description !== undefined && { description: productData.description }),
-        ...(productData.categoryId !== undefined && { categoryId: productData.categoryId }),
-        ...(productData.brandId !== undefined && { brandId: productData.brandId || null }),
-        ...(productData.basePrice !== undefined && { basePrice: productData.basePrice }),
-        ...(productData.costPrice !== undefined && { costPrice: productData.costPrice }),
-        ...(productData.salePrice !== undefined && { salePrice: productData.salePrice }),
-        ...(productData.sku !== undefined && { sku: productData.sku && productData.sku.trim() ? productData.sku.trim() : null }),
-        ...(productData.barcode !== undefined && { barcode: productData.barcode && productData.barcode.trim() ? productData.barcode.trim() : null }),
-        ...(productData.status !== undefined && { status: productData.status }),
-        ...(productData.gender !== undefined && { gender: productData.gender }),
-        ...(productData.season !== undefined && { season: productData.season }),
-        ...(productData.careInstructions !== undefined && { careInstructions: productData.careInstructions }),
-        ...(productData.countryOfOrigin !== undefined && { countryOfOrigin: productData.countryOfOrigin }),
-        ...(productData.isFeatured !== undefined && { isFeatured: productData.isFeatured }),
-        ...(primaryMediaUrl !== undefined && { imageUrl: primaryMediaUrl }),
-        ...(media !== undefined && { galleryUrls: media.map((m: any) => m.url) }),
-      },
-    });
-
-    // 2. Update SEO
-    if (seo) {
-      await prisma.productSeo.upsert({
-        where: { productId: id },
-        update: {
-          metaTitle: seo.metaTitle,
-          metaDescription: seo.metaDescription,
-          canonicalUrl: seo.canonicalUrl,
-          ogTitle: seo.ogTitle,
-          ogDescription: seo.ogDescription,
-          ogImageUrl: seo.ogImageUrl,
-          twitterCardType: seo.twitterCardType,
-          structuredData: seo.structuredData || {},
-          keywords: seo.keywords || [],
-        },
-        create: {
-          productId: id,
-          metaTitle: seo.metaTitle,
-          metaDescription: seo.metaDescription,
-          canonicalUrl: seo.canonicalUrl,
-          ogTitle: seo.ogTitle,
-          ogDescription: seo.ogDescription,
-          ogImageUrl: seo.ogImageUrl,
-          twitterCardType: seo.twitterCardType,
-          structuredData: seo.structuredData || {},
-          keywords: seo.keywords || [],
+    await prisma.$transaction(async (tx) => {
+      // 1. Update core product fields
+      await tx.product.update({
+        where: { id },
+        data: {
+          ...(productData.name !== undefined && { name: productData.name }),
+          ...(productData.slug !== undefined && { slug: productData.slug }),
+          ...(productData.shortDescription !== undefined && { shortDescription: productData.shortDescription }),
+          ...(productData.description !== undefined && { description: productData.description }),
+          ...(productData.categoryId !== undefined && { categoryId: productData.categoryId }),
+          ...(productData.brandId !== undefined && { brandId: productData.brandId || null }),
+          ...(productData.basePrice !== undefined && { basePrice: productData.basePrice }),
+          ...(productData.costPrice !== undefined && { costPrice: productData.costPrice }),
+          ...(productData.salePrice !== undefined && { salePrice: productData.salePrice }),
+          ...(productData.sku !== undefined && { sku: productData.sku && productData.sku.trim() ? productData.sku.trim() : null }),
+          ...(productData.barcode !== undefined && { barcode: productData.barcode && productData.barcode.trim() ? productData.barcode.trim() : null }),
+          ...(productData.status !== undefined && { status: productData.status }),
+          ...(productData.gender !== undefined && { gender: productData.gender }),
+          ...(productData.season !== undefined && { season: productData.season }),
+          ...(productData.careInstructions !== undefined && { careInstructions: productData.careInstructions }),
+          ...(productData.countryOfOrigin !== undefined && { countryOfOrigin: productData.countryOfOrigin }),
+          ...(productData.isFeatured !== undefined && { isFeatured: productData.isFeatured }),
+          ...(primaryMediaUrl !== undefined && { imageUrl: primaryMediaUrl }),
+          ...(media !== undefined && { galleryUrls: media.map((m: any) => m.url) }),
         },
       });
-    }
 
-    // 3. Update Tags
-    if (tags !== undefined) {
-      await prisma.productTag.deleteMany({ where: { productId: id } });
-      if (tags.length > 0) {
-        await prisma.productTag.createMany({
-          data: tags.map((tagId) => ({
+      // 2. Update SEO
+      if (seo) {
+        await tx.productSeo.upsert({
+          where: { productId: id },
+          update: {
+            metaTitle: seo.metaTitle,
+            metaDescription: seo.metaDescription,
+            canonicalUrl: seo.canonicalUrl,
+            ogTitle: seo.ogTitle,
+            ogDescription: seo.ogDescription,
+            ogImageUrl: seo.ogImageUrl,
+            twitterCardType: seo.twitterCardType,
+            structuredData: seo.structuredData || {},
+            keywords: seo.keywords || [],
+          },
+          create: {
             productId: id,
-            tagId,
-          })),
-          skipDuplicates: true,
+            metaTitle: seo.metaTitle,
+            metaDescription: seo.metaDescription,
+            canonicalUrl: seo.canonicalUrl,
+            ogTitle: seo.ogTitle,
+            ogDescription: seo.ogDescription,
+            ogImageUrl: seo.ogImageUrl,
+            twitterCardType: seo.twitterCardType,
+            structuredData: seo.structuredData || {},
+            keywords: seo.keywords || [],
+          },
         });
       }
-    }
 
-    // 4. Update Media
-    if (media !== undefined) {
-      await prisma.productMedia.deleteMany({ where: { productId: id } });
-      if (media.length > 0) {
-        await prisma.productMedia.createMany({
-          data: media.map((m: any, idx: number) => ({
-            productId: id,
-            url: m.url,
-            urlWebp: m.urlWebp || null,
-            altText: m.altText || null,
-            displayOrder: m.displayOrder ?? idx,
-            isPrimary: m.isPrimary ?? idx === 0,
-            mediaType: m.mediaType || "IMAGE",
-          })),
-        });
-      }
-    }
-
-    // 5. Update Variants
-    if (variants !== undefined || productData.stockQuantity !== undefined) {
-      const defaultWarehouseId = await ProductRepository.getDefaultWarehouseId();
-
-      if (variants && variants.length > 0) {
-        await prisma.variant.deleteMany({ where: { productId: id } });
-
-        for (const [idx, v] of variants.entries()) {
-          const sku = v.sku?.trim() || `${id.slice(0, 8).toUpperCase()}-V${idx + 1}`;
-          const createdVariant = await prisma.variant.create({
-            data: {
+      // 3. Update Tags
+      if (tags !== undefined) {
+        await tx.productTag.deleteMany({ where: { productId: id } });
+        if (tags.length > 0) {
+          await tx.productTag.createMany({
+            data: tags.map((tagId) => ({
               productId: id,
-              sku,
-              barcode: v.barcode && v.barcode.trim() ? v.barcode.trim() : null,
-              priceOverride: v.priceOverride ?? null,
-              salePrice: v.salePrice ?? null,
-              weight: v.weight ?? null,
-              attributes: v.attributes || {},
-              isActive: v.isActive ?? true,
-            },
+              tagId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      // 4. Update Media
+      if (media !== undefined) {
+        await tx.productMedia.deleteMany({ where: { productId: id } });
+        if (media.length > 0) {
+          await tx.productMedia.createMany({
+            data: media.map((m: any, idx: number) => ({
+              productId: id,
+              url: m.url,
+              urlWebp: m.urlWebp || null,
+              altText: m.altText || null,
+              displayOrder: m.displayOrder ?? idx,
+              isPrimary: m.isPrimary ?? idx === 0,
+              mediaType: m.mediaType || "IMAGE",
+            })),
+          });
+        }
+      }
+
+      // 5. Update Variants Safely without foreign key violations
+      if (variants !== undefined || productData.stockQuantity !== undefined) {
+        const defaultWarehouseId = await ProductRepository.getDefaultWarehouseId();
+
+        if (variants && variants.length > 0) {
+          const existingVariants = await tx.variant.findMany({
+            where: { productId: id },
           });
 
-          if (defaultWarehouseId) {
-            await prisma.inventoryLevel.create({
-              data: {
-                variantId: createdVariant.id,
-                warehouseId: defaultWarehouseId,
-                quantityAvailable: Number(v.stockQuantity ?? 0),
-                quantityReserved: 0,
-                reorderPoint: 10,
-              },
-            });
-          }
-        }
-      } else if (productData.stockQuantity !== undefined) {
-        const existingVariants = await prisma.variant.findMany({
-          where: { productId: id },
-          take: 1,
-        });
+          const processedVariantIds = new Set<string>();
 
-        if (existingVariants.length > 0) {
-          const varId = existingVariants[0].id;
-          if (defaultWarehouseId) {
-            await prisma.inventoryLevel.upsert({
-              where: {
-                variantId_warehouseId: {
+          for (const [idx, v] of variants.entries()) {
+            const sku = v.sku?.trim() || `${id.slice(0, 8).toUpperCase()}-V${idx + 1}`;
+            
+            // Match existing by id or by sku
+            const existing = existingVariants.find(
+              (ev) => (v.id && ev.id === v.id) || (ev.sku && ev.sku.toLowerCase() === sku.toLowerCase())
+            );
+
+            let targetVariantId: string;
+
+            if (existing) {
+              targetVariantId = existing.id;
+              processedVariantIds.add(existing.id);
+
+              await tx.variant.update({
+                where: { id: existing.id },
+                data: {
+                  sku,
+                  barcode: v.barcode && v.barcode.trim() ? v.barcode.trim() : null,
+                  priceOverride: v.priceOverride ?? null,
+                  salePrice: v.salePrice ?? null,
+                  costPrice: v.costPrice ?? null,
+                  weight: v.weight ?? null,
+                  attributes: v.attributes || {},
+                  isActive: v.isActive ?? true,
+                },
+              });
+            } else {
+              const createdVariant = await tx.variant.create({
+                data: {
+                  productId: id,
+                  sku,
+                  barcode: v.barcode && v.barcode.trim() ? v.barcode.trim() : null,
+                  priceOverride: v.priceOverride ?? null,
+                  salePrice: v.salePrice ?? null,
+                  costPrice: v.costPrice ?? null,
+                  weight: v.weight ?? null,
+                  attributes: v.attributes || {},
+                  isActive: v.isActive ?? true,
+                },
+              });
+              targetVariantId = createdVariant.id;
+              processedVariantIds.add(createdVariant.id);
+            }
+
+            if (defaultWarehouseId && v.stockQuantity !== undefined) {
+              await tx.inventoryLevel.upsert({
+                where: {
+                  variantId_warehouseId: {
+                    variantId: targetVariantId,
+                    warehouseId: defaultWarehouseId,
+                  },
+                },
+                update: {
+                  quantityAvailable: Number(v.stockQuantity ?? 0),
+                },
+                create: {
+                  variantId: targetVariantId,
+                  warehouseId: defaultWarehouseId,
+                  quantityAvailable: Number(v.stockQuantity ?? 0),
+                  quantityReserved: 0,
+                  reorderPoint: 10,
+                },
+              });
+            }
+          }
+
+          // Safely handle obsolete variants without violating foreign key constraints
+          for (const ev of existingVariants) {
+            if (!processedVariantIds.has(ev.id)) {
+              const hasOrders = await tx.orderItem.count({ where: { variantId: ev.id } });
+              if (hasOrders > 0) {
+                // If referenced by previous order items, deactivate rather than delete
+                await tx.variant.update({
+                  where: { id: ev.id },
+                  data: { isActive: false },
+                });
+              } else {
+                // Safe to remove inventory levels and variant
+                await tx.inventoryLevel.deleteMany({ where: { variantId: ev.id } });
+                await tx.cartItem.deleteMany({ where: { variantId: ev.id } });
+                await tx.variant.delete({ where: { id: ev.id } });
+              }
+            }
+          }
+        } else if (productData.stockQuantity !== undefined) {
+          const existingVariants = await tx.variant.findMany({
+            where: { productId: id },
+            take: 1,
+          });
+
+          if (existingVariants.length > 0) {
+            const varId = existingVariants[0].id;
+            if (defaultWarehouseId) {
+              await tx.inventoryLevel.upsert({
+                where: {
+                  variantId_warehouseId: {
+                    variantId: varId,
+                    warehouseId: defaultWarehouseId,
+                  },
+                },
+                update: {
+                  quantityAvailable: Number(productData.stockQuantity ?? 0),
+                },
+                create: {
                   variantId: varId,
                   warehouseId: defaultWarehouseId,
+                  quantityAvailable: Number(productData.stockQuantity ?? 0),
+                  quantityReserved: 0,
+                  reorderPoint: 10,
                 },
-              },
-              update: {
-                quantityAvailable: Number(productData.stockQuantity ?? 0),
-              },
-              create: {
-                variantId: varId,
-                warehouseId: defaultWarehouseId,
-                quantityAvailable: Number(productData.stockQuantity ?? 0),
-                quantityReserved: 0,
-                reorderPoint: 10,
-              },
-            });
+              });
+            }
           }
         }
       }
-    }
+    });
 
     return this.getProductById(id);
   }

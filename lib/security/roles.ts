@@ -58,8 +58,9 @@ export async function verifySuperAdmin() {
   }
 
   const role = await getRoleForUser(user);
+  const normalizedRole = role.replace(/[\s_-]+/g, "").toUpperCase();
   
-  if (!(ADMIN_ROLES as readonly string[]).includes(role)) {
+  if (!["SUPERADMIN", "ADMIN"].includes(normalizedRole)) {
     throw new Error("Forbidden: Administrator access required");
   }
 
@@ -74,8 +75,9 @@ export async function verifyAdmin() {
   }
 
   const role = await getRoleForUser(user);
+  const normalizedRole = role.replace(/[\s_-]+/g, "").toUpperCase();
   
-  if (!(ADMIN_ROLES as readonly string[]).includes(role)) {
+  if (!["SUPERADMIN", "ADMIN"].includes(normalizedRole)) {
     throw new Error("Forbidden: Admin access required");
   }
 

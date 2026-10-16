@@ -8,7 +8,7 @@ export async function getAuditLogsAction() {
       select: {
         id: true,
         action: true,
-        tableName: true,
+        entity: true,
         userId: true,
         ipAddress: true,
         createdAt: true,
@@ -21,7 +21,7 @@ export async function getAuditLogsAction() {
     return logs.map((log) => ({
       id: log.id,
       action: log.action,
-      table_name: log.tableName,
+      table_name: log.entity,
       user_id: log.userId,
       ip_address: log.ipAddress,
       created_at: log.createdAt.toISOString(),

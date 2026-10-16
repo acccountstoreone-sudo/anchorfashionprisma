@@ -42,17 +42,48 @@ export class CustomerRepository {
       if (updates.last_name !== undefined) updateData.lastName = updates.last_name;
       if (updates.phone !== undefined) updateData.phone = updates.phone;
       if (updates.avatar_url !== undefined) updateData.avatarUrl = updates.avatar_url;
-      if (updates.email !== undefined) updateData.email = updates.email;
 
-      const profile = await prisma.profile.upsert({
-        where: { id: userId },
-        update: updateData,
-        create: {
-          id: userId,
-          email: updates.email || "",
-          ...updateData,
-        },
-      });
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+      const email = updates.email?.trim() || null;
+
+      let profile;
+      if (isUuid) {
+        profile = await prisma.profile.upsert({
+          where: { id: userId },
+          update: {
+            ...updateData,
+            ...(updates.email !== undefined ? { email } : {}),
+          },
+          create: {
+            id: userId,
+            email,
+            ...updateData,
+          },
+        });
+      } else if (email) {
+        profile = await prisma.profile.upsert({
+          where: { email },
+          update: updateData,
+          create: {
+            email,
+            ...updateData,
+          },
+        });
+      } else {
+        profile = await prisma.profile.findFirst({
+          where: { phone: updates.phone || undefined },
+        });
+        if (profile) {
+          profile = await prisma.profile.update({
+            where: { id: profile.id },
+            data: updateData,
+          });
+        }
+      }
+
+      if (!profile) {
+        throw new Error("Unable to locate or create profile for customer.");
+      }
 
       return {
         id: profile.id,
@@ -207,11 +238,13 @@ export class CustomerRepository {
 
   static async logActivity(userId: string, activityType: string, metadata: any = {}) {
     try {
+      const isUserUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
       await prisma.auditLog.create({
         data: {
-          userId,
+          userId: isUserUuid ? userId : null,
           action: activityType,
           entity: "customer",
+          entityId: userId,
           newValues: metadata,
         },
       });

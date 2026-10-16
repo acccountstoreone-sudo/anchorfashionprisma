@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { prisma } from "@/lib/prisma";
 import { InventoryLevel, InventoryMovement } from "@/types/inventory.types";
 
 export class InventoryRepository {
@@ -325,96 +326,86 @@ export class InventoryRepository {
       throw new Error(`Source and destination warehouse must be different`);
     }
 
-    // 1. Check source warehouse inventory
-    const { data: sourceLevels, error: srcErr } = await supabase
-      .from("inventory_levels")
-      .select("*")
-      .eq("variant_id", variantId)
-      .eq("warehouse_id", fromWarehouseId)
-      .limit(1);
+    // Perform fully atomic transfer using Prisma transaction
+    await prisma.$transaction(async (tx) => {
+      // 1. Check source warehouse inventory
+      const sourceInv = await tx.inventoryLevel.findFirst({
+        where: { variantId, warehouseId: fromWarehouseId },
+      });
 
-    if (srcErr) throw new Error(`Failed to check source inventory: ${srcErr.message}`);
-    const sourceInv = sourceLevels && sourceLevels.length > 0 ? sourceLevels[0] : null;
-    const sourceAvail = sourceInv ? Number(sourceInv.quantity_available) || 0 : 0;
+      const sourceAvail = sourceInv ? sourceInv.quantityAvailable : 0;
+      if (!sourceInv || sourceAvail < quantity) {
+        throw new Error(
+          `Insufficient stock in source warehouse. Available: ${sourceAvail}, Requested: ${quantity}`
+        );
+      }
 
-    if (!sourceInv || sourceAvail < quantity) {
-      throw new Error(
-        `Insufficient stock in source warehouse. Available: ${sourceAvail}, Requested: ${quantity}`
-      );
-    }
+      // 2. Decrement source inventory
+      const newSourceAvail = sourceAvail - quantity;
+      await tx.inventoryLevel.update({
+        where: { id: sourceInv.id },
+        data: {
+          quantityAvailable: newSourceAvail,
+          updatedAt: new Date(),
+        },
+      });
 
-    // 2. Decrement source inventory
-    const { error: decErr } = await supabase
-      .from("inventory_levels")
-      .update({
-        quantity_available: sourceAvail - quantity,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", sourceInv.id);
+      // 3. Increment or insert destination inventory
+      const destInv = await tx.inventoryLevel.findFirst({
+        where: { variantId, warehouseId: toWarehouseId },
+      });
 
-    if (decErr) throw new Error(`Failed to deduct stock from source warehouse: ${decErr.message}`);
+      const destAvail = destInv ? destInv.quantityAvailable : 0;
+      const newDestAvail = destAvail + quantity;
 
-    // 3. Increment or insert destination inventory
-    const { data: destLevels, error: dstErr } = await supabase
-      .from("inventory_levels")
-      .select("*")
-      .eq("variant_id", variantId)
-      .eq("warehouse_id", toWarehouseId)
-      .limit(1);
-
-    if (dstErr) throw new Error(`Failed to check destination inventory: ${dstErr.message}`);
-
-    if (destLevels && destLevels.length > 0) {
-      const destInv = destLevels[0];
-      const destAvail = Number(destInv.quantity_available) || 0;
-      const { error: incErr } = await supabase
-        .from("inventory_levels")
-        .update({
-          quantity_available: destAvail + quantity,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", destInv.id);
-
-      if (incErr) throw new Error(`Failed to add stock to destination warehouse: ${incErr.message}`);
-    } else {
-      const { error: insErr } = await supabase
-        .from("inventory_levels")
-        .insert({
-          variant_id: variantId,
-          warehouse_id: toWarehouseId,
-          quantity_available: quantity,
-          quantity_reserved: 0,
-          quantity_incoming: 0,
-          quantity_damaged: 0,
-          quantity_returned: 0,
-          reorder_point: 5,
-          safety_stock: 2,
+      if (destInv) {
+        await tx.inventoryLevel.update({
+          where: { id: destInv.id },
+          data: {
+            quantityAvailable: newDestAvail,
+            updatedAt: new Date(),
+          },
         });
+      } else {
+        await tx.inventoryLevel.create({
+          data: {
+            variantId,
+            warehouseId: toWarehouseId,
+            quantityAvailable: quantity,
+            quantityReserved: 0,
+            quantityIncoming: 0,
+            quantityDamaged: 0,
+            quantityReturned: 0,
+            reorderPoint: 5,
+            safetyStock: 2,
+          },
+        });
+      }
 
-      if (insErr) throw new Error(`Failed to initialize inventory in destination warehouse: ${insErr.message}`);
-    }
+      // 4. Record movements
+      await tx.stockMovement.create({
+        data: {
+          variantId,
+          warehouseId: fromWarehouseId,
+          movementType: "TRANSFER_OUT",
+          quantity: -quantity,
+          previousQuantity: sourceAvail,
+          newQuantity: newSourceAvail,
+          notes: notes || `Transferred to warehouse ${toWarehouseId}`,
+        },
+      });
 
-    // 4. Record movement out
-    await this.recordMovement({
-      variant_id: variantId,
-      warehouse_id: fromWarehouseId,
-      movement_type: "TRANSFER",
-      quantity_change: -quantity,
-      to_warehouse_id: toWarehouseId,
-      reason: reason ? String(reason).slice(0, 50) : "Inter-Warehouse Transfer",
-      reason_code: "TRANSFER_OUT",
-      notes: notes || `Transferred to warehouse ${toWarehouseId}`,
-    });
-
-    // 5. Record movement in
-    await this.recordMovement({
-      variant_id: variantId,
-      warehouse_id: toWarehouseId,
-      movement_type: "TRANSFER",
-      quantity_change: quantity,
-      reason: reason ? String(reason).slice(0, 50) : "Inter-Warehouse Transfer",
-      reason_code: "TRANSFER_IN",
-      notes: notes || `Received from warehouse ${fromWarehouseId}`,
+      await tx.stockMovement.create({
+        data: {
+          variantId,
+          warehouseId: toWarehouseId,
+          movementType: "TRANSFER_IN",
+          quantity: quantity,
+          previousQuantity: destAvail,
+          newQuantity: newDestAvail,
+          notes: notes || `Received from warehouse ${fromWarehouseId}`,
+        },
+      });
     });
   }
 

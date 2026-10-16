@@ -26,6 +26,64 @@ const DEFAULT_SLIDES: HeroSlide[] = [
   },
 ];
 
+function HeroSlideMedia({
+  slide,
+  index,
+  isActive,
+}: {
+  slide: HeroSlide;
+  index: number;
+  isActive: boolean;
+}) {
+  const initialUrl =
+    slide.image_url ?? slide.media_url ?? slide.image ?? "/images/home/hero-banner.png";
+  const [src, setSrc] = useState(initialUrl);
+
+  useEffect(() => {
+    setSrc(initialUrl);
+  }, [initialUrl]);
+
+  const headline = slide.title ?? slide.headline;
+  const isVideo = slide.isVideo || src.endsWith(".mp4") || src.includes("/video-files/");
+
+  return (
+    <div className="absolute inset-0 h-full w-full overflow-hidden bg-[#111]">
+      {isVideo ? (
+        <video
+          src={src}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload={index === 0 ? "auto" : "none"}
+          className={`h-full w-full object-cover object-center md:transition-transform md:ease-out md:[transition-duration:20s] ${
+            isActive ? "scale-100 md:scale-105" : "scale-100"
+          }`}
+          poster="/images/home/hero-banner.png"
+        />
+      ) : (
+        <Image
+          src={src}
+          alt={headline ?? `Banner ${index + 1}`}
+          fill
+          sizes="100vw"
+          className={`h-full w-full object-cover object-center md:transition-transform md:ease-out md:[transition-duration:20s] ${
+            isActive ? "scale-100 md:scale-105" : "scale-100"
+          }`}
+          priority={index === 0}
+          loading={index === 0 ? "eager" : "lazy"}
+          onError={() => {
+            if (src !== "/images/home/hero-banner.png") {
+              setSrc("/images/home/hero-banner.png");
+            }
+          }}
+          unoptimized={true}
+        />
+      )}
+    </div>
+  );
+}
+
 export function HomeHero({ slides: propSlides }: { slides?: HeroSlide[] }) {
   const slides =
     propSlides && propSlides.length > 0 ? propSlides : DEFAULT_SLIDES;
@@ -84,35 +142,7 @@ export function HomeHero({ slides: propSlides }: { slides?: HeroSlide[] }) {
                 <span className="sr-only">{headline || "View Promotion"}</span>
               </Link>
 
-              <div className="absolute inset-0 h-full w-full overflow-hidden bg-[#111]">
-                {isVideo ? (
-                  <video
-                    src={imageUrl}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload={index === 0 ? "auto" : "none"}
-                    className={`h-full w-full object-cover object-center md:transition-transform md:ease-out md:[transition-duration:20s] ${
-                      isActive ? "scale-100 md:scale-105" : "scale-100"
-                    }`}
-                    poster="/images/home/hero-banner.png"
-                  />
-                ) : (
-                  <Image
-                    src={imageUrl}
-                    alt={headline ?? `Banner ${index + 1}`}
-                    fill
-                    sizes="100vw"
-                    className={`h-full w-full object-cover object-center md:transition-transform md:ease-out md:[transition-duration:20s] ${
-                      isActive ? "scale-100 md:scale-105" : "scale-100"
-                    }`}
-                    priority={index === 0}
-                    loading={index === 0 ? "eager" : "lazy"}
-                    unoptimized={imageUrl.startsWith("data:") || imageUrl.startsWith("http")}
-                  />
-                )}
-              </div>
+              <HeroSlideMedia slide={slide} index={index} isActive={isActive} />
             </div>
           );
         })}

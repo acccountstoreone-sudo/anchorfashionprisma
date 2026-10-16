@@ -919,10 +919,10 @@ export function createClient() {
             if (typeof window === "undefined" && file) {
               const fs = await import("fs/promises");
               const pathModule = await import("path");
-              const uploadDir = pathModule.join(process.cwd(), "public", "uploads");
+              const cleanPath = path.replace(/^\/+/, "").replace(/\\/g, "/");
+              const uploadDir = pathModule.join(process.cwd(), "public", "uploads", pathModule.dirname(cleanPath));
               await fs.mkdir(uploadDir, { recursive: true });
-              const filename = pathModule.basename(path);
-              const dest = pathModule.join(uploadDir, filename);
+              const dest = pathModule.join(process.cwd(), "public", "uploads", cleanPath);
 
               let buffer: Buffer;
               if (Buffer.isBuffer(file)) {
@@ -941,8 +941,9 @@ export function createClient() {
               await fs.writeFile(dest, buffer);
             }
             return { data: { path }, error: null };
-          } catch {
-            return { data: { path }, error: null };
+          } catch (err: any) {
+            console.error("[polyfill storage.upload error]:", err);
+            return { data: null, error: err };
           }
         },
         getPublicUrl: (path: string) => ({
@@ -1014,6 +1015,26 @@ export function createClient() {
             const { getServerSession } = await import("@/lib/auth/server");
             const { user: u } = await getServerSession();
             if (u) {
+              let resolvedRole = (u as any).role;
+              if (!resolvedRole || resolvedRole === "CUSTOMER") {
+                try {
+                  const { prisma } = await import("@/lib/prisma");
+                  const isUuid = u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id);
+                  const profile = await prisma.profile.findFirst({
+                    where: {
+                      OR: [
+                        ...(isUuid ? [{ id: u.id }] : []),
+                        ...(u.email ? [{ email: u.email }] : []),
+                      ],
+                    },
+                    include: { role: true },
+                  });
+                  if (profile?.role?.name) {
+                    resolvedRole = profile.role.name.toUpperCase();
+                  }
+                } catch {}
+              }
+              const finalRole = resolvedRole || "CUSTOMER";
               return {
                 data: {
                   user: {
@@ -1023,10 +1044,10 @@ export function createClient() {
                       first_name: u.name?.split(" ")[0] || "",
                       last_name: u.name?.split(" ").slice(1).join(" ") || "",
                       full_name: u.name || "",
-                      role: (u as any).role || "CUSTOMER",
+                      role: finalRole,
                     },
                     app_metadata: {
-                      role: (u as any).role || "CUSTOMER",
+                      role: finalRole,
                     },
                     ...u,
                   },

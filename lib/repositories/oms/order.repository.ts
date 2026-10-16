@@ -46,7 +46,10 @@ export class OrderRepository {
 
     const where: any = {};
     if (options?.customerId) {
-      where.profileId = options.customerId;
+      const isCustUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(options.customerId);
+      if (isCustUuid) {
+        where.profileId = options.customerId;
+      }
     }
     
     if (options?.status && options.status !== "all") {
@@ -211,6 +214,12 @@ export class OrderRepository {
     updatedBy?: string,
     _?: any
   ): Promise<Order> {
+    const isUserUuid =
+      updatedBy &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        updatedBy
+      );
+
     const updated = await prisma.order.update({
       where: { id },
       data: {
@@ -218,8 +227,10 @@ export class OrderRepository {
         statusHistory: {
           create: {
             status: status.toUpperCase(),
-            notes: `Order status updated to ${status}`,
-            changedBy: updatedBy,
+            notes: updatedBy
+              ? `Order status updated to ${status} (by ${updatedBy})`
+              : `Order status updated to ${status}`,
+            changedBy: isUserUuid ? updatedBy : null,
           }
         }
       },

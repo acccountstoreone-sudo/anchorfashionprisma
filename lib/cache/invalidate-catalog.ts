@@ -70,6 +70,10 @@ export function invalidateHomepageCache() {
     revalidateTag(CACHE_TAGS.HOMEPAGE, "max");
     revalidateTag(CACHE_TAGS.CATALOG, "max");
     revalidatePath("/", "page");
+    revalidatePath("/", "layout");
+    revalidatePath("/(shop)", "layout");
+    revalidatePath("/(shop)", "page");
+    revalidatePath("/admin/cms/banners");
   } catch (error) {
     console.warn("Failed to invalidate homepage cache tags:", error);
   }

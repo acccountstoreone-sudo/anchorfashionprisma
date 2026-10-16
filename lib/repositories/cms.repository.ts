@@ -524,7 +524,15 @@ export class CMSRepository {
 
   async getBanners(placement?: string): Promise<any[]> {
     const banners = await prisma.banner.findMany({
-      where: placement ? { placement } : undefined,
+      where: placement
+        ? {
+            OR: [
+              { placement: placement },
+              { placement: placement.toLowerCase() },
+              { placement: placement.toUpperCase() },
+            ],
+          }
+        : undefined,
       orderBy: { displayOrder: "asc" },
     });
     return banners.map((b) => ({

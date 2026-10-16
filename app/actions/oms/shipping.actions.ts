@@ -62,8 +62,28 @@ export async function dispatchOrderAction(
     }
 
     // 3. Address Validation
-    const shippingAddress = orderDetails.shippingAddress;
-    if (!shippingAddress || !shippingAddress.address_line1 || !shippingAddress.phone || !shippingAddress.first_name) {
+    const rawAddress = (orderDetails as any).shippingAddress || (orderDetails as any).shipping_address;
+    if (!rawAddress) {
+      return { success: false, error: "Order is missing shipping address." };
+    }
+
+    const addressLine =
+      rawAddress.address_line1 ||
+      rawAddress.address_line ||
+      rawAddress.addressLine ||
+      rawAddress.address ||
+      "";
+    const phone = rawAddress.phone || rawAddress.recipient_phone || rawAddress.recipientPhone || "";
+    const firstName =
+      rawAddress.first_name ||
+      rawAddress.firstName ||
+      rawAddress.recipient_name ||
+      rawAddress.recipientName ||
+      rawAddress.name ||
+      "";
+    const lastName = rawAddress.last_name || rawAddress.lastName || "";
+
+    if (!addressLine || !phone || !firstName) {
       return { success: false, error: "Order is missing complete shipping address, phone, or recipient name." };
     }
 
@@ -95,16 +115,17 @@ export async function dispatchOrderAction(
     }
 
     // 6. Create Shipment
-    const recipientName = `${shippingAddress.first_name || ""} ${shippingAddress.last_name || ""}`.trim();
+    const recipientName = `${firstName} ${lastName}`.trim();
+    const addressLine2 = rawAddress.address_line2 || rawAddress.addressLine2 || "";
     
     const shipmentInput = {
       orderId: orderId,
       courierProviderCode: courierCode,
       recipientName: recipientName,
-      recipientPhone: shippingAddress.phone,
-      recipientAddress: shippingAddress.address_line1 + (shippingAddress.address_line2 ? `, ${shippingAddress.address_line2}` : ""),
-      recipientCity: shippingAddress.city || undefined,
-      recipientDistrict: shippingAddress.state || undefined,
+      recipientPhone: phone,
+      recipientAddress: addressLine + (addressLine2 ? `, ${addressLine2}` : ""),
+      recipientCity: rawAddress.city || undefined,
+      recipientDistrict: rawAddress.state || rawAddress.district || undefined,
       isCOD: isCOD,
       codAmount: codAmount,
       items: (orderDetails.items || []).map((item: any) => ({

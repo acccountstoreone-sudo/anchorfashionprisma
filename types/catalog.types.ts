@@ -42,14 +42,31 @@ export const ProductVariantSchema = z.object({
     .optional()
     .nullable()
     .transform((val) => (val === undefined ? undefined : val && val.trim() ? val.trim() : null)),
-  priceOverride: z.number().min(0).optional().nullable(),
-  salePrice: z.number().min(0).optional().nullable(),
-  weight: z.number().min(0).optional().nullable(),
+  priceOverride: z
+    .preprocess(
+      (val) => (val === "" || val === null || val === undefined ? null : Number(val)),
+      z.number().min(0).optional().nullable()
+    ),
+  salePrice: z
+    .preprocess(
+      (val) => (val === "" || val === null || val === undefined ? null : Number(val)),
+      z.number().min(0).optional().nullable()
+    ),
+  costPrice: z
+    .preprocess(
+      (val) => (val === "" || val === null || val === undefined ? null : Number(val)),
+      z.number().min(0).optional().nullable()
+    ),
+  weight: z
+    .preprocess(
+      (val) => (val === "" || val === null || val === undefined ? null : Number(val)),
+      z.number().min(0).optional().nullable()
+    ),
   dimensions: z
     .object({
-      length: z.number().optional(),
-      width: z.number().optional(),
-      height: z.number().optional(),
+      length: z.coerce.number().optional(),
+      width: z.coerce.number().optional(),
+      height: z.coerce.number().optional(),
     })
     .optional()
     .nullable(),
@@ -65,7 +82,7 @@ export const ProductMediaSchema = z.object({
   url: z.string().min(1, "Image URL is required").max(1024),
   urlWebp: z.string().url().max(1024).optional().nullable(),
   altText: z.string().max(255).optional().nullable(),
-  displayOrder: z.number().default(0),
+  displayOrder: z.coerce.number().default(0),
   isPrimary: z.boolean().default(false),
   mediaType: MediaType.default("IMAGE"),
 });
@@ -87,9 +104,21 @@ export const ProductSchema = z.object({
     .transform((val) => (val === undefined ? undefined : val && val.trim() ? val.trim() : null)),
   categoryId: z.string().uuid("Please select a valid category"),
   brandId: z.string().uuid().optional().nullable().or(z.literal("").transform(() => null)),
-  basePrice: z.number().min(0, "Sell price must be 0 or greater"),
-  costPrice: z.number().min(0).optional().nullable(),
-  salePrice: z.number().min(0).optional().nullable(),
+  basePrice: z
+    .preprocess(
+      (val) => (val === "" || val === null || val === undefined ? 0 : Number(val)),
+      z.number().min(0, "Sell price must be 0 or greater")
+    ),
+  costPrice: z
+    .preprocess(
+      (val) => (val === "" || val === null || val === undefined ? null : Number(val)),
+      z.number().min(0).optional().nullable()
+    ),
+  salePrice: z
+    .preprocess(
+      (val) => (val === "" || val === null || val === undefined ? null : Number(val)),
+      z.number().min(0).optional().nullable()
+    ),
   stockQuantity: z.coerce.number().int().min(0).optional().default(0),
   sku: z
     .string()
@@ -184,7 +213,12 @@ export const CreateProductSchema = ProductSchema.omit({
     .array(ProductMediaSchema.omit({ id: true, productId: true }))
     .optional(),
   variants: z
-    .array(ProductVariantSchema.omit({ id: true, productId: true }))
+    .array(
+      ProductVariantSchema.omit({ id: true, productId: true }).extend({
+        id: z.string().uuid().optional(),
+        productId: z.string().uuid().optional(),
+      })
+    )
     .optional(),
 });
 

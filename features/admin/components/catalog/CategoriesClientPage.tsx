@@ -340,15 +340,41 @@ export function CategoriesClientPage({
     display_order: 0,
   });
 
-  const filtered = useMemo(
-    () =>
-      categories.filter(
+  const [tab, setTab] = useState<"all" | "navbar" | "sub" | "inactive">("all");
+
+  const counts = useMemo(
+    () => ({
+      all: categories.length,
+      navbar: categories.filter((c) => !c.parent_id && c.is_active).length,
+      sub: categories.filter((c) => !!c.parent_id).length,
+      inactive: categories.filter((c) => !c.is_active).length,
+    }),
+    [categories]
+  );
+
+  const filtered = useMemo(() => {
+    return categories
+      .filter((c) => {
+        if (tab === "navbar") return !c.parent_id && c.is_active;
+        if (tab === "sub") return !!c.parent_id;
+        if (tab === "inactive") return !c.is_active;
+        return true;
+      })
+      .filter(
         (c) =>
           c.name.toLowerCase().includes(search.toLowerCase()) ||
           c.slug.toLowerCase().includes(search.toLowerCase())
-      ),
-    [categories, search]
-  );
+      )
+      .sort((a, b) => {
+        if (tab === "navbar" || !tab || tab === "all") {
+          // If root categories, sort by display_order
+          if (!a.parent_id && !b.parent_id) {
+            return (a.display_order ?? 0) - (b.display_order ?? 0);
+          }
+        }
+        return 0;
+      });
+  }, [categories, search, tab]);
 
   const openAdd = () => {
     setEditTarget(null);
@@ -491,6 +517,59 @@ export function CategoriesClientPage({
         onSearchChange={setSearch}
         searchPlaceholder="Search categories..."
       >
+        {/* Navigation / Category Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-zinc-100/90 rounded-xl w-fit mb-4 border border-zinc-200/70">
+          <button
+            type="button"
+            onClick={() => setTab("all")}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+              tab === "all"
+                ? "bg-white text-zinc-900 shadow-xs"
+                : "text-zinc-600 hover:text-zinc-900 hover:bg-white/50"
+            )}
+          >
+            All Categories ({counts.all})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("navbar")}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
+              tab === "navbar"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "text-emerald-700 hover:text-emerald-950 hover:bg-emerald-50"
+            )}
+          >
+            <span className={cn("h-2 w-2 rounded-full", tab === "navbar" ? "bg-white" : "bg-emerald-500")} />
+            Navbar Menus ({counts.navbar})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("sub")}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+              tab === "sub"
+                ? "bg-white text-zinc-900 shadow-xs"
+                : "text-zinc-600 hover:text-zinc-900 hover:bg-white/50"
+            )}
+          >
+            Subcategories ({counts.sub})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("inactive")}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+              tab === "inactive"
+                ? "bg-white text-zinc-900 shadow-xs"
+                : "text-zinc-600 hover:text-zinc-900 hover:bg-white/50"
+            )}
+          >
+            Inactive ({counts.inactive})
+          </button>
+        </div>
+
         <div className="rounded-md border bg-card text-card-foreground">
           <Table>
             <TableHeader>
@@ -500,7 +579,7 @@ export function CategoriesClientPage({
                 <TableHead>Slug</TableHead>
                 <TableHead>Parent</TableHead>
                 <TableHead>Order</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Menu Placement</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -544,13 +623,30 @@ export function CategoriesClientPage({
                     <TableCell className="text-sm font-mono">{category.display_order}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 items-start">
-                        <Badge variant={category.is_active ? "default" : "secondary"}>
-                          {category.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                        {!category.parent_id && category.is_active && (
-                          <span className="text-[10px] text-zinc-500 font-medium">
-                            {category.display_order < 8 ? "Navbar Bar" : "Navbar More"}
-                          </span>
+                        {!category.parent_id ? (
+                          category.is_active ? (
+                            <>
+                              <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-[11px] gap-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                                Navbar Menu #{category.display_order}
+                              </Badge>
+                              <span className="text-[10px] text-zinc-500">Root Category (Visible on Front)</span>
+                            </>
+                          ) : (
+                            <>
+                              <Badge variant="secondary" className="text-zinc-500 text-[11px]">
+                                Hidden from Navbar
+                              </Badge>
+                              <span className="text-[10px] text-zinc-400">Inactive</span>
+                            </>
+                          )
+                        ) : (
+                          <>
+                            <Badge variant={category.is_active ? "outline" : "secondary"} className="text-zinc-700 text-[11px]">
+                              {category.is_active ? "Mega Menu Subitem" : "Inactive Subitem"}
+                            </Badge>
+                            <span className="text-[10px] text-zinc-400">Inside Parent Category Dropdown</span>
+                          </>
                         )}
                       </div>
                     </TableCell>
@@ -705,34 +801,65 @@ export function CategoriesClientPage({
                 excludeId={editTarget?.id}
               />
             </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="cat-order">Display Order</Label>
-                <span className="text-xs text-muted-foreground font-mono">Lower = higher priority</span>
-              </div>
-              <Input
-                id="cat-order"
-                type="number"
-                value={form.display_order}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, display_order: Number(e.target.value) }))
-                }
-              />
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Controls navigation bar sequence. The top 8 root categories with the lowest values appear directly on the main header bar; additional ones appear in the &ldquo;MORE&rdquo; menu.
-              </p>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
+            {/* Storefront Navigation Menu Settings */}
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 space-y-3.5">
               <div>
-                <p className="text-sm font-medium">Active Status</p>
-                <p className="text-xs text-muted-foreground">
-                  Controls visibility on the store website and navbar menu.
+                <h4 className="text-sm font-semibold text-zinc-900">Storefront Navbar Menu</h4>
+                <p className="text-xs text-zinc-500">
+                  Control whether and in what order this category appears in the website top navbar.
                 </p>
               </div>
-              <Switch
-                checked={form.is_active}
-                onCheckedChange={(v) => setForm((f) => ({ ...f, is_active: v }))}
-              />
+
+              {!form.parent_id || form.parent_id === "none" ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between rounded-lg bg-white border border-zinc-200 p-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-zinc-900">
+                        Show in Storefront Navbar
+                      </p>
+                      <p className="text-[11px] text-zinc-500">
+                        Enable to display as a main top-level menu item with flyout dropdown.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.is_active}
+                      onCheckedChange={(v) => setForm((f) => ({ ...f, is_active: v }))}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="cat-order" className="text-xs font-semibold">Navbar Sequence Order</Label>
+                      <span className="text-[11px] text-zinc-500 font-mono">0 = First, 1 = Second, etc.</span>
+                    </div>
+                    <Input
+                      id="cat-order"
+                      type="number"
+                      value={form.display_order}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, display_order: Number(e.target.value) }))
+                      }
+                      className="bg-white"
+                    />
+                    <p className="text-[11px] text-zinc-500 leading-relaxed">
+                      Arranges menu tabs horizontally from left to right across the storefront header.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-lg bg-white border border-zinc-200 p-3 text-xs text-zinc-600 leading-relaxed space-y-2">
+                  <p>
+                    📌 <strong>Mega Menu Subcategory:</strong> This category is a child of another category. When customers hover over the parent in the top navbar, this subcategory and its links will automatically display inside the mega menu columns.
+                  </p>
+                  <div className="flex items-center justify-between pt-1 border-t border-zinc-100">
+                    <span className="text-xs font-medium text-zinc-700">Display this subcategory:</span>
+                    <Switch
+                      checked={form.is_active}
+                      onCheckedChange={(v) => setForm((f) => ({ ...f, is_active: v }))}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <SheetFooter className="p-6 pt-4 border-t bg-background shrink-0 flex flex-row items-center justify-end gap-2">

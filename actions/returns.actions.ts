@@ -67,7 +67,8 @@ async function requireBranchAccess(returnId: string) {
       .eq("id", user.id)
       .maybeSingle();
 
-    const isGlobalAdmin = ["SUPERADMIN", "SUPER_ADMIN", "ADMIN"].includes(role);
+    const normalizedRole = role.replace(/[\s_-]+/g, "").toUpperCase();
+    const isGlobalAdmin = ["SUPERADMIN", "ADMIN"].includes(normalizedRole);
     // Only enforce branch filtering if user is not global admin and has a branch assigned
     if (!isGlobalAdmin && profile?.branch_id) {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(returnId);

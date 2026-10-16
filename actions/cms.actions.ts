@@ -569,34 +569,28 @@ export async function upsertHeroSlideWithUpload(formData: FormData) {
     const file = formData.get("file") as File | null;
 
     if (file && file.size > 0) {
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error("Image file size must be less than 5MB");
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error("Image file size must be less than 10MB");
       }
 
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       const mimeType = file.type || "image/jpeg";
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const fileName = `${Date.now()}_${safeName}`;
 
-      // Try Supabase storage first
-      let uploadedUrl = "";
       try {
-        const { createAdminClient } = await import("@/lib/supabase/admin-client");
-        const supabase = createAdminClient();
-        const fileName = `banners/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-        const { error: uploadError } = await supabase.storage
-          .from("media")
-          .upload(fileName, buffer, { contentType: mimeType, upsert: true });
-
-        if (!uploadError) {
-          const { data: pubData } = supabase.storage.from("media").getPublicUrl(fileName);
-          if (pubData?.publicUrl && !pubData.publicUrl.startsWith("data:")) {
-            uploadedUrl = pubData.publicUrl;
-          }
-        }
-      } catch {}
-
-      // Fallback: data URI
-      image_url = uploadedUrl || `data:${mimeType};base64,${buffer.toString("base64")}`;
+        const fs = await import("fs/promises");
+        const pathModule = await import("path");
+        const uploadDir = pathModule.join(process.cwd(), "public", "uploads", "banners");
+        await fs.mkdir(uploadDir, { recursive: true });
+        const filePath = pathModule.join(uploadDir, fileName);
+        await fs.writeFile(filePath, buffer);
+        image_url = `/uploads/banners/${fileName}`;
+      } catch (writeErr) {
+        console.warn("[upsertHeroSlideWithUpload] Local disk write fallback to dataUri:", writeErr);
+        image_url = `data:${mimeType};base64,${buffer.toString("base64")}`;
+      }
     }
 
     if (!image_url) {

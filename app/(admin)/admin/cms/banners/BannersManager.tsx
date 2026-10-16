@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +70,7 @@ export function BannersManager({
 }: {
   initialSlides: HeroSlide[];
 }) {
+  const router = useRouter();
   const [slides, setSlides] = useState<HeroSlide[]>(initialSlides);
   const [filterPlacement, setFilterPlacement] = useState<"all" | "hero" | "promo">("all");
   const [isPending, startTransition] = useTransition();
@@ -77,6 +79,10 @@ export function BannersManager({
   const [deleteAllConfirmOpen, setDeleteAllConfirmOpen] = useState(false);
   const [formData, setFormData] = useState<BannerFormData>(emptyBannerForm);
   const [previewUrl, setPreviewUrl] = useState<string>("");
+
+  useEffect(() => {
+    setSlides(initialSlides);
+  }, [initialSlides]);
 
   const handleOpenAdd = () => {
     setFormData({
@@ -174,6 +180,7 @@ export function BannersManager({
             );
           }
         });
+        router.refresh();
       } else {
         toast.error(result.error || "Failed to save banner");
       }
@@ -187,6 +194,7 @@ export function BannersManager({
         setSlides((prev) => prev.filter((s) => s.id !== id));
         setDeleteConfirmId(null);
         toast.success("Banner deleted successfully");
+        router.refresh();
       } else {
         toast.error(res.error || "Failed to delete banner");
       }
@@ -200,6 +208,7 @@ export function BannersManager({
         setSlides([]);
         setDeleteAllConfirmOpen(false);
         toast.success("All banners deleted successfully");
+        router.refresh();
       } else {
         toast.error(res.error || "Failed to delete banners");
       }
@@ -296,7 +305,7 @@ export function BannersManager({
                           alt={slide.title || `Slide ${index + 1}`}
                           fill
                           className="object-cover"
-                          unoptimized={slide.image_url.startsWith("http") || slide.image_url.startsWith("data:")}
+                          unoptimized={true}
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-muted-foreground">
@@ -449,12 +458,10 @@ export function BannersManager({
               </Label>
               {previewUrl && (
                 <div className="relative h-36 w-full overflow-hidden rounded-lg border bg-muted">
-                  <Image
+                  <img
                     src={previewUrl}
                     alt="Preview"
-                    fill
-                    className="object-cover"
-                    unoptimized={previewUrl.startsWith("blob:") || previewUrl.startsWith("http") || previewUrl.startsWith("data:")}
+                    className="h-full w-full object-cover"
                   />
                 </div>
               )}
