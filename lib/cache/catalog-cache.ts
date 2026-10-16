@@ -209,3 +209,20 @@ export const getCachedWhyChooseUs = unstable_cache(
   }
 );
 
+/**
+ * Cached Curated Categories / The Style Edit Fetcher
+ */
+export const getCachedCuratedCategoriesData = unstable_cache(
+  async () => {
+    const { getStorefrontCuratedCategories } = await import(
+      "@/actions/curated-categories.actions"
+    );
+    return getStorefrontCuratedCategories();
+  },
+  ["homepage-curated-categories-data"],
+  {
+    tags: [CACHE_TAGS.HOMEPAGE, CACHE_TAGS.CATEGORIES, "curated-categories"],
+    revalidate: CACHE_TTL.STANDARD,
+  }
+);
+

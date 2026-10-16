@@ -18,6 +18,7 @@ import {
   Activity,
   HelpCircle,
   Sparkles,
+  Layers,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -25,6 +26,13 @@ export const metadata: Metadata = {
 };
 
 const cmsModules = [
+  {
+    id: "curated-categories",
+    name: "Curated Categories (Style Edit)",
+    icon: Layers,
+    description: "Manage homepage 4-card signature bento editorial showcase",
+    href: "/admin/cms/curated-categories",
+  },
   {
     id: "blogs",
     name: "Blog Posts",

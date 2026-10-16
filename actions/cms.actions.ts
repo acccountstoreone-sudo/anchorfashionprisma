@@ -576,12 +576,18 @@ export async function upsertHeroSlideWithUpload(formData: FormData) {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       const mimeType = file.type || "image/jpeg";
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const fileName = `${Date.now()}_${safeName}`;
+      const pathModule = await import("path");
+      const safeBase = pathModule
+        .basename(file.name, pathModule.extname(file.name))
+        .replace(/[^a-zA-Z0-9_-]/g, "_")
+        .slice(0, 50);
+      const ext =
+        pathModule.extname(file.name).replace(/[^a-zA-Z0-9]/g, "").toLowerCase() ||
+        "jpg";
+      const fileName = `${Date.now()}_${safeBase}.${ext}`;
 
       try {
         const fs = await import("fs/promises");
-        const pathModule = await import("path");
         const uploadDir = pathModule.join(process.cwd(), "public", "uploads", "banners");
         await fs.mkdir(uploadDir, { recursive: true });
         const filePath = pathModule.join(uploadDir, fileName);
@@ -649,6 +655,18 @@ export async function upsertHeroSlideWithUpload(formData: FormData) {
 // Delete a single banner by ID
 export async function deleteHeroSlide(id: string) {
   try {
+    // Optionally remove local file from disk if under /uploads/banners/
+    try {
+      const banners = await cmsRepo.getBanners();
+      const existing = banners.find((b: any) => b.id === id);
+      if (existing?.image_url?.startsWith("/uploads/banners/")) {
+        const fs = await import("fs/promises");
+        const pathModule = await import("path");
+        const safePath = pathModule.join(process.cwd(), "public", existing.image_url);
+        await fs.unlink(safePath).catch(() => {});
+      }
+    } catch {}
+
     await cmsRepo.deleteBanner(id);
 
     try {

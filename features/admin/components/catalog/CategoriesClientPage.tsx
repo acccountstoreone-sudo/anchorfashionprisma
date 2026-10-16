@@ -42,6 +42,7 @@ import {
   Loader2,
   ImageIcon,
   ExternalLink,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -517,6 +518,30 @@ export function CategoriesClientPage({
         onSearchChange={setSearch}
         searchPlaceholder="Search categories..."
       >
+        {/* Homepage Curated Highlight Banner */}
+        <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-[#C9A86A]/30 bg-gradient-to-r from-[#C9A86A]/10 via-amber-500/5 to-transparent p-3 sm:px-4 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#C9A86A]/20 text-[#97793d]">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">
+                Homepage "Curated Categories (The Style Edit)"
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Decide which categories appear in the signature 4-card showcase on your storefront.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/admin/cms/curated-categories"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-black px-3 py-1.5 font-medium text-white shadow-xs hover:bg-neutral-800 transition-colors shrink-0"
+          >
+            Manage Curated Showcase
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+        </div>
+
         {/* Navigation / Category Filter Tabs */}
         <div className="flex flex-wrap items-center gap-1.5 p-1 bg-zinc-100/90 rounded-xl w-fit mb-4 border border-zinc-200/70">
           <button

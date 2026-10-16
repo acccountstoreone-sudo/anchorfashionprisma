@@ -6,6 +6,7 @@ import {
   getCachedHeroSlides,
   getCachedFeaturedPromoBanner,
   getCachedWhyChooseUs,
+  getCachedCuratedCategoriesData,
 } from "@/lib/cache/catalog-cache";
 import { HomeHero } from "@/components/home/home-hero";
 import { CategoryHighlight } from "@/components/home/category-highlight";
@@ -49,6 +50,7 @@ export default async function HomePage() {
     activeFlashSales,
     featuredPromoBanner,
     whyChooseUsData,
+    curatedCategoriesData,
   ] = await Promise.all([
     getCachedCategories(),
     getCachedCollections(),
@@ -62,6 +64,7 @@ export default async function HomePage() {
     FlashSaleService.getActiveFlashSales(),
     getCachedFeaturedPromoBanner(),
     getCachedWhyChooseUs(),
+    getCachedCuratedCategoriesData(),
   ]);
 
   return (
@@ -89,7 +92,10 @@ export default async function HomePage() {
 
       {/* 3. Editorial Category Highlight Masonry */}
       <FadeIn delay={0.2} direction="up">
-        <CategoryHighlight categories={categories} />
+        <CategoryHighlight
+          categories={categories}
+          curatedData={curatedCategoriesData}
+        />
       </FadeIn>
 
       <div className="space-y-10 py-6 md:space-y-16 md:py-12 lg:space-y-20 lg:py-16">

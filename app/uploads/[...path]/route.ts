@@ -9,6 +9,7 @@ const MIME_TYPES: Record<string, string> = {
   ".webp": "image/webp",
   ".gif": "image/gif",
   ".svg": "image/svg+xml",
+  ".avif": "image/avif",
   ".mp4": "video/mp4",
   ".webm": "video/webm",
   ".pdf": "application/pdf",
@@ -25,11 +26,21 @@ export async function GET(
     }
 
     // Sanitize path segments to prevent directory traversal
-    const safeSegments = pathSegments.map((seg) =>
-      seg.replace(/[^a-zA-Z0-9._-]/g, "")
-    );
-    const relativePath = safeSegments.join("/");
-    const filePath = path.join(process.cwd(), "public", "uploads", relativePath);
+    const safeSegments = pathSegments
+      .map((seg) => seg.replace(/[^a-zA-Z0-9._-]/g, ""))
+      .filter((seg) => Boolean(seg) && seg !== "." && seg !== "..");
+
+    if (safeSegments.length === 0) {
+      return new NextResponse("Invalid file path", { status: 400 });
+    }
+
+    const uploadsDir = path.resolve(process.cwd(), "public", "uploads");
+    const filePath = path.resolve(uploadsDir, ...safeSegments);
+
+    // Strict jail verification - ensure resolved path is inside public/uploads
+    if (!filePath.startsWith(uploadsDir + path.sep)) {
+      return new NextResponse("Forbidden", { status: 403 });
+    }
 
     // Verify existence
     try {
@@ -57,3 +68,4 @@ export async function GET(
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
+

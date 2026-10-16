@@ -255,17 +255,46 @@ export function StoreHeader({
     .slice(0, 2)
     .toUpperCase();
 
-  // Dynamically build navLinks from dbCategories configured in Admin Dashboard
+  // Maintain categories state with automatic fallback for pages that don't pass dbCategories
+  const [categories, setCategories] = useState<Category[]>(dbCategories);
+
+  useEffect(() => {
+    if (dbCategories && dbCategories.length > 0) {
+      setCategories(dbCategories);
+    } else {
+      fetch("/api/categories")
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => {
+          if (Array.isArray(data) && data.length > 0) {
+            setCategories(data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [dbCategories]);
+
+  // Dynamically build navLinks from categories configured in Admin Dashboard
   const navLinks: NavLinkItem[] = useMemo(() => {
     // Filter root categories that are active, ordered by display_order set in Admin
-    const topLevelCategories = dbCategories
+    const topLevelCategories = categories
       .filter((c) => !c.parent_id && c.is_active !== false)
       .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+
+    // Fallback if no categories are configured yet
+    if (topLevelCategories.length === 0) {
+      return [
+        { label: "NEW ARRIVALS", href: "/products?sort=newest" },
+        { label: "MEN", href: "/categories/men" },
+        { label: "WOMEN", href: "/categories/women" },
+        { label: "KIDS", href: "/categories/kids" },
+        { label: "ACCESSORIES", href: "/categories/accessories" },
+      ];
+    }
 
     const links: NavLinkItem[] = [];
 
     topLevelCategories.forEach((topCat) => {
-      const children = dbCategories.filter(
+      const children = categories.filter(
         (c) => c.parent_id === topCat.id && c.is_active !== false
       );
       let megaMenu;
@@ -275,24 +304,40 @@ export function StoreHeader({
 
         // Check for 3rd level categories
         let hasSubChildren = false;
+        const directLeaves: Category[] = [];
+
         children.forEach((child) => {
-          const grandChildren = dbCategories.filter(
+          const grandChildren = categories.filter(
             (c) => c.parent_id === child.id && c.is_active !== false
           );
           if (grandChildren.length > 0) {
             hasSubChildren = true;
             columns.push({
               title: child.name,
-              links: grandChildren.map((gc) => ({
-                label: gc.name,
-                href: `/categories/${gc.slug}`,
-              })),
+              links: [
+                { label: `All ${child.name}`, href: `/categories/${child.slug}` },
+                ...grandChildren.map((gc) => ({
+                  label: gc.name,
+                  href: `/categories/${gc.slug}`,
+                })),
+              ],
             });
+          } else {
+            directLeaves.push(child);
           }
         });
 
-        // If no 3rd level, distribute the 2nd level across columns cleanly
-        if (!hasSubChildren) {
+        // If some children had subchildren and some didn't, preserve direct leaf items!
+        if (hasSubChildren && directLeaves.length > 0) {
+          columns.push({
+            title: `More in ${topCat.name}`,
+            links: directLeaves.map((c) => ({
+              label: c.name,
+              href: `/categories/${c.slug}`,
+            })),
+          });
+        } else if (!hasSubChildren) {
+          // If no 3rd level anywhere, distribute the 2nd level across columns cleanly
           const chunkSize = 6;
           for (let i = 0; i < children.length; i += chunkSize) {
             columns.push({
@@ -328,7 +373,7 @@ export function StoreHeader({
     });
 
     return links;
-  }, [dbCategories]);
+  }, [categories]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
