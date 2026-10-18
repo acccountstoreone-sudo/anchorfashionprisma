@@ -16,11 +16,26 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  staticPageGenerationTimeout: 120,
+  outputFileTracingExcludes: {
+    "*": [
+      "./marketplaceandaffiliateplartform/**",
+      "./tests/**",
+      "./e2e/**",
+    ],
+  },
 
   experimental: {
+    cpus: 2,
+    turbopackMemoryLimit: 1024 * 1024 * 1024,
     turbopackFileSystemCacheForBuild: true,
+    turbopackFileSystemCacheForDev: true,
     optimizePackageImports: [
+      "lucide-react",
       "framer-motion",
+      "@radix-ui/react-icons",
+      "recharts",
+      "date-fns",
     ],
   },
 

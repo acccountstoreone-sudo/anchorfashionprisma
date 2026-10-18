@@ -58,7 +58,7 @@ function formatCol(col: string): string {
   return `"${trimmed.replace(/^"|"$/g, "")}"`;
 }
 
-class QueryBuilder {
+class QueryBuilder implements PromiseLike<any> {
   private tableName: string;
   private selectCols: string = "*";
   private whereClauses: string[] = [];
@@ -83,7 +83,7 @@ class QueryBuilder {
     this.tableName = clean;
   }
 
-  select(cols: string = "*", opts?: { count?: string }) {
+  select(cols: string = "*", opts?: { count?: string; head?: boolean }) {
     if (!["insert", "update", "upsert", "delete"].includes(this.action)) {
       this.action = "select";
     }
@@ -710,15 +710,19 @@ class QueryBuilder {
     }
   }
 
-  then(resolve: any, reject: any) {
-    return this.execute().then(resolve, reject);
+  then<TResult1 = any, TResult2 = never>(
+    onfulfilled?: ((value: any) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
+  ): Promise<TResult1 | TResult2> {
+    return this.execute().then(onfulfilled, onrejected);
   }
 }
 
 export function createClient() {
   return {
     from: (table: string) => new QueryBuilder(table),
-    rpc: async (fnName: string, args?: any) => {
+    rpc: (fnName: string, args?: any) => {
+      const p = (async () => {
       try {
         if (!args || Object.keys(args).length === 0) {
           const res = (await prisma.$queryRawUnsafe(
@@ -911,7 +915,11 @@ export function createClient() {
       } catch (e: any) {
         return { data: null, error: { message: e.message, code: e.code } };
       }
-    },
+    })() as Promise<any> & { maybeSingle: () => Promise<any>; single: () => Promise<any> };
+    p.maybeSingle = () => p;
+    p.single = () => p;
+    return p;
+  },
     storage: {
       from: (bucket: string) => ({
         upload: async (path: string, file: any, opts?: any) => {
