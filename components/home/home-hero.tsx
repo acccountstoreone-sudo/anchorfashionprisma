@@ -55,7 +55,7 @@ function HeroSlideMedia({
           loop
           muted
           playsInline
-          preload={index === 0 ? "auto" : "none"}
+          preload="metadata"
           className={`h-full w-full object-cover object-center md:transition-transform md:ease-out md:[transition-duration:20s] ${
             isActive ? "scale-100 md:scale-105" : "scale-100"
           }`}
@@ -77,7 +77,7 @@ function HeroSlideMedia({
               setSrc("/images/home/hero-banner.png");
             }
           }}
-          unoptimized={true}
+          unoptimized={src.startsWith("data:")}
         />
       )}
     </div>
@@ -116,6 +116,7 @@ export function HomeHero({ slides: propSlides }: { slides?: HeroSlide[] }) {
 
   return (
     <section className="relative w-full overflow-hidden bg-[#1A1A1A]">
+      <h1 className="sr-only">Anchor Fashion | Premium Apparel &amp; Luxury Fashion</h1>
       {/* Full-width responsive banner: exact uncropped aspect-[1896/830] on mobile/tablet, immersive full-bleed on desktop */}
       <div className="relative aspect-[1896/830] sm:aspect-[1896/830] w-full md:aspect-auto md:h-[80vh] md:min-h-[560px]">
         {slides.map((slide, index) => {

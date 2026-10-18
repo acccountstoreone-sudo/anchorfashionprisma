@@ -26,6 +26,7 @@ export function FloatingPromotion() {
             setIsVisible(false);
             setIsDismissed(true);
           }}
+          aria-label="Dismiss promotion"
           className="absolute top-2 right-2 p-1 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
         >
           <X className="h-4 w-4" />

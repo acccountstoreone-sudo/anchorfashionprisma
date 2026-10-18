@@ -86,6 +86,9 @@ export function PromotionPopupBanner({ initialPromotion }: PromotionPopupBannerP
         aria-modal="true"
         aria-labelledby="promo-banner-title"
       >
+        <h2 id="promo-banner-title" className="sr-only">
+          {promo.name || "Special Promotion"}
+        </h2>
         {/* Close Button */}
         <button
           onClick={handleClose}

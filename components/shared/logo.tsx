@@ -82,7 +82,6 @@ export const AnchorFashionLogo = ({
         viewBox="0 0 440 130"
         className="h-auto w-full"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ visibility: mounted ? "visible" : "hidden" }}
       >
         <defs>
           {/* Mask to cut out the standard crossbar of the 'A' */}

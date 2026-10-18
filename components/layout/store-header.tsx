@@ -32,6 +32,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ADMIN_ROLES, MANAGER_ROLES } from "@/lib/constants/auth";
 import { useCartStore } from "@/stores/use-cart-store";
 import { useWishlistStore } from "@/stores/use-wishlist-store";
+import { useSessionContext } from "@/providers/session-provider";
 import { cn } from "@/lib/utils";
 
 interface Category {
@@ -180,7 +181,7 @@ export function StoreHeader({
   contactPhone,
   contactEmail,
   announcementBar,
-  user,
+  user: propUser,
 }: {
   dbCategories?: Category[];
   contactPhone?: string;
@@ -189,6 +190,8 @@ export function StoreHeader({
   user?: any;
 }) {
   const router = useRouter();
+  const { user: contextUser } = useSessionContext();
+  const user = propUser || contextUser;
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -418,6 +421,7 @@ export function StoreHeader({
                 <SheetTrigger asChild>
                   <button
                     type="button"
+                    aria-label="Open navigation menu"
                     className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-black focus:outline-none cursor-pointer"
                   >
                     <Menu className="h-6 w-6" />
@@ -446,6 +450,7 @@ export function StoreHeader({
                                 <button
                                   type="button"
                                   onClick={() => toggleExpand(link.label)}
+                                  aria-label={`Toggle ${link.label} submenu`}
                                   className="p-2 text-gray-400 cursor-pointer"
                                 >
                                   <ChevronDown
@@ -525,6 +530,7 @@ export function StoreHeader({
               <input
                 type="text"
                 placeholder="Search"
+                aria-label="Search catalog"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none"
@@ -550,7 +556,7 @@ export function StoreHeader({
                     ))}
                 </SelectContent>
               </Select>
-              <button type="submit" className="ml-2 pl-2 cursor-pointer">
+              <button type="submit" aria-label="Submit search" className="ml-2 pl-2 cursor-pointer">
                 <Search className="h-5 w-5 text-gray-500 hover:text-gray-900 transition-colors" />
               </button>
             </form>
@@ -578,6 +584,7 @@ export function StoreHeader({
             {/* Account */}
             <Link
               href={accountHref}
+              aria-label={user ? "My Account" : "Sign In"}
               className="hidden sm:block text-gray-700 hover:text-[#C9A86A] transition-colors"
             >
               {user ? (
@@ -595,6 +602,7 @@ export function StoreHeader({
             {/* Wishlist */}
             <Link
               href="/account/wishlist"
+              aria-label="Wishlist"
               className="relative text-gray-700 hover:text-[#C9A86A] transition-colors flex items-center gap-1.5"
             >
               <Heart className="h-[22px] w-[22px]" strokeWidth={1.5} />
@@ -606,6 +614,7 @@ export function StoreHeader({
             {/* Cart */}
             <button
               onClick={() => setSheetOpen(true)}
+              aria-label="Shopping Cart"
               className="relative text-gray-700 hover:text-[#C9A86A] transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <ShoppingCart className="h-[22px] w-[22px]" strokeWidth={1.5} />

@@ -78,7 +78,6 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: {
       canonical: "https://anchorfashion.com",
     },
-    manifest: "/manifest.json",
   };
 }
 

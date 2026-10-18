@@ -133,9 +133,9 @@ export async function StoreFooter() {
 
           {/* Shop Column */}
           <div className="space-y-5">
-            <h4 className="text-xs font-bold uppercase tracking-[0.25em] text-[#C9A86A]">
+            <h3 className="text-xs font-bold uppercase tracking-[0.25em] text-[#C9A86A]">
               Shop
-            </h4>
+            </h3>
             <ul className="space-y-3">
               {footerLinks.shop.map((link) => (
                 <li key={link.href}>
@@ -152,9 +152,9 @@ export async function StoreFooter() {
 
           {/* Help Column */}
           <div className="space-y-5">
-            <h4 className="text-xs font-bold uppercase tracking-[0.25em] text-[#C9A86A]">
+            <h3 className="text-xs font-bold uppercase tracking-[0.25em] text-[#C9A86A]">
               Help
-            </h4>
+            </h3>
             <ul className="space-y-3">
               {footerLinks.help.map((link) => (
                 <li key={link.href}>
@@ -171,9 +171,9 @@ export async function StoreFooter() {
 
           {/* Legal Column */}
           <div className="space-y-5">
-            <h4 className="text-xs font-bold uppercase tracking-[0.25em] text-[#C9A86A]">
+            <h3 className="text-xs font-bold uppercase tracking-[0.25em] text-[#C9A86A]">
               Company
-            </h4>
+            </h3>
             <ul className="space-y-3">
               {footerLinks.legal.map((link) => (
                 <li key={link.href}>

@@ -8,12 +8,15 @@ import { ADMIN_ROLES, MANAGER_ROLES } from "@/lib/constants/auth";
 import { useCartStore } from "@/stores/use-cart-store";
 import { useWishlistStore } from "@/stores/use-wishlist-store";
 import { useState, useEffect } from "react";
+import { useSessionContext } from "@/providers/session-provider";
 
-export function MobileBottomNav({ user }: { user: any }) {
+export function MobileBottomNav({ user: propUser }: { user?: any }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const { cart } = useCartStore();
   const { wishlist } = useWishlistStore();
+  const { user: contextUser } = useSessionContext();
+  const user = propUser || contextUser;
 
   useEffect(() => {
     setMounted(true);
@@ -57,6 +60,7 @@ export function MobileBottomNav({ user }: { user: any }) {
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
               className={`group inline-flex flex-col items-center justify-center px-2 py-1 transition-colors ${
                 isActive ? "text-[#1A1A1A]" : "text-gray-400 hover:text-[#1A1A1A]"
               }`}
@@ -89,6 +93,7 @@ export function MobileBottomNav({ user }: { user: any }) {
         {/* Profile Tab */}
         <Link
           href={accountHref}
+          aria-label={user ? "Profile" : "Login"}
           className={`group inline-flex flex-col items-center justify-center px-2 py-1 transition-colors ${
             pathname.includes("/account") || pathname === "/auth/login" || pathname.startsWith("/admin") || pathname.startsWith("/manager")
               ? "text-[#1A1A1A]"

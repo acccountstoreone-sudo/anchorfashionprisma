@@ -8,19 +8,15 @@ import { PromotionPopupBanner } from "@/components/marketing/PromotionPopupBanne
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { PromotionRepository } from "@/lib/repositories/marketing/promotion.repository";
 
-import { getServerSession } from "@/lib/auth/server";
-
-export const dynamic = "force-dynamic";
+import { getCachedCategories } from "@/lib/cache/catalog-cache";
 
 export default async function ShopLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = await getServerSession();
-
   const [categories, storeInfo, activePromotion] = await Promise.all([
-    CatalogRepository.getCategories().catch(() => []),
+    getCachedCategories().catch(() => []),
     getStoreInfo().catch(() => ({
       store_name: "Anchor Fashion Enterprise",
       store_description: "",
@@ -43,7 +39,6 @@ export default async function ShopLayout({
     free_shipping_threshold: "999",
   };
 
-  const safeUser = user ? JSON.parse(JSON.stringify(user)) : null;
   const safeCategories = Array.isArray(categories) ? categories : [];
 
   const orgJsonLd = {
@@ -70,11 +65,10 @@ export default async function ShopLayout({
         contactPhone={safeStoreInfo.phone}
         contactEmail={safeStoreInfo.email}
         announcementBar={safeStoreInfo.announcement_bar}
-        user={safeUser}
       />
       <main className="w-full flex-1 bg-background">{children}</main>
       <StoreFooter />
-      <MobileBottomNav user={safeUser} />
+      <MobileBottomNav />
       <FloatingPromotion />
       <PromotionPopupBanner initialPromotion={activePromotion} />
       <CartDrawer />

@@ -59,6 +59,11 @@ export function WhyChooseUs({ data }: WhyChooseUsProps) {
       ? content.benefits
       : DEFAULT_WHY_CHOOSE_US.benefits;
 
+  const safeImageUrl =
+    content.imageUrl && !content.imageUrl.includes("example.com")
+      ? content.imageUrl
+      : DEFAULT_WHY_CHOOSE_US.imageUrl;
+
   return (
     <section className="bg-white py-12 sm:py-16 md:py-24">
       <div className="container mx-auto px-4 md:px-6">
@@ -66,7 +71,7 @@ export function WhyChooseUs({ data }: WhyChooseUsProps) {
           {/* Left Side: Brand Image / Ethos */}
           <div className="relative aspect-[3/4] h-auto w-full overflow-hidden md:h-[500px] md:aspect-auto lg:h-[700px]">
             <Image
-              src={content.imageUrl || DEFAULT_WHY_CHOOSE_US.imageUrl}
+              src={safeImageUrl}
               alt={content.title || "The Anchor Fashion Difference"}
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"

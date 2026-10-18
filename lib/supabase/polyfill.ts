@@ -480,32 +480,41 @@ class QueryBuilder implements PromiseLike<any> {
         const productIds = rows.map((r) => r.id).filter(Boolean);
         if (productIds.length > 0) {
           if (this.selectCols.includes("variants")) {
-            const vars = (await prisma.$queryRawUnsafe(
-              `SELECT * FROM "variants" WHERE "product_id" = ANY($1::uuid[])`,
-              productIds
-            )) as any[];
-            const varMap = new Map<string, any[]>();
-            for (const v of vars) {
-              if (!varMap.has(v.product_id)) varMap.set(v.product_id, []);
-              varMap.get(v.product_id)!.push(serializePlain(v));
-            }
-            for (const row of rows) {
-              row.variants = varMap.get(row.id) || [];
-            }
+            try {
+              const vars = (await (prisma as any).variant.findMany({
+                where: { productId: { in: productIds } },
+              })) as any[];
+              const varMap = new Map<string, any[]>();
+              for (const v of vars) {
+                const pId = v.productId || v.product_id;
+                if (pId) {
+                  if (!varMap.has(pId)) varMap.set(pId, []);
+                  varMap.get(pId)!.push(serializePlain(v));
+                }
+              }
+              for (const row of rows) {
+                row.variants = varMap.get(row.id) || [];
+              }
+            } catch {}
           }
           if (this.selectCols.includes("product_media")) {
-            const mediaList = (await prisma.$queryRawUnsafe(
-              `SELECT * FROM "product_media" WHERE "product_id" = ANY($1::uuid[]) ORDER BY "sort_order" ASC`,
-              productIds
-            )) as any[];
-            const mediaMap = new Map<string, any[]>();
-            for (const m of mediaList) {
-              if (!mediaMap.has(m.product_id)) mediaMap.set(m.product_id, []);
-              mediaMap.get(m.product_id)!.push(serializePlain(m));
-            }
-            for (const row of rows) {
-              row.product_media = mediaMap.get(row.id) || [];
-            }
+            try {
+              const mediaList = (await (prisma as any).productMedia.findMany({
+                where: { productId: { in: productIds } },
+                orderBy: { displayOrder: "asc" },
+              })) as any[];
+              const mediaMap = new Map<string, any[]>();
+              for (const m of mediaList) {
+                const pId = m.productId || m.product_id;
+                if (pId) {
+                  if (!mediaMap.has(pId)) mediaMap.set(pId, []);
+                  mediaMap.get(pId)!.push(serializePlain(m));
+                }
+              }
+              for (const row of rows) {
+                row.product_media = mediaMap.get(row.id) || [];
+              }
+            } catch {}
           }
         }
       }

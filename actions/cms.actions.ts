@@ -5,6 +5,33 @@ import { CMSPage, CMSSection, CMSNavigation, CMSPageBlock, CMSMediaItem } from "
 import { revalidatePath } from "next/cache";
 import { invalidateHomepageCache } from "@/lib/cache/invalidate-catalog";
 import { CMSRepository } from "@/lib/repositories/cms.repository";
+import fs from "fs";
+import path from "path";
+
+function saveBase64ImageLocally(dataUrl: string | null | undefined, id: string): string | null {
+  if (!dataUrl) return null;
+  if (!dataUrl.startsWith("data:image/")) return dataUrl;
+  try {
+    const matches = dataUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+    if (!matches) return dataUrl;
+    const rawExt = matches[1].toLowerCase();
+    const ext = rawExt === "jpeg" ? "jpg" : rawExt.includes("png") ? "png" : rawExt.includes("webp") ? "webp" : "jpg";
+    const base64Data = matches[2];
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "banners");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const filename = `banner-${id}.${ext}`;
+    const filePath = path.join(uploadDir, filename);
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, Buffer.from(base64Data, "base64"));
+    }
+    return `/uploads/banners/${filename}`;
+  } catch (err) {
+    console.error("Error saving base64 banner:", err);
+    return dataUrl;
+  }
+}
 
 const cmsRepo = new CMSRepository();
 
@@ -429,11 +456,14 @@ function isBannerActive(b: any, now: Date): boolean {
 }
 
 function prismaRowToHeroSlide(b: any): HeroSlide {
+  const cleanImage = saveBase64ImageLocally(b.image_url, String(b.id)) || b.image_url || "/images/home/hero-banner.png";
+  const cleanMedia = b.media_url ? (saveBase64ImageLocally(b.media_url, `media-${b.id}`) || b.media_url) : cleanImage;
+
   return {
     id: b.id,
-    image_url: b.image_url,
-    media_url: b.media_url ?? b.image_url,
-    image: b.image_url,
+    image_url: cleanImage,
+    media_url: cleanMedia,
+    image: cleanImage,
     link_url: b.link_url,
     cta_url: b.link_url,
     ctaHref: b.link_url,
@@ -474,6 +504,7 @@ export async function getFeaturedPromoBanner(): Promise<FeaturedPromoBannerData>
     const banners = await cmsRepo.getBanners("promo");
     const promoBanner = banners.find((b) => isBannerActive(b, now));
     if (!promoBanner) return DEFAULT_PROMO_BANNER;
+    const cleanPromoImage = saveBase64ImageLocally(promoBanner.image_url, `promo-${promoBanner.id}`) || promoBanner.image_url || DEFAULT_PROMO_BANNER.imageUrl;
     return {
       id: promoBanner.id,
       title: promoBanner.title || DEFAULT_PROMO_BANNER.title,
@@ -481,7 +512,7 @@ export async function getFeaturedPromoBanner(): Promise<FeaturedPromoBannerData>
       description: promoBanner.description || DEFAULT_PROMO_BANNER.description,
       ctaText: promoBanner.cta_text || DEFAULT_PROMO_BANNER.ctaText,
       ctaLink: promoBanner.link_url || DEFAULT_PROMO_BANNER.ctaLink,
-      imageUrl: promoBanner.image_url || DEFAULT_PROMO_BANNER.imageUrl,
+      imageUrl: cleanPromoImage,
     };
   } catch {
     return DEFAULT_PROMO_BANNER;
