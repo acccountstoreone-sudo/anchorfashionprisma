@@ -215,31 +215,42 @@ export const CatalogRepository = {
    */
   async getProducts(params: ProductListParams) {
     try {
-      const where: any = {
-        status: "ACTIVE",
-        deletedAt: null,
-      };
+      const andClauses: any[] = [
+        { status: "ACTIVE" },
+        { deletedAt: null },
+      ];
 
       if (params.category) {
-        where.category = { slug: params.category };
+        const catSlug = params.category.toLowerCase().trim();
+        andClauses.push({
+          OR: [
+            { category: { slug: catSlug } },
+            { category: { parent: { slug: catSlug } } },
+          ],
+        });
       }
       if (params.brand) {
-        where.brand = { slug: params.brand };
+        andClauses.push({ brand: { slug: params.brand } });
       }
       if (params.minPrice !== undefined || params.maxPrice !== undefined) {
-        where.basePrice = {};
-        if (params.minPrice !== undefined) where.basePrice.gte = params.minPrice;
-        if (params.maxPrice !== undefined) where.basePrice.lte = params.maxPrice;
+        const priceFilter: any = {};
+        if (params.minPrice !== undefined) priceFilter.gte = params.minPrice;
+        if (params.maxPrice !== undefined) priceFilter.lte = params.maxPrice;
+        andClauses.push({ basePrice: priceFilter });
       }
       if (params.search && params.search.trim()) {
         const term = params.search.trim();
-        where.OR = [
-          { name: { contains: term, mode: "insensitive" } },
-          { description: { contains: term, mode: "insensitive" } },
-          { shortDescription: { contains: term, mode: "insensitive" } },
-          { sku: { contains: term, mode: "insensitive" } },
-        ];
+        andClauses.push({
+          OR: [
+            { name: { contains: term, mode: "insensitive" } },
+            { description: { contains: term, mode: "insensitive" } },
+            { shortDescription: { contains: term, mode: "insensitive" } },
+            { sku: { contains: term, mode: "insensitive" } },
+          ],
+        });
       }
+
+      const where: any = { AND: andClauses };
 
       let orderBy: any = { createdAt: "desc" };
       if (params.sortBy === "price_asc") {

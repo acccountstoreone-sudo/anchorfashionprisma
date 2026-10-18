@@ -85,7 +85,17 @@ export const getProducts = async (params?: {
 
   // Filter by category ID if it's a real database category ID
   if (params?.categoryId && !params.categoryId.startsWith("virtual-")) {
-    query = query.eq("category_id", params.categoryId);
+    const allCategories = await CatalogService.getCategories();
+    const childIds = (allCategories as any[])
+      .filter((c) => c.parentId === params.categoryId || c.parent_id === params.categoryId)
+      .map((c) => c.id);
+    const categoryIds = [params.categoryId, ...childIds];
+
+    if (categoryIds.length > 1) {
+      query = query.in("category_id", categoryIds);
+    } else {
+      query = query.eq("category_id", params.categoryId);
+    }
   } else if (slug) {
     if (slug === "sale") {
       query = query.not("sale_price", "is", null);
