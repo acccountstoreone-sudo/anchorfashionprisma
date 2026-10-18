@@ -139,31 +139,38 @@ export function FloatingPurchaseCard({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed left-0 right-0 top-0 z-50 hidden border-b border-gray-100 bg-white/95 px-6 py-2.5 shadow-md backdrop-blur-md transition-transform duration-300 animate-in slide-in-from-top-full lg:block">
-      <div className="container mx-auto flex max-w-6xl items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="relative h-11 w-9 overflow-hidden bg-gray-100">
+    <div className="fixed left-0 right-0 top-0 z-[60] hidden border-b border-zinc-200/80 bg-white/95 px-6 py-2.5 shadow-lg backdrop-blur-xl transition-all duration-300 animate-in slide-in-from-top-full lg:block">
+      <div className="container mx-auto flex max-w-7xl items-center justify-between">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="relative h-12 w-10 shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-50 shadow-xs">
             <Image
               src={productImage || "/images/placeholder.webp"}
               alt={productName}
               fill
-              sizes="40px"
-              className="object-cover"
+              sizes="48px"
+              className="object-cover object-center"
             />
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-[#1A1A1A]">{productName}</h3>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs font-bold text-[#1A1A1A]">
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-medium text-zinc-900 max-w-md">
+              {productName}
+            </h3>
+            <div className="flex items-baseline gap-2.5 mt-0.5">
+              <span className="text-xs font-bold text-zinc-950 font-sans">
                 {formatCurrency(productPrice)}
               </span>
-              {compareAtPrice && (
-                <span className="text-[11px] text-gray-400 line-through">
-                  {formatCurrency(compareAtPrice)}
-                </span>
+              {compareAtPrice && compareAtPrice > productPrice && (
+                <>
+                  <span className="text-[11px] text-zinc-400 line-through">
+                    {formatCurrency(compareAtPrice)}
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">
+                    {Math.round(((compareAtPrice - productPrice) / compareAtPrice) * 100)}% OFF
+                  </span>
+                </>
               )}
               {selectedVariantSku && (
-                <span className="text-[10px] uppercase tracking-wider text-gray-400">
+                <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-mono hidden xl:inline">
                   SKU: {selectedVariantSku}
                 </span>
               )}
@@ -171,9 +178,9 @@ export function FloatingPurchaseCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           {selectedVariantLabel && (
-            <span className="text-xs font-medium text-gray-600 bg-gray-50 px-2.5 py-1 rounded">
+            <span className="text-xs font-medium text-zinc-700 bg-zinc-100 border border-zinc-200/80 px-2.5 py-1 rounded-md">
               {selectedVariantLabel}
             </span>
           )}
@@ -183,9 +190,9 @@ export function FloatingPurchaseCard({
             onClick={handleAddToCart}
             disabled={isOutOfStock || isLoading || isBuyNowLoading}
             className={cn(
-              "border border-black bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-black transition-colors hover:bg-black hover:text-white",
+              "border border-zinc-900 bg-white px-5 py-2 text-xs font-bold uppercase tracking-wider text-zinc-900 transition-all hover:bg-zinc-900 hover:text-white rounded-md shadow-xs active:scale-95",
               isOutOfStock
-                ? "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400"
+                ? "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400 shadow-none"
                 : "",
               isLoading && "cursor-wait opacity-80"
             )}
@@ -198,9 +205,9 @@ export function FloatingPurchaseCard({
             onClick={handleBuyNow}
             disabled={isOutOfStock || isBuyNowLoading || isLoading}
             className={cn(
-              "bg-[#1A1A1A] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#C9A86A]",
+              "bg-[#111111] px-6 py-2 text-xs font-bold uppercase tracking-wider text-white transition-all hover:bg-[#C9A86A] rounded-md shadow-sm active:scale-95",
               isOutOfStock
-                ? "cursor-not-allowed bg-zinc-300 text-zinc-500"
+                ? "cursor-not-allowed bg-zinc-300 text-zinc-500 shadow-none"
                 : "",
               isBuyNowLoading && "cursor-wait opacity-80"
             )}

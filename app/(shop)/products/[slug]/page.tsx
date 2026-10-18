@@ -62,6 +62,10 @@ export default async function ProductDetailPage({
     });
     relatedProducts = (data || []).filter((p: any) => p.id !== product.id);
   }
+  if (relatedProducts.length === 0) {
+    const featured = await CatalogService.getFeaturedProducts(5);
+    relatedProducts = (featured || []).filter((p: any) => p.id !== product.id);
+  }
 
   // 3. Fetch real reviews
   const reviews = await ReviewRepository.getReviewsByProductId(product.id);

@@ -130,6 +130,79 @@ function calculateVariantStock(v: VariantData, fallbackStock: number = 0): numbe
   return fallbackStock;
 }
 
+const FASHION_COLOR_MAP: Record<string, string> = {
+  black: "#111111",
+  white: "#FFFFFF",
+  "off white": "#FAF9F6",
+  offwhite: "#FAF9F6",
+  ivory: "#FFFFF0",
+  cream: "#FFFDD0",
+  beige: "#F5F5DC",
+  camel: "#C19A6B",
+  khaki: "#C3B091",
+  tan: "#D2B48C",
+  brown: "#6E473B",
+  chocolate: "#3D2314",
+  grey: "#808080",
+  gray: "#808080",
+  "light grey": "#D3D3D3",
+  "dark grey": "#4A4A4A",
+  charcoal: "#333333",
+  anthracite: "#292F36",
+  navy: "#001F3F",
+  "navy blue": "#0A192F",
+  navyblue: "#0A192F",
+  midnight: "#191970",
+  "royal blue": "#4169E1",
+  blue: "#1E3A8A",
+  "sky blue": "#87CEEB",
+  teal: "#008080",
+  cyan: "#00FFFF",
+  turquoise: "#40E0D0",
+  green: "#1B4D3E",
+  "forest green": "#228B22",
+  olive: "#556B2F",
+  "olive green": "#556B2F",
+  emerald: "#50C878",
+  sage: "#9CAF88",
+  mint: "#98FF98",
+  red: "#C41E3A",
+  crimson: "#DC143C",
+  maroon: "#800000",
+  burgundy: "#800020",
+  wine: "#722F37",
+  pink: "#FFC0CB",
+  "dusty pink": "#DDA0DD",
+  blush: "#DE5D83",
+  rose: "#FF007F",
+  "rose gold": "#B76E79",
+  gold: "#D4AF37",
+  silver: "#C0C0C0",
+  yellow: "#EAB308",
+  mustard: "#FFDB58",
+  orange: "#EA580C",
+  rust: "#B7410E",
+  copper: "#B87333",
+  purple: "#6B21A8",
+  lavender: "#E6E6FA",
+  plum: "#8E4585",
+};
+
+function getFashionColorHex(colorName: string): string {
+  const normalized = colorName.toLowerCase().trim();
+  if (FASHION_COLOR_MAP[normalized]) {
+    return FASHION_COLOR_MAP[normalized];
+  }
+  const stripped = normalized.replace(/[^a-z]/g, "");
+  if (FASHION_COLOR_MAP[stripped]) {
+    return FASHION_COLOR_MAP[stripped];
+  }
+  if (colorName.startsWith("#")) {
+    return colorName;
+  }
+  return stripped;
+}
+
 export function ProductVariantSelector({
   productId,
   baseStockQuantity = 0,
@@ -382,17 +455,22 @@ export function ProductVariantSelector({
     <div className="space-y-6">
       {/* Price & SKU Bar */}
       <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-gray-100 pb-4">
-        <div className="flex items-baseline gap-3">
-          <span className="text-3xl font-semibold tracking-tight text-gray-950">
+        <div className="flex flex-wrap items-baseline gap-3">
+          <span className="text-3xl font-semibold tracking-tight text-gray-950 font-sans">
             {formatCurrency(effectivePrice)}
           </span>
-          {compareAtPrice && (
-            <span className="text-lg text-gray-400 line-through">
-              {formatCurrency(compareAtPrice)}
-            </span>
+          {compareAtPrice && compareAtPrice > effectivePrice && (
+            <>
+              <span className="text-lg text-gray-400 line-through">
+                {formatCurrency(compareAtPrice)}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200/70 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
+                Save {formatCurrency(compareAtPrice - effectivePrice)} ({Math.round(((compareAtPrice - effectivePrice) / compareAtPrice) * 100)}% OFF)
+              </span>
+            </>
           )}
           {isFlashActive && (
-            <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-700 uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-800 uppercase tracking-wider">
               <Zap className="h-3 w-3 fill-amber-500 text-amber-500" />
               Flash Deal
             </span>
@@ -402,27 +480,33 @@ export function ProductVariantSelector({
         {/* Dynamic SKU Display */}
         {currentSku && (
           <div className="text-xs font-medium tracking-wider text-gray-400 uppercase">
-            SKU: <span className="text-gray-700">{currentSku}</span>
+            SKU: <span className="text-gray-700 font-mono">{currentSku}</span>
           </div>
         )}
       </div>
 
-      {/* Stock Indicator Status */}
-      <div className="flex items-center gap-2">
+      {/* Stock & Delivery Indicator Status */}
+      <div className="flex flex-wrap items-center gap-3">
         {isOutOfStock ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">
             <span className="h-2 w-2 rounded-full bg-zinc-400" />
             Out of Stock
           </span>
         ) : isLowStock ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200/60 px-3 py-1 text-xs font-semibold text-amber-800">
             <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-            Low Stock — Only {currentStock} left
+            Low Stock — Only {currentStock} left in stock
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/60 px-3 py-1 text-xs font-semibold text-emerald-800">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            In Stock
+            In Stock • Ready to Dispatch
+          </span>
+        )}
+
+        {effectivePrice >= 999 && !isOutOfStock && (
+          <span className="inline-flex items-center gap-1 text-xs text-gray-500 font-medium">
+            🚚 Free Express Shipping
           </span>
         )}
       </div>
@@ -496,7 +580,7 @@ export function ProductVariantSelector({
 
                 if (isColorDim) {
                   // Premium Color Swatch
-                  const colorHex = val.toLowerCase().replace(/[^a-z]/g, "");
+                  const colorHex = getFashionColorHex(val);
                   return (
                     <button
                       key={val}
@@ -514,16 +598,16 @@ export function ProductVariantSelector({
                             : ""
                       }`}
                       className={cn(
-                        "relative flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2",
+                        "relative flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2",
                         isSelected
-                          ? "border-black shadow-md scale-110"
+                          ? "border-black shadow-md scale-110 ring-2 ring-[#C9A86A]/40"
                           : isAvailableCombination
-                            ? "border-transparent ring-1 ring-gray-200 hover:ring-gray-400 hover:scale-110"
+                            ? "border-transparent ring-1 ring-gray-200 hover:ring-gray-400 hover:scale-105"
                             : "cursor-not-allowed border-transparent opacity-40 grayscale"
                       )}
                     >
                       <span
-                        className="h-full w-full rounded-full border border-black/10 shadow-inner"
+                        className="h-full w-full rounded-full border border-black/15 shadow-inner"
                         style={{ backgroundColor: colorHex }}
                       />
                       {/* Checkmark for selected */}

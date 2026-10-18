@@ -18,11 +18,9 @@ const nextConfig: NextConfig = {
   },
 
   experimental: {
+    turbopackFileSystemCacheForBuild: true,
     optimizePackageImports: [
-      "lucide-react",
       "framer-motion",
-      "@radix-ui/react-icons",
-      "recharts",
     ],
   },
 

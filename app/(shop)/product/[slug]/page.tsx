@@ -77,6 +77,10 @@ export default async function ProductDetailPage({
       });
       relatedProducts = (data || []).filter((p: any) => p.id !== product.id);
     }
+    if (relatedProducts.length === 0) {
+      const featured = await CatalogService.getFeaturedProducts(5);
+      relatedProducts = (featured || []).filter((p: any) => p.id !== product.id);
+    }
   } catch (err) {
     console.warn("Could not fetch related products:", err);
   }

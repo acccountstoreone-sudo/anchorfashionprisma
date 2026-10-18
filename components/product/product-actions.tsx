@@ -206,7 +206,7 @@ export function ProductActions({
           {/* Quantity Stepper */}
           <div
             className={cn(
-              "flex h-[52px] w-full sm:w-36 items-center justify-between border border-gray-200 bg-white transition-opacity",
+              "flex h-[54px] w-full sm:w-36 items-center justify-between rounded-xl border border-zinc-200/90 bg-white shadow-xs transition-all",
               effectiveDisabled ? "opacity-50 pointer-events-none" : ""
             )}
             role="group"
@@ -217,12 +217,12 @@ export function ProductActions({
               onClick={handleDecrease}
               disabled={effectiveDisabled || quantity <= 1}
               aria-label="Decrease quantity"
-              className="flex h-full w-12 items-center justify-center text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-full w-12 items-center justify-center text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-black rounded-l-xl disabled:cursor-not-allowed disabled:opacity-30"
             >
               <Minus className="h-4 w-4" />
             </button>
             <span
-              className="flex-1 text-center text-sm font-semibold text-zinc-900 select-none"
+              className="flex-1 text-center text-sm font-semibold text-zinc-900 select-none font-mono"
               aria-live="polite"
             >
               {quantity}
@@ -232,7 +232,7 @@ export function ProductActions({
               onClick={handleIncrease}
               disabled={effectiveDisabled || quantity >= maxQuantity}
               aria-label="Increase quantity"
-              className="flex h-full w-12 items-center justify-center text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-black disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-full w-12 items-center justify-center text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-black rounded-r-xl disabled:cursor-not-allowed disabled:opacity-30"
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -244,14 +244,14 @@ export function ProductActions({
             onClick={handleAddToCart}
             disabled={effectiveDisabled || isCartLoading || isBuyNowLoading}
             className={cn(
-              "group flex h-[52px] flex-1 items-center justify-center gap-2 border border-black bg-white px-6 text-[13px] font-bold uppercase tracking-[0.15em] text-black transition-all",
+              "group flex h-[54px] flex-1 items-center justify-center gap-2.5 rounded-xl border-2 border-zinc-950 bg-white px-6 text-[13px] font-bold uppercase tracking-[0.15em] text-zinc-950 shadow-sm transition-all",
               effectiveDisabled
-                ? "cursor-not-allowed border-zinc-200 bg-zinc-50 text-zinc-400"
-                : "hover:bg-black hover:text-white active:scale-[0.98]",
+                ? "cursor-not-allowed border-zinc-200 bg-zinc-50 text-zinc-400 shadow-none"
+                : "hover:bg-zinc-950 hover:text-white active:scale-[0.98]",
               isCartLoading ? "cursor-wait opacity-80" : ""
             )}
           >
-            <ShoppingBag className="h-[18px] w-[18px] transition-transform group-hover:scale-110" strokeWidth={1.5} />
+            <ShoppingBag className="h-[18px] w-[18px] transition-transform group-hover:scale-110" strokeWidth={1.75} />
             <span>
               {isCartLoading
                 ? "Adding..."
@@ -267,12 +267,12 @@ export function ProductActions({
             onClick={handleToggleWishlist}
             disabled={isWishlistLoading}
             aria-label={isWished ? "Remove from wishlist" : "Add to wishlist"}
-            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center border border-gray-200 transition-colors hover:border-black bg-white"
+            className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-xl border border-zinc-200/90 transition-all hover:border-black bg-white shadow-xs active:scale-95"
           >
             <Heart
               className={cn(
                 "h-5 w-5 transition-transform hover:scale-110",
-                isWished ? "fill-[#E50000] text-[#E50000]" : "text-black hover:text-[#E50000]"
+                isWished ? "fill-[#E50000] text-[#E50000]" : "text-zinc-900 hover:text-[#E50000]"
               )}
               strokeWidth={1.5}
             />
@@ -285,10 +285,10 @@ export function ProductActions({
           onClick={handleBuyNow}
           disabled={effectiveDisabled || isBuyNowLoading || isCartLoading}
           className={cn(
-            "group flex h-[56px] w-full items-center justify-center gap-2.5 px-8 text-[13px] font-bold uppercase tracking-[0.2em] text-white shadow-md transition-all",
+            "group flex h-[56px] w-full items-center justify-center gap-2.5 rounded-xl px-8 text-[13px] font-bold uppercase tracking-[0.2em] text-white shadow-md transition-all",
             effectiveDisabled
               ? "cursor-not-allowed bg-zinc-300 text-zinc-500 shadow-none"
-              : "bg-[#111111] hover:bg-[#C9A86A] active:scale-[0.99] hover:shadow-lg",
+              : "bg-gradient-to-r from-[#111111] via-[#1a1a1a] to-[#111111] hover:from-[#C9A86A] hover:via-[#D4AF37] hover:to-[#B59155] active:scale-[0.99] hover:shadow-xl",
             isBuyNowLoading ? "cursor-wait opacity-80" : ""
           )}
         >
@@ -316,29 +316,29 @@ export function ProductActions({
       {/* Sticky Mobile Bottom Bar: Dual Actions */}
       <div
         className={cn(
-          "fixed bottom-0 left-0 right-0 z-50 transform border-t border-gray-100 bg-white/95 backdrop-blur-md px-4 py-2.5 shadow-2xl transition-transform duration-300 md:hidden",
+          "fixed bottom-0 left-0 right-0 z-50 transform border-t border-zinc-200/80 bg-white/95 backdrop-blur-xl px-4 py-2.5 shadow-2xl transition-transform duration-300 md:hidden",
           "pb-[max(env(safe-area-inset-bottom),0.75rem)]"
         )}
       >
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 overflow-hidden min-w-0 max-w-[35%]">
+          <div className="flex items-center gap-2.5 overflow-hidden min-w-0 max-w-[36%]">
             {productImage && (
-              <div className="relative h-11 w-9 shrink-0 overflow-hidden bg-gray-100">
+              <div className="relative h-11 w-9 shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-50">
                 <Image
                   src={productImage}
                   alt={productName || "Product"}
                   fill
-                  className="object-cover"
+                  className="object-cover object-center"
                   sizes="40px"
                 />
               </div>
             )}
             <div className="flex flex-col min-w-0">
-              <span className="truncate text-[11px] font-medium text-gray-900 leading-tight">
+              <span className="truncate text-[11px] font-medium text-zinc-900 leading-tight">
                 {productName}
               </span>
               {productPrice !== undefined && (
-                <span className="text-xs font-bold text-[#1A1A1A]">
+                <span className="text-xs font-bold text-zinc-950 font-sans mt-0.5">
                   {formatCurrency(productPrice)}
                 </span>
               )}
@@ -349,10 +349,10 @@ export function ProductActions({
             <button
               type="button"
               className={cn(
-                "flex h-11 flex-1 items-center justify-center border border-black bg-white px-3 text-[10px] font-bold uppercase tracking-wider text-black transition-colors",
+                "flex h-11 flex-1 items-center justify-center rounded-lg border border-zinc-900 bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-zinc-900 transition-all shadow-xs active:scale-95",
                 effectiveDisabled
-                  ? "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400"
-                  : "hover:bg-gray-50",
+                  ? "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400 shadow-none"
+                  : "hover:bg-zinc-50",
                 isCartLoading ? "cursor-wait opacity-80" : ""
               )}
               onClick={handleAddToCart}
@@ -364,9 +364,9 @@ export function ProductActions({
             <button
               type="button"
               className={cn(
-                "flex h-11 flex-1 items-center justify-center bg-[#1A1A1A] px-3 text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#C9A86A]",
+                "flex h-11 flex-1 items-center justify-center rounded-lg bg-[#111111] px-3 text-[11px] font-bold uppercase tracking-wider text-white transition-all shadow-sm hover:bg-[#C9A86A] active:scale-95",
                 effectiveDisabled
-                  ? "cursor-not-allowed bg-zinc-300 text-zinc-500"
+                  ? "cursor-not-allowed bg-zinc-300 text-zinc-500 shadow-none"
                   : "",
                 isBuyNowLoading ? "cursor-wait opacity-80" : ""
               )}
