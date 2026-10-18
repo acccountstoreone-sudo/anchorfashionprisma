@@ -9,10 +9,10 @@ export function FloatingPromotion() {
   const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
-    // Show after 5 seconds
+    // Show after 10 seconds
     const timer = setTimeout(() => {
       if (!isDismissed) setIsVisible(true);
-    }, 5000);
+    }, 10000);
     return () => clearTimeout(timer);
   }, [isDismissed]);
 

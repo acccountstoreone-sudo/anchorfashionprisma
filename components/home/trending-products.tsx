@@ -3,20 +3,16 @@
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
-import Autoplay from "embla-carousel-autoplay";
 import { useCallback } from "react";
 import { ProductCard } from "@/components/product/product-card";
 import { jost } from "@/lib/fonts";
 
 export function TrendingProducts({ products }: { products: any[] }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel(
-    {
-      align: "start",
-      loop: false,
-      dragFree: true,
-    },
-    [Autoplay({ delay: 5500, stopOnInteraction: true })]
-  );
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: "start",
+    loop: false,
+    dragFree: true,
+  });
 
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();

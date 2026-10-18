@@ -110,7 +110,7 @@ export function HomeHero({ slides: propSlides }: { slides?: HeroSlide[] }) {
   // Auto-play (only when more than 1 slide)
   useEffect(() => {
     if (slides.length <= 1) return;
-    const timer = setInterval(next, 6500); // slightly longer reading time
+    const timer = setInterval(next, 9000); // 9 seconds reading time
     return () => clearInterval(timer);
   }, [next, slides.length]);
 
