@@ -55,16 +55,31 @@ export function ProductQuickView({
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isAdding, setIsAdding] = useState(false);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
-  // Extract images
-  const mediaList =
-    product.product_media && product.product_media.length > 0
-      ? product.product_media.map((m: any) => m.url)
-      : product.images && product.images.length > 0
-        ? product.images.map((img: any) => img.url || img)
-        : [product.thumbnail || "/images/placeholder.webp"];
+  // Reset states when product changes
+  React.useEffect(() => {
+    setActiveImageIndex(0);
+    setFailedImages({});
+  }, [product?.id, isOpen]);
 
-  const currentImage = mediaList[activeImageIndex] || mediaList[0];
+  // Extract images robustly across all data shapes
+  const rawMediaList: string[] = [
+    ...(Array.isArray(product?.product_media) ? product.product_media.map((m: any) => m?.url || m) : []),
+    ...(Array.isArray(product?.media) ? product.media.map((m: any) => m?.url || m) : []),
+    ...(Array.isArray(product?.galleryUrls) ? product.galleryUrls : []),
+    ...(Array.isArray(product?.images) ? product.images.map((img: any) => img?.url || img) : []),
+    product?.imageUrl,
+    product?.thumbnail,
+  ].filter((url): url is string => typeof url === "string" && url.trim().length > 0);
+
+  const mediaList = Array.from(new Set(rawMediaList));
+  if (mediaList.length === 0) {
+    mediaList.push("/images/placeholder.webp");
+  }
+
+  const rawActive = mediaList[activeImageIndex] || mediaList[0];
+  const currentImage = failedImages[rawActive] ? "/images/placeholder.webp" : rawActive;
 
   // Pricing calculation
   const price = Number(product.sale_price ?? product.base_price ?? product.price ?? 0);
@@ -192,11 +207,14 @@ export function ProductQuickView({
             <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-white shadow-inner">
               <Image
                 src={currentImage}
-                alt={product.name}
+                alt={product.name || "Product image"}
                 fill
                 priority
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover object-center transition-all duration-300"
+                onError={() => {
+                  setFailedImages((prev) => ({ ...prev, [rawActive]: true }));
+                }}
               />
 
               {/* Badges */}
@@ -231,24 +249,31 @@ export function ProductQuickView({
             {/* Thumbnail Strip */}
             {mediaList.length > 1 && (
               <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-                {mediaList.map((thumbUrl: string, idx: number) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImageIndex(idx)}
-                    className={`relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
-                      activeImageIndex === idx
-                        ? "border-black shadow-sm"
-                        : "border-transparent opacity-60 hover:opacity-100"
-                    }`}
-                  >
-                    <Image
-                      src={thumbUrl}
-                      alt={`Thumbnail ${idx + 1}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </button>
-                ))}
+                {mediaList.map((thumbUrl: string, idx: number) => {
+                  const thumbDisplay = failedImages[thumbUrl] ? "/images/placeholder.webp" : thumbUrl;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={`relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all bg-zinc-100 ${
+                        activeImageIndex === idx
+                          ? "border-black shadow-sm"
+                          : "border-transparent opacity-60 hover:opacity-100"
+                      }`}
+                    >
+                      <Image
+                        src={thumbDisplay}
+                        alt={`Thumbnail ${idx + 1}`}
+                        fill
+                        sizes="56px"
+                        className="object-cover"
+                        onError={() => {
+                          setFailedImages((prev) => ({ ...prev, [thumbUrl]: true }));
+                        }}
+                      />
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>

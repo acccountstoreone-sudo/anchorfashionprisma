@@ -30,18 +30,22 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Extract images: primary and secondary (for lookbook hover transition)
-  const mediaList = product.product_media || product.images || [];
+  const mediaList = product.product_media || product.media || product.images || [];
   const primaryMedia =
-    mediaList.find((m: any) => m.is_primary) ||
-    mediaList[0];
+    (Array.isArray(mediaList) ? mediaList.find((m: any) => m?.is_primary || m?.isPrimary) : null) ||
+    (Array.isArray(mediaList) ? mediaList[0] : null);
 
   const primaryImage =
     primaryMedia?.url ||
+    product.imageUrl ||
     product.thumbnail ||
     (typeof primaryMedia === "string" ? primaryMedia : null) ||
     "/images/placeholder.webp";
+
+  const displayImage = imageError ? "/images/placeholder.webp" : primaryImage;
 
   // Extract Pricing & Discounts
   const price = Number(product.sale_price ?? product.base_price ?? product.price ?? 0);
@@ -189,11 +193,12 @@ export function ProductCard({ product, className }: ProductCardProps) {
           >
             {/* Primary Image with smooth zoom */}
             <Image
-              src={primaryImage}
-              alt={product.name}
+              src={displayImage}
+              alt={product.name || "Product"}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className="object-cover object-center transition-transform duration-500 ease-out group-hover:scale-105"
+              onError={() => setImageError(true)}
             />
           </Link>
 
