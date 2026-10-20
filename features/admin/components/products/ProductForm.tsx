@@ -6,8 +6,9 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Plus, Trash2, Upload, ImagePlus, X, Loader2 } from "lucide-react";
+import { Plus, Trash2, Upload, ImagePlus, X, Loader2, Sparkles } from "lucide-react";
 import Image from "next/image";
+import { InventoryPickerModal } from "@/components/admin/inventory/InventoryPickerModal";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -78,6 +79,33 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [brands, setBrands] = useState<BrandOption[]>([]);
   const [tags, setTags] = useState<TagOption[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const handleSelectInventoryProduct = (item: any) => {
+    form.setValue("name", item.name, { shouldValidate: true });
+    form.setValue("slug", item.slug, { shouldValidate: true });
+    if (item.categoryId) form.setValue("categoryId", item.categoryId, { shouldValidate: true });
+    form.setValue("basePrice", item.basePrice, { shouldValidate: true });
+    if (item.costPrice !== undefined) form.setValue("costPrice", item.costPrice, { shouldValidate: true });
+    if (item.sku) form.setValue("sku", item.sku, { shouldValidate: true });
+    if (item.barcode) form.setValue("barcode", item.barcode, { shouldValidate: true });
+    form.setValue("stockQuantity", item.totalAvailable || 0, { shouldValidate: true });
+
+    if (item.variants && item.variants.length > 0) {
+      const mapped = item.variants.map((v: any) => ({
+        sku: v.sku,
+        barcode: v.barcode || "",
+        priceOverride: v.price || item.basePrice,
+        costPrice: v.cost || item.costPrice,
+        stockQuantity: v.available || 0,
+        attributes: v.attributes || {},
+        isActive: true,
+      }));
+      form.setValue("variants", mapped, { shouldValidate: true });
+    }
+
+    toast.success(`Loaded "${item.name}" from inventory with ${item.variantCount || item.variants?.length || 0} variants! Add description, images, and click Publish.`);
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -380,6 +408,33 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             </Button>
           </div>
         </div>
+
+        {/* Load from Inventory Master Quick Banner */}
+        {!initialData && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/25 rounded-2xl gap-4 shadow-sm">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                <span className="font-bold text-sm text-foreground">
+                  Already added this item into Inventory? (ইনভেন্টরি থেকে দ্রুত লোড করুন)
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Load colors, sizes, barcodes, SKU, and stock counts directly from your Inventory intake in 1-click.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              className="bg-amber-600 hover:bg-amber-500 text-white shrink-0 gap-1.5 shadow-sm cursor-pointer"
+              onClick={() => setPickerOpen(true)}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Select from Inventory
+            </Button>
+          </div>
+        )}
 
         <div className="grid gap-6 md:grid-cols-3 pb-8">
           {/* Main Info Column */}
@@ -1120,6 +1175,13 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
           </div>
         </div>
       </form>
+
+      {/* Select from Inventory Master Modal */}
+      <InventoryPickerModal
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelectProduct={handleSelectInventoryProduct}
+      />
     </Form>
   );
 }

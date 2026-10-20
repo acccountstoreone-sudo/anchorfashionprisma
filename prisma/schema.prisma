@@ -302,6 +302,7 @@ model Variant {
   poItems         PurchaseOrderItem[]
   returnItems     ReturnItem[]
   stockMovements  StockMovement[]
+  branchTransfers BranchTransfer[]
   product         Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
@@ -328,6 +329,7 @@ model Warehouse {
   pickLists       PickList[]
   purchaseOrders  PurchaseOrder[]
   stockMovements  StockMovement[]
+  branchTransfers BranchTransfer[]
   warehouse_zones warehouse_zones[]
 
   @@map("warehouses")
@@ -1122,13 +1124,41 @@ model blog_tags {
 }
 
 model branches {
-  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name       String    @db.VarChar(255)
-  code       String?   @db.VarChar(50)
-  address    String?
-  phone      String?   @db.VarChar(50)
-  is_active  Boolean?  @default(true)
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String           @db.VarChar(255)
+  code            String?          @db.VarChar(50)
+  address         String?
+  phone           String?          @db.VarChar(50)
+  is_active       Boolean?         @default(true)
+  created_at      DateTime?        @default(now()) @db.Timestamptz(6)
+  branchTransfers BranchTransfer[]
+}
+
+model BranchTransfer {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transferNumber      String    @unique @map("transfer_number") @db.VarChar(50)
+  sourceWarehouseId   String    @map("source_warehouse_id") @db.Uuid
+  destinationBranchId String    @map("destination_branch_id") @db.Uuid
+  variantId           String    @map("variant_id") @db.Uuid
+  quantity            Int
+  status              String    @default("DISPATCHED") @db.VarChar(50)
+  unitCost            Decimal?  @map("unit_cost") @db.Decimal(12, 2)
+  unitPrice           Decimal?  @map("unit_price") @db.Decimal(12, 2)
+  notes               String?
+  dispatchedBy        String?   @map("dispatched_by") @db.Uuid
+  dispatchedAt        DateTime? @default(now()) @map("dispatched_at") @db.Timestamptz(6)
+  receivedAt          DateTime? @map("received_at") @db.Timestamptz(6)
+  createdAt           DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  warehouse           Warehouse @relation(fields: [sourceWarehouseId], references: [id], onDelete: Cascade)
+  branch              branches  @relation(fields: [destinationBranchId], references: [id], onDelete: Cascade)
+  variant             Variant   @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([destinationBranchId], map: "idx_branch_transfers_branch")
+  @@index([variantId], map: "idx_branch_transfers_variant")
+  @@index([createdAt(sort: Desc)], map: "idx_branch_transfers_created_at")
+  @@map("branch_transfers")
 }
 
 model campaign_audiences {
