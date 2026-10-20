@@ -863,18 +863,32 @@ export function createClient() {
           }
         }
 
-        try {
-          const res = (await prisma.$queryRawUnsafe(
-            `SELECT * FROM "${fnName}"(${placeholders.join(", ")})`,
-            ...params
-          )) as any[];
-          return { data: serializePlain(res), error: null };
-        } catch (dbErr: any) {
-          // If stored function execution failed, evaluate Prisma fallback
-          console.warn(
-            `[polyfill.rpc] DB call to "${fnName}" noticed, checking fallback:`,
-            dbErr.message
-          );
+        const KNOWN_PRISMA_RPCS = [
+          "consume_coupon_atomic",
+          "release_coupon_atomic",
+          "release_order_inventory",
+          "confirm_order_inventory",
+          "reserve_order_inventory",
+          "atomic_reserve_stock",
+          "atomic_release_stock",
+          "release_stock",
+          "atomic_reduce_stock",
+          "reduce_stock",
+          "reverse_loyalty_points",
+          "redeem_loyalty_points",
+          "increment_label_print_count",
+        ];
+
+        if (!KNOWN_PRISMA_RPCS.includes(fnName)) {
+          try {
+            const res = (await prisma.$queryRawUnsafe(
+              `SELECT * FROM "${fnName}"(${placeholders.join(", ")})`,
+              ...params
+            )) as any[];
+            return { data: serializePlain(res), error: null };
+          } catch (dbErr: any) {
+            // If stored function execution failed, evaluate Prisma fallback
+          }
         }
 
         // Stored procedure Prisma fallback for robust high-traffic resilience
@@ -941,7 +955,22 @@ export function createClient() {
             return { data: true, error: null };
           }
         } else if (fnName === "consume_coupon_atomic") {
-          const couponId = args.p_coupon_id || args.coupon_id;
+          const couponCode = args.p_coupon_code || args.coupon_code || args.code;
+          let couponId = args.p_coupon_id || args.coupon_id;
+          const customerId = args.p_customer_id || args.customer_id;
+          const orderId = args.p_order_id || args.order_id;
+          const discountApplied = Number(args.p_discount_applied || args.discount_applied || 0);
+
+          if (!couponId && couponCode) {
+            const found: any = await prisma.$queryRawUnsafe(
+              `SELECT id FROM coupons WHERE UPPER(code) = UPPER($1) LIMIT 1`,
+              couponCode.trim()
+            );
+            if (found && found.length > 0) {
+              couponId = found[0].id;
+            }
+          }
+
           if (couponId) {
             await prisma.$executeRawUnsafe(
               `UPDATE coupons 
@@ -950,6 +979,48 @@ export function createClient() {
                WHERE id = $1::uuid`,
               couponId
             );
+
+            try {
+              await prisma.$executeRawUnsafe(
+                `INSERT INTO coupon_usages (id, coupon_id, order_id, customer_id, discount_amount, created_at)
+                 VALUES (gen_random_uuid(), $1::uuid, $2::uuid, $3::uuid, $4::numeric, NOW())`,
+                couponId,
+                orderId || null,
+                customerId || null,
+                discountApplied
+              );
+            } catch (usageErr) {
+              console.warn("Coupon usage record warning:", usageErr);
+            }
+
+            return { data: true, error: null };
+          }
+          return { data: true, error: null };
+        } else if (fnName === "release_coupon_atomic") {
+          const orderId = args.p_order_id || args.order_id;
+          if (orderId) {
+            try {
+              const usages: any = await prisma.$queryRawUnsafe(
+                `SELECT coupon_id FROM coupon_usages WHERE order_id = $1::uuid`,
+                orderId
+              );
+              if (usages && usages.length > 0) {
+                const couponId = usages[0].coupon_id;
+                await prisma.$executeRawUnsafe(
+                  `UPDATE coupons 
+                   SET used_count = GREATEST(0, COALESCE(used_count, 1) - 1),
+                       updated_at = NOW()
+                   WHERE id = $1::uuid`,
+                  couponId
+                );
+                await prisma.$executeRawUnsafe(
+                  `DELETE FROM coupon_usages WHERE order_id = $1::uuid`,
+                  orderId
+                );
+              }
+            } catch (releaseErr) {
+              console.warn("Coupon release notice:", releaseErr);
+            }
             return { data: true, error: null };
           }
         } else if (

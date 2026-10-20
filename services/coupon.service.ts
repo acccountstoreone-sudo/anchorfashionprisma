@@ -24,7 +24,7 @@ export class CouponService {
   ): Promise<CouponValidationResult> {
     try {
       if (!code || !code.trim()) {
-        return { isValid: false, discount: 0, error: "Empty coupon code" };
+        return { isValid: false, discount: 0, error: "Please enter a valid coupon code" };
       }
 
       const supabase = this.getAdminClient();
@@ -37,32 +37,57 @@ export class CouponService {
         .single();
 
       if (couponError || !couponData) {
-        return { isValid: false, discount: 0, error: "INVALID_COUPON" };
+        return { isValid: false, discount: 0, error: "Coupon code not found or invalid" };
       }
 
-      const coupon = couponData as CouponRecord;
+      // Extract unified properties supporting both snake_case DB columns and camelCase/alternate aliases
+      const isActive = couponData.is_active ?? couponData.isActive ?? true;
+      const discountType = (couponData.discount_type || couponData.discountType || "PERCENTAGE").toUpperCase();
+      const discountValue = Number(couponData.discount_value ?? couponData.value ?? couponData.discountValue ?? 0);
+      const minOrderAmount = couponData.min_order_amount ?? couponData.min_order_value ?? couponData.minOrderAmount ?? null;
+      const maxDiscount = couponData.max_discount ?? couponData.maxDiscount ?? null;
+      const usageLimit = couponData.usage_limit ?? couponData.usageLimit ?? null;
+      const usedCount = Number(couponData.used_count ?? couponData.usedCount ?? 0);
+      const startDate = couponData.start_date ?? couponData.valid_from ?? couponData.startDate ?? null;
+      const endDate = couponData.end_date ?? couponData.valid_until ?? couponData.endDate ?? null;
 
       // 2. Validate Active State & Expiry
-      if (!coupon.is_active) {
-        return { isValid: false, discount: 0, error: "COUPON_INACTIVE" };
+      if (!isActive) {
+        return { isValid: false, discount: 0, error: "This coupon is currently inactive" };
       }
 
       const now = new Date();
-      const validFrom = new Date(coupon.valid_from);
-      const validUntil = new Date(coupon.valid_until);
+      if (startDate) {
+        const validFrom = new Date(startDate);
+        if (!isNaN(validFrom.getTime()) && now < validFrom) {
+          return { isValid: false, discount: 0, error: "This coupon is not active yet" };
+        }
+      }
 
-      if (now < validFrom || now > validUntil) {
-        return { isValid: false, discount: 0, error: "COUPON_EXPIRED" };
+      if (endDate) {
+        const validUntil = new Date(endDate);
+        if (!isNaN(validUntil.getTime()) && now > validUntil) {
+          return { isValid: false, discount: 0, error: "This coupon has expired" };
+        }
       }
 
       // 3. Validate Minimum Order Value
-      if (coupon.min_order_value && subtotal < coupon.min_order_value) {
-        return { isValid: false, discount: 0, error: `MINIMUM_ORDER_NOT_MET` };
+      if (minOrderAmount !== null && minOrderAmount !== undefined) {
+        const minVal = Number(minOrderAmount);
+        if (subtotal < minVal) {
+          return {
+            isValid: false,
+            discount: 0,
+            error: `Minimum order amount of ৳${minVal.toLocaleString()} required for this coupon`,
+          };
+        }
       }
 
       // 4. Validate Global Usage Limit
-      if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
-        return { isValid: false, discount: 0, error: "COUPON_USAGE_LIMIT_REACHED" };
+      if (usageLimit !== null && usageLimit !== undefined && usageLimit > 0) {
+        if (usedCount >= usageLimit) {
+          return { isValid: false, discount: 0, error: "Coupon usage limit has been reached" };
+        }
       }
 
       // 5. Validate Per-User Limit
@@ -71,25 +96,28 @@ export class CouponService {
         const { count, error: usageError } = await supabase
           .from("coupon_usages")
           .select("*", { count: "exact", head: true })
-          .eq("coupon_id", coupon.id)
+          .eq("coupon_id", couponData.id)
           .eq("customer_id", customerId);
 
         if (usageError) {
           console.error("Error checking customer usage:", usageError);
         } else if (count !== null && count >= perUserLimit) {
-          return { isValid: false, discount: 0, error: "CUSTOMER_USAGE_LIMIT_REACHED" };
+          return { isValid: false, discount: 0, error: "You have already used this coupon" };
         }
       }
 
       // 6. Calculate Discount
       let discountAmount = 0;
-      if (coupon.discount_type === "PERCENTAGE") {
-        discountAmount = (subtotal * coupon.value) / 100;
-        if (coupon.max_discount && discountAmount > coupon.max_discount) {
-          discountAmount = coupon.max_discount;
+      if (discountType === "PERCENTAGE") {
+        discountAmount = (subtotal * discountValue) / 100;
+        if (maxDiscount !== null && maxDiscount !== undefined) {
+          const maxVal = Number(maxDiscount);
+          if (discountAmount > maxVal) {
+            discountAmount = maxVal;
+          }
         }
-      } else if (coupon.discount_type === "FIXED") {
-        discountAmount = coupon.value;
+      } else if (discountType === "FIXED") {
+        discountAmount = discountValue;
       }
 
       // 7. Ensure discount doesn't exceed subtotal
@@ -100,15 +128,30 @@ export class CouponService {
       // Avoid floating point precision issues
       discountAmount = Math.round(discountAmount * 100) / 100;
 
+      const normalizedCoupon: CouponRecord = {
+        id: couponData.id,
+        code: couponData.code,
+        discount_type: discountType as "PERCENTAGE" | "FIXED",
+        value: discountValue,
+        min_order_value: minOrderAmount ? Number(minOrderAmount) : null,
+        max_discount: maxDiscount ? Number(maxDiscount) : null,
+        usage_limit: usageLimit,
+        used_count: usedCount,
+        valid_from: startDate ? new Date(startDate).toISOString() : new Date().toISOString(),
+        valid_until: endDate ? new Date(endDate).toISOString() : new Date(Date.now() + 365 * 86400000).toISOString(),
+        is_active: isActive,
+        created_at: couponData.created_at || couponData.createdAt || new Date().toISOString(),
+      };
+
       return {
         isValid: true,
-        coupon,
+        coupon: normalizedCoupon,
         discount: discountAmount,
       };
 
     } catch (err) {
       console.error("Error validating coupon:", err);
-      return { isValid: false, discount: 0, error: "INTERNAL_ERROR" };
+      return { isValid: false, discount: 0, error: "Internal error validating coupon" };
     }
   }
 
