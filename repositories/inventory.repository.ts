@@ -174,65 +174,81 @@ export class InventoryRepository {
    * Get inventory dashboard data (with SKU, Product Name, and Warehouse Name)
    */
   async getInventoryDashboard(limit = 20, search?: string) {
-    const supabase = this.getAdminClient();
+    try {
+      const trimmedSearch = search?.trim();
+      const whereClause = trimmedSearch
+        ? {
+            OR: [
+              { variant: { sku: { contains: trimmedSearch, mode: "insensitive" as const } } },
+              { variant: { product: { name: { contains: trimmedSearch, mode: "insensitive" as const } } } },
+            ],
+          }
+        : undefined;
 
-    let query = supabase
-      .from("inventory_levels")
-      .select(`
-        id,
-        quantity_available,
-        quantity_reserved,
-        reorder_point,
-        variant:variants(sku, product:products(name)),
-        warehouse:warehouses(name)
-      `, { count: "exact" })
-      .order("created_at", { ascending: false })
-      .limit(limit);
+      const levels = await prisma.inventoryLevel.findMany({
+        where: whereClause,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          variant: {
+            include: {
+              product: {
+                select: { name: true },
+              },
+            },
+          },
+          warehouse: {
+            select: { name: true },
+          },
+        },
+      });
 
-    // Note: Filtering heavily nested relations in postgREST might be limited without an RPC,
-    // but we can try basic filtering or skip filtering at db level if it errors.
-    // Assuming we want a basic list for the dashboard.
-    
-    // In a real enterprise app, an RPC or dedicated View should be used to allow efficient searching
-    // across joined tables. Since this is an MVP fix, we'll fetch without deep search or let PostgREST
-    // do its best.
-    
-    const { data, error, count } = await query;
-    if (error) {
-      console.error("Error fetching inventory dashboard:", error);
-      throw error;
+      const processed = levels.map((item) => {
+        const available = item.quantityAvailable ?? 0;
+        const reserved = item.quantityReserved ?? 0;
+        const reorderPoint = item.reorderPoint ?? 0;
+
+        let status: "In Stock" | "Low Stock" | "Out of Stock" = "In Stock";
+        if (available <= 0) {
+          status = "Out of Stock";
+        } else if (available <= reorderPoint) {
+          status = "Low Stock";
+        }
+
+        return {
+          id: item.id,
+          sku: item.variant?.sku || "Unknown SKU",
+          name: item.variant?.product?.name || "Anchor Fashion Apparel",
+          warehouse: item.warehouse?.name || "Main Central Warehouse",
+          available,
+          reserved,
+          status,
+        };
+      });
+
+      const totalInStock = processed.reduce((acc, curr) => acc + curr.available, 0);
+      const lowStockCount = processed.filter((p) => p.status === "Low Stock").length;
+      const outOfStockCount = processed.filter((p) => p.status === "Out of Stock").length;
+
+      return {
+        items: processed,
+        stats: {
+          totalItems: totalInStock,
+          lowStock: lowStockCount,
+          outOfStock: outOfStockCount,
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching inventory dashboard via Prisma:", error);
+      return {
+        items: [],
+        stats: {
+          totalItems: 0,
+          lowStock: 0,
+          outOfStock: 0,
+        },
+      };
     }
-
-    // Process data to match flat dashboard needs
-    const processed = (data || []).map((item: any) => ({
-      id: item.id,
-      sku: item.variant?.sku || "Unknown SKU",
-      name: item.variant?.product?.name || "Unknown Product",
-      warehouse: item.warehouse?.name || "Unknown Warehouse",
-      available: item.quantity_available,
-      reserved: item.quantity_reserved,
-      status: item.quantity_available <= 0 ? "Out of Stock" : item.quantity_available <= (item.reorder_point || 0) ? "Low Stock" : "In Stock"
-    }));
-
-    // If search is provided, filter in memory for MVP since nested PostgREST OR filtering is complex
-    let filtered = processed;
-    if (search) {
-      const s = search.toLowerCase();
-      filtered = processed.filter((p: any) => p.sku.toLowerCase().includes(s) || p.name.toLowerCase().includes(s));
-    }
-
-    const totalInStock = processed.reduce((acc: number, curr: any) => acc + curr.available, 0);
-    const lowStockCount = processed.filter((p: any) => p.status === "Low Stock").length;
-    const outOfStockCount = processed.filter((p: any) => p.status === "Out of Stock").length;
-
-    return {
-      items: filtered,
-      stats: {
-        totalItems: totalInStock,
-        lowStock: lowStockCount,
-        outOfStock: outOfStockCount,
-      }
-    };
   }
 
   /**

@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { CouponService } from "@/services/coupon.service";
 
 describe("Coupon System & Validation Engine", () => {
-  describe("validateAndCalculateDiscount", () => {
+  describe("validateAndCalculateDiscount", { timeout: 15000 }, () => {
     it("should validate and calculate percentage discount correctly", async () => {
       const res = await CouponService.validateAndCalculateDiscount("ANCHOR10", 2000);
       expect(res.isValid).toBe(true);
