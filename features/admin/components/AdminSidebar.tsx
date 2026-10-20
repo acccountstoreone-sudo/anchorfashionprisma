@@ -223,13 +223,20 @@ const navigation: NavCategory[] = [
 export const AdminSidebar = ({
   className,
   role = "CUSTOMER",
+  onNavigate,
+  isMobile = false,
 }: {
   className?: string;
   role?: string;
+  onNavigate?: () => void;
+  isMobile?: boolean;
 }) => {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { data: orderMetrics } = useOrderMetrics();
+
+  // On mobile drawers, never allow collapsed state
+  const effectiveCollapsed = isMobile ? false : isCollapsed;
 
   const getOrderBadgeCount = (name: string): number | undefined => {
     if (!orderMetrics) return undefined;
@@ -253,25 +260,27 @@ export const AdminSidebar = ({
     <div
       className={cn(
         "flex h-full h-[100dvh] shrink-0 flex-col bg-card text-card-foreground shadow-[0_0_20px_rgba(89,102,122,0.05)] transition-all duration-300 relative z-20 border-r border-border",
-        isCollapsed ? "w-[80px]" : "w-[280px]",
+        effectiveCollapsed ? "w-[80px]" : "w-[280px]",
         className
       )}
     >
-      <div className={cn("h-[80px] shrink-0 flex items-center border-b border-border relative", isCollapsed ? "px-0 justify-center" : "px-6 gap-3")}>
-        {!isCollapsed && (
+      <div className={cn("h-[80px] shrink-0 flex items-center border-b border-border relative", effectiveCollapsed ? "px-0 justify-center" : "px-6 gap-3")}>
+        {!effectiveCollapsed && (
           <>
             <AnchorFashionLogo noLink={true} className="text-slate-900 dark:text-slate-100" />
           </>
         )}
-        {isCollapsed && <AnchorFashionLogo noLink={true} className="text-slate-900 dark:text-slate-100 w-8 h-8" />}
+        {effectiveCollapsed && <AnchorFashionLogo noLink={true} className="text-slate-900 dark:text-slate-100 w-8 h-8" />}
         
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background shadow-sm hover:bg-muted text-foreground transition-colors"
-          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-        </button>
+        {!isMobile && (
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="absolute -right-3 top-1/2 -translate-y-1/2 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background shadow-sm hover:bg-muted text-foreground transition-colors"
+            title={effectiveCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {effectiveCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+          </button>
+        )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
@@ -286,7 +295,7 @@ export const AdminSidebar = ({
 
             return (
               <div key={category.title} className="px-4">
-                {!isCollapsed ? (
+                {!effectiveCollapsed ? (
                   <h4 className="mb-2 px-2 text-xs font-bold uppercase tracking-wider text-muted-foreground/80">
                     {category.title}
                   </h4>
@@ -307,10 +316,11 @@ export const AdminSidebar = ({
                           <Link
                             key={group.name}
                             href={group.href}
-                            title={isCollapsed ? group.name : undefined}
+                            onClick={onNavigate}
+                            title={effectiveCollapsed ? group.name : undefined}
                             className={cn(
                               "group flex items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all",
-                              isCollapsed ? "justify-center px-0" : "px-4",
+                              effectiveCollapsed ? "justify-center px-0" : "px-4",
                               isActive
                                 ? "bg-[#00A1FF]/10 text-[#00A1FF] relative after:absolute after:right-0 after:top-1/2 after:h-8 after:w-1 after:-translate-y-1/2 after:rounded-l-full after:bg-[#00A1FF]"
                                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -322,7 +332,7 @@ export const AdminSidebar = ({
                                 isActive ? "text-[#00A1FF]" : "text-muted-foreground/80 group-hover:text-muted-foreground"
                               )}
                             />
-                            {!isCollapsed && group.name}
+                            {!effectiveCollapsed && group.name}
                           </Link>
                         );
                       }
@@ -332,7 +342,7 @@ export const AdminSidebar = ({
                           pathname === item.href || pathname.startsWith(`${item.href}/`)
                       );
 
-                      if (isCollapsed) {
+                      if (effectiveCollapsed) {
                         const hasPendingOrders = group.name === "Orders" && (orderMetrics?.pendingOrders || 0) > 0;
                         return (
                           <div key={group.name} className="relative group/tooltip flex justify-center mb-1">
@@ -402,6 +412,7 @@ export const AdminSidebar = ({
                                   <Link
                                     key={item.name}
                                     href={item.href}
+                                    onClick={onNavigate}
                                     className={cn(
                                       "relative flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors",
                                       isSubActive
@@ -447,7 +458,7 @@ export const AdminSidebar = ({
       </div>
 
       <div className="shrink-0 p-4 border-t border-border flex justify-center">
-        {isCollapsed ? (
+        {effectiveCollapsed ? (
           <LogoutButton 
             className="w-10 h-10 p-0 justify-center bg-muted/50 hover:bg-muted dark:hover:bg-slate-800 text-foreground/90 border-none rounded-xl"
             hideText={true}

@@ -92,19 +92,78 @@ export function ManagerHeader({ user }: { user?: any }) {
       {/* Mobile Drawer Navigation */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="md:hidden">
+          <Button variant="outline" size="icon" className="md:hidden border-border/80 hover:bg-muted">
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle navigation menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="flex w-72 flex-col p-0 dark:bg-background">
-          <div className="flex h-14 items-center gap-2 border-b px-4 font-semibold">
-            <Package className="h-5 w-5 text-primary" />
-            <span className="text-lg font-bold tracking-tight">Anchor Manager</span>
+        <SheetContent side="left" className="flex w-[300px] sm:w-[340px] flex-col p-0 bg-slate-950 text-slate-100 border-r border-slate-800 shadow-2xl">
+          {/* Executive Header Banner */}
+          <div className="relative border-b border-slate-800/80 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 text-black shadow-md">
+                <Package className="h-5 w-5 stroke-[2.5]" />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black tracking-wide text-white">
+                    ANCHOR MANAGER
+                  </span>
+                  <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                </div>
+                <span className="text-[10px] font-semibold tracking-wider text-amber-400/90 uppercase">
+                  Operations Command
+                </span>
+              </div>
+            </div>
+
+            {/* Manager Profile Snippet */}
+            <div className="mt-3.5 flex items-center gap-3 rounded-xl bg-white/[0.04] border border-white/5 p-2.5">
+              <Avatar className="h-8 w-8 border border-amber-400/30">
+                <AvatarFallback className="bg-amber-600/30 text-amber-300 text-xs font-bold">
+                  {(user?.user_metadata?.full_name || user?.email || "M").slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 overflow-hidden">
+                <p className="text-xs font-bold text-white truncate">
+                  {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Store Manager"}
+                </p>
+                <p className="text-[10px] text-slate-400 truncate">
+                  {user?.email || "manager@anchorfashion.com"}
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            <nav className="space-y-1">
-              {mobileNavItems.map((item) => {
+
+          {/* Navigation Links Scrollable Area */}
+          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 overscroll-contain">
+            {/* Quick Action: Live Storefront */}
+            <Link
+              href="/"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center justify-between rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-500/20 px-3.5 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition-all"
+            >
+              <span className="flex items-center gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                <span>Visit Live Storefront</span>
+              </span>
+              <span className="text-[10px] uppercase tracking-wider text-amber-400/70 font-semibold">Store ↗</span>
+            </Link>
+
+            {/* Section 1: Core Operations */}
+            <div className="space-y-1">
+              <span className="px-2 text-[9.5px] font-extrabold uppercase tracking-widest text-slate-500">
+                Store Operations
+              </span>
+              {[
+                { title: "Dashboard", href: "/manager", icon: LayoutDashboard },
+                { title: "Orders Management", href: "/manager/orders", icon: ShoppingCart },
+                { title: "Catalog & Products", href: "/manager/products", icon: Package },
+                { title: "Inventory & Warehouses", href: "/manager/inventory", icon: Boxes },
+              ].map((item) => {
                 const Icon = item.icon;
                 const isActive =
                   pathname === item.href ||
@@ -115,27 +174,92 @@ export function ManagerHeader({ user }: { user?: any }) {
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                      "flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all",
                       isActive
-                        ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-amber-400 text-black font-extrabold shadow-sm"
+                        : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
                     )}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {item.title}
+                    <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-black" : "text-slate-400")} />
+                    <span>{item.title}</span>
                   </Link>
                 );
               })}
-            </nav>
+            </div>
+
+            {/* Section 2: CRM & Engagement */}
+            <div className="space-y-1">
+              <span className="px-2 text-[9.5px] font-extrabold uppercase tracking-widest text-slate-500">
+                CRM & Marketing
+              </span>
+              {[
+                { title: "Customer Records", href: "/manager/customers", icon: Users },
+                { title: "Promotions & Marketing", href: "/manager/marketing", icon: Megaphone },
+                { title: "Content (CMS)", href: "/manager/cms", icon: LayoutTemplate },
+                { title: "Support Helpdesk", href: "/manager/support", icon: LifeBuoy },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all",
+                      isActive
+                        ? "bg-amber-400 text-black font-extrabold shadow-sm"
+                        : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-black" : "text-slate-400")} />
+                    <span>{item.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Section 3: Performance & System */}
+            <div className="space-y-1">
+              <span className="px-2 text-[9.5px] font-extrabold uppercase tracking-widest text-slate-500">
+                Reports & Settings
+              </span>
+              {[
+                { title: "Analytics & Reports", href: "/manager/reports", icon: BarChart3 },
+                { title: "Assigned Tasks", href: "/manager/tasks", icon: CheckSquare },
+                { title: "Store Settings", href: "/manager/settings", icon: Settings },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all",
+                      isActive
+                        ? "bg-amber-400 text-black font-extrabold shadow-sm"
+                        : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-black" : "text-slate-400")} />
+                    <span>{item.title}</span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-          <div className="border-t p-4">
+
+          {/* Drawer Footer & Logout */}
+          <div className="border-t border-slate-800 bg-slate-950 p-3.5 space-y-2">
             <Button
               variant="outline"
-              className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive gap-2"
+              className="w-full justify-center border-rose-500/20 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 font-bold gap-2 text-xs rounded-xl"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4" />
-              Sign Out
+              Sign Out of Manager Portal
             </Button>
           </div>
         </SheetContent>
