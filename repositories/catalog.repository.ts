@@ -222,12 +222,40 @@ export const CatalogRepository = {
 
       if (params.category) {
         const catSlug = params.category.toLowerCase().trim();
-        andClauses.push({
-          OR: [
-            { category: { slug: catSlug } },
-            { category: { parent: { slug: catSlug } } },
-          ],
-        });
+        if (catSlug === "sale") {
+          andClauses.push({ salePrice: { not: null } });
+        } else if (catSlug === "men" || catSlug === "mens") {
+          andClauses.push({
+            OR: [
+              { gender: "MALE" },
+              { category: { slug: { in: ["men", "mens", "panjabi", "shirt", "polo", "t-shirt"] } } },
+              { category: { parent: { slug: { in: ["men", "mens"] } } } },
+            ],
+          });
+        } else if (catSlug === "women" || catSlug === "womens") {
+          andClauses.push({
+            OR: [
+              { gender: "FEMALE" },
+              { category: { slug: { in: ["women", "womens", "saree", "kurti", "salwar", "bottom", "ethnic-wear"] } } },
+              { category: { parent: { slug: { in: ["women", "womens"] } } } },
+            ],
+          });
+        } else if (catSlug === "kids") {
+          andClauses.push({
+            OR: [
+              { gender: "KIDS" },
+              { category: { slug: "kids" } },
+              { category: { parent: { slug: "kids" } } },
+            ],
+          });
+        } else {
+          andClauses.push({
+            OR: [
+              { category: { slug: catSlug } },
+              { category: { parent: { slug: catSlug } } },
+            ],
+          });
+        }
       }
       if (params.brand) {
         andClauses.push({ brand: { slug: params.brand } });
