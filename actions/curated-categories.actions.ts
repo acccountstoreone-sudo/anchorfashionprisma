@@ -34,7 +34,7 @@ async function verifyStaffSession(): Promise<{ authorized: boolean; error?: stri
 
     let role = String((user as any).role || (user as any).user_metadata?.role || "").trim().toUpperCase();
 
-    if (!role || role === "CUSTOMER") {
+    if (!role || role === "USER" || role === "CUSTOMER") {
       const isUuid =
         user.id &&
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id);

@@ -13,10 +13,15 @@ export const AUTH_ROLES = {
 
 export type AuthRole = (typeof AUTH_ROLES)[keyof typeof AUTH_ROLES];
 
-export const ADMIN_ROLES = [AUTH_ROLES.SUPERADMIN, AUTH_ROLES.ADMIN];
-
-export const MANAGER_ROLES = [
+export const ADMIN_ROLES: readonly string[] = [
   AUTH_ROLES.SUPERADMIN,
+  "SUPER_ADMIN",
+  AUTH_ROLES.ADMIN,
+];
+
+export const MANAGER_ROLES: readonly string[] = [
+  AUTH_ROLES.SUPERADMIN,
+  "SUPER_ADMIN",
   AUTH_ROLES.ADMIN,
   AUTH_ROLES.MANAGER,
   AUTH_ROLES.WAREHOUSE_MANAGER,
@@ -24,15 +29,17 @@ export const MANAGER_ROLES = [
   AUTH_ROLES.FINANCE_MANAGER,
 ];
 
-export const MARKETING_ROLES = [
+export const MARKETING_ROLES: readonly string[] = [
   AUTH_ROLES.SUPERADMIN,
+  "SUPER_ADMIN",
   AUTH_ROLES.ADMIN,
   AUTH_ROLES.MARKETING_MANAGER,
   AUTH_ROLES.MARKETING,
 ];
 
-export const STAFF_ROLES = [
+export const STAFF_ROLES: readonly string[] = [
   AUTH_ROLES.SUPERADMIN,
+  "SUPER_ADMIN",
   AUTH_ROLES.ADMIN,
   AUTH_ROLES.MANAGER,
   AUTH_ROLES.WAREHOUSE_MANAGER,

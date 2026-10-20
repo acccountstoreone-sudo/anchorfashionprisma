@@ -13,16 +13,25 @@ export class ShippingRepository {
   async getCouriers(): Promise<CourierProviderRecord[]> {
     try {
       const data = await prisma.courier_providers.findMany({
-        orderBy: { priority: "asc" },
+        orderBy: { name: "asc" },
       });
-      return data.map((r) => ({
-        ...r,
+      return data.map((r: any) => ({
         id: String(r.id),
-        credentials: (r.credentials as Record<string, any>) ?? {},
-        settings: (r.settings as Record<string, any>) ?? {},
-        supported_zones: r.supported_zones as string[] | null,
+        code: r.code as any,
+        name: r.name,
+        display_name: r.name,
+        logo_url: null,
+        is_active: r.is_active ?? true,
+        is_cod_supported: true,
+        is_sandbox: true,
+        priority: 1,
+        max_weight_kg: 10,
+        credentials: (r.config as any)?.credentials ?? {},
+        settings: (r.config as any)?.settings ?? {},
+        webhook_secret: null,
+        supported_zones: null,
         created_at: r.created_at?.toISOString() ?? new Date().toISOString(),
-        updated_at: r.updated_at?.toISOString() ?? new Date().toISOString(),
+        updated_at: r.created_at?.toISOString() ?? new Date().toISOString(),
       })) as CourierProviderRecord[];
     } catch (error: any) {
       console.warn("getCouriers error, using mock data:", error.message);
@@ -71,7 +80,7 @@ export class ShippingRepository {
     try {
       await prisma.courier_providers.update({
         where: { id },
-        data: { is_active, updated_at: new Date() },
+        data: { is_active },
       });
     } catch (error: any) {
       console.error("updateCourierStatus error:", error.message);
@@ -86,13 +95,20 @@ export class ShippingRepository {
       const data = await prisma.delivery_zones.findMany({
         orderBy: { name: "asc" },
       });
-      return data.map((z) => ({
-        ...z,
+      return data.map((z: any) => ({
         id: String(z.id),
-        districts: z.districts as string[],
+        name: z.name,
+        code: z.code ?? "IND",
+        description: null,
+        districts: [],
+        is_cod_available: true,
+        rate: Number(z.rate ?? 60),
+        is_active: z.is_active ?? true,
+        estimated_days_min: 1,
+        estimated_days_max: 3,
         created_at: z.created_at?.toISOString() ?? new Date().toISOString(),
-        updated_at: z.updated_at?.toISOString() ?? new Date().toISOString(),
-      })) as DeliveryZone[];
+        updated_at: z.created_at?.toISOString() ?? new Date().toISOString(),
+      })) as unknown as DeliveryZone[];
     } catch (error: any) {
       console.warn("getZones error, using mock data:", error.message);
       return [

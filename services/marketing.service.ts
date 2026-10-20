@@ -265,7 +265,7 @@ export class MarketingService {
         .not("email", "is", null)
         .limit(200);
 
-      (customers || []).forEach((c) => {
+      (customers || []).forEach((c: any) => {
         if (c.email && c.email.includes("@")) {
           recipientsMap.set(c.email.toLowerCase().trim(), {
             id: c.id,
@@ -282,7 +282,7 @@ export class MarketingService {
         .eq("is_active", true)
         .limit(200);
 
-      (subscribers || []).forEach((s) => {
+      (subscribers || []).forEach((s: any) => {
         if (s.email && s.email.includes("@")) {
           const emailKey = s.email.toLowerCase().trim();
           if (!recipientsMap.has(emailKey)) {

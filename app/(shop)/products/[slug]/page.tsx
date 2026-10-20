@@ -21,19 +21,39 @@ export async function generateMetadata({
     };
   }
 
+  const title = product.seo_title || `${product.name} | Anchor Fashion`;
+  const description =
+    product.seo_description ||
+    product.description?.substring(0, 160) ||
+    `Shop ${product.name} at Anchor Fashion. Premium luxury fashion & modern apparel.`;
+  const ogImage = product.product_media?.[0]?.url || "/og-image.jpg";
+
   return {
-    title: product.seo_title || `${product.name} | Anchor Fashion`,
-    description:
-      product.seo_description ||
-      product.description?.substring(0, 160) ||
-      `Shop ${product.name} at Anchor Fashion. Premium luxury fashion & modern apparel.`,
+    title,
+    description,
+    alternates: {
+      canonical: `https://anchorfashion.com/products/${product.slug}`,
+    },
     openGraph: {
-      title: product.seo_title || product.name,
-      description:
-        product.seo_description || product.description?.substring(0, 160),
-      images: product.product_media?.[0]?.url
-        ? [product.product_media[0].url]
-        : [],
+      title,
+      description,
+      url: `https://anchorfashion.com/products/${product.slug}`,
+      siteName: "Anchor Fashion",
+      images: [
+        {
+          url: ogImage,
+          width: 800,
+          height: 1000,
+          alt: product.name,
+        },
+      ],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
     },
   };
 }
@@ -78,7 +98,7 @@ export default async function ProductDetailPage({
   const effectivePrice =
     flashSale?.flash_price ?? product.sale_price ?? product.base_price;
 
-  const jsonLd = {
+  const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
@@ -102,11 +122,50 @@ export default async function ProductDetailPage({
     },
   };
 
+  const breadcrumbsJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://anchorfashion.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Products",
+        item: "https://anchorfashion.com/products",
+      },
+      ...(product.categories?.name
+        ? [
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: product.categories.name,
+              item: `https://anchorfashion.com/categories/${product.categories.slug}`,
+            },
+          ]
+        : []),
+      {
+        "@type": "ListItem",
+        position: product.categories?.name ? 4 : 3,
+        name: product.name,
+        item: `https://anchorfashion.com/products/${product.slug}`,
+      },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
       />
       <ProductDetailView
         product={product}

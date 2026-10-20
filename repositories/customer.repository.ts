@@ -175,14 +175,14 @@ export class CustomerRepository {
   static async getReviews(userId: string): Promise<CustomerReview[]> {
     try {
       const reviews = await prisma.review.findMany({
-        where: { customerId: userId },
+        where: { userId },
         include: { product: true },
         orderBy: { createdAt: "desc" },
       });
 
-      return reviews.map((r) => ({
+      return reviews.map((r: any) => ({
         id: r.id,
-        customer_id: r.customerId || "",
+        customer_id: r.userId || "",
         product_id: r.productId || "",
         order_id: null,
         rating: r.rating,

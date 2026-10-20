@@ -39,8 +39,8 @@ async function getCurrentUser() {
 async function requireBranchAccess(returnId: string) {
   const user = await getCurrentUser();
   
-  // Default to ADMIN role if accessed within authenticated staff/admin session
-  const role = String(user?.user_metadata?.role || user?.app_metadata?.role || "ADMIN").toUpperCase();
+  const { resolveUserRole } = await import("@/lib/auth/server");
+  const role = user ? await resolveUserRole(user) : "CUSTOMER";
   const staffRoleList = [
     "SUPERADMIN",
     "SUPER_ADMIN",
@@ -54,8 +54,8 @@ async function requireBranchAccess(returnId: string) {
     "OPERATIONS",
   ];
 
-  // If user is explicitly a customer and not staff, deny access
-  if (user && role === "CUSTOMER") {
+  // Strictly enforce staff permissions
+  if (!user || !staffRoleList.includes(role)) {
     throw new Error("Unauthorized: Insufficient staff permissions.");
   }
 

@@ -299,8 +299,8 @@ export class ReferralService {
       console.error("Failed to fetch referral stats:", error);
     }
 
-    const pendingCount = attributions?.filter(a => a.status === "PENDING").length || 0;
-    const rewardedCount = attributions?.filter(a => a.status === "REWARDED").length || 0;
+    const pendingCount = attributions?.filter((a: any) => a.status === "PENDING").length || 0;
+    const rewardedCount = attributions?.filter((a: any) => a.status === "REWARDED").length || 0;
     const totalEarned = rewardedCount * 500; // Hardcoded point rule match
 
     return {

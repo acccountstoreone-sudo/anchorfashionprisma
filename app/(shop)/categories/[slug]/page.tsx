@@ -71,8 +71,58 @@ export default async function CategoryPage({
     rating: "Top Rated",
   };
 
+  const categoryJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `${displayName} Collection | Anchor Fashion`,
+    description: `Explore the ${displayName} collection at Anchor Fashion.`,
+    url: `https://anchorfashion.com/categories/${slug}`,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: products.slice(0, 10).map((p: any, idx: number) => ({
+        "@type": "ListItem",
+        position: idx + 1,
+        url: `https://anchorfashion.com/products/${p.slug}`,
+        name: p.name,
+      })),
+    },
+  };
+
+  const breadcrumbsJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://anchorfashion.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Categories",
+        item: "https://anchorfashion.com/categories",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: displayName,
+        item: `https://anchorfashion.com/categories/${slug}`,
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-[#FAFAFA] pb-24">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
+      />
       {/* Breadcrumb Bar */}
       <div className="border-b border-gray-200/60 bg-white">
         <div className="container mx-auto px-4 py-3 md:px-6">

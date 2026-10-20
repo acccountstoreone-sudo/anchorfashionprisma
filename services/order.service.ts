@@ -84,7 +84,7 @@ export class OrderService {
 
     const defaultWarehouse = await this.warehouseService.getDefaultWarehouse();
     const fallbackWarehouseId =
-      defaultWarehouse?.id || "85bf6ad1-be55-47b2-ab31-07b05c43bcfc";
+      defaultWarehouse?.id || "fc4ab9a5-7623-46ad-ada5-2bbdd95f3655";
     const supabase = createAdminClient();
 
     for (const item of cart.items) {

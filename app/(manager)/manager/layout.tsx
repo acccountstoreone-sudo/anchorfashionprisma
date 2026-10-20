@@ -3,9 +3,8 @@ import { redirect } from "next/navigation";
 import { ManagerSidebar } from "@/components/manager/layout/ManagerSidebar";
 import { ManagerHeader } from "@/components/manager/layout/ManagerHeader";
 import { Metadata } from "next";
-import { getServerSession } from "@/lib/auth/server";
-import { prisma } from "@/lib/prisma";
-import { MANAGER_ROLES, ADMIN_ROLES } from "@/lib/constants/auth";
+import { getServerSession, resolveUserRole } from "@/lib/auth/server";
+import { STAFF_ROLES } from "@/lib/constants/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -21,51 +20,10 @@ export default async function ManagerLayout({ children }: { children: ReactNode 
     redirect("/auth/login?next=/manager");
   }
 
-  let role = String((user as any).role || "").toUpperCase();
+  const role = (await resolveUserRole(user)).toUpperCase().trim();
+  const isManagerOrStaff = STAFF_ROLES.includes(role);
 
-  if (!role || role === "CUSTOMER") {
-    try {
-      const isUuid =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          user.id
-        );
-      const profile = await prisma.profile.findFirst({
-        where: {
-          OR: [
-            ...(isUuid ? [{ id: user.id }] : []),
-            ...(user.email ? [{ email: user.email }] : []),
-          ],
-        },
-        include: {
-          role: true,
-        },
-      });
-
-      if (profile?.role?.name) {
-        role = profile.role.name.toUpperCase();
-      }
-    } catch (err) {
-      console.error("[Manager Layout] Error fetching role from database:", err);
-    }
-  }
-
-  if (!role) role = "CUSTOMER";
-
-  const isManagerOrAdmin =
-    (MANAGER_ROLES as readonly string[]).includes(role) ||
-    (ADMIN_ROLES as readonly string[]).includes(role) ||
-    [
-      "SUPERADMIN",
-      "SUPER_ADMIN",
-      "ADMIN",
-      "MANAGER",
-      "WAREHOUSE_MANAGER",
-      "MARKETING_MANAGER",
-      "FINANCE_MANAGER",
-      "STAFF",
-    ].includes(role);
-
-  if (!isManagerOrAdmin) {
+  if (!isManagerOrStaff) {
     redirect("/account/profile");
   }
 

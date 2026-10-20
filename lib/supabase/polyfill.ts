@@ -23,7 +23,14 @@ function serializePlain(val: any): any {
 
 function formatCol(col: string): string {
   if (!col) return '""';
-  const trimmed = col.trim();
+  let trimmed = col.trim();
+
+  // Alias compatibility
+  if (trimmed === "warehouse_code") {
+    trimmed = "code";
+  } else if (trimmed.endsWith(".warehouse_code")) {
+    trimmed = trimmed.replace(".warehouse_code", ".code");
+  }
 
   // Handle PostgreSQL JSON text accessor: metadata->>key
   if (trimmed.includes("->>")) {
@@ -119,6 +126,9 @@ class QueryBuilder implements PromiseLike<any> {
   }
 
   eq(col: string, val: any) {
+    if (this.tableName === "inventory_levels" && (col === "bin_id" || col.endsWith(".bin_id"))) {
+      return this;
+    }
     const c = formatCol(col);
     if (val === null) {
       this.whereClauses.push(`${c} IS NULL`);
@@ -229,6 +239,9 @@ class QueryBuilder implements PromiseLike<any> {
   }
 
   is(col: string, val: any) {
+    if (this.tableName === "inventory_levels" && (col === "bin_id" || col.endsWith(".bin_id"))) {
+      return this;
+    }
     const c = formatCol(col);
     if (val === null) {
       this.whereClauses.push(`${c} IS NULL`);
@@ -563,6 +576,61 @@ class QueryBuilder implements PromiseLike<any> {
           }
         }
 
+        if (this.tableName === "warehouses") {
+          for (const item of dataArray) {
+            if (item.warehouse_code && !item.code) {
+              item.code = item.warehouse_code;
+            }
+            if (item.capacity_sqft !== undefined && item.capacity === undefined) {
+              item.capacity = item.capacity_sqft ? Math.round(Number(item.capacity_sqft)) : null;
+            }
+            delete item.warehouse_code;
+            delete item.capacity_sqft;
+            delete item.type;
+            delete item.status;
+          }
+        }
+
+        if (this.tableName === "inventory_levels") {
+          for (const item of dataArray) {
+            delete item.bin_id;
+            delete item.quantity_incoming;
+            delete item.quantity_damaged;
+            delete item.quantity_returned;
+            delete item.safety_stock;
+          }
+        }
+
+        if (this.tableName === "stock_movements") {
+          for (const item of dataArray) {
+            if (item.quantity_change !== undefined && item.quantity === undefined) {
+              item.quantity = Number(item.quantity_change) || 0;
+            }
+            if (!item.movement_type) {
+              item.movement_type = item.reason_code || (item.quantity && item.quantity < 0 ? "OUT" : "IN");
+            }
+            if (item.previous_quantity === undefined) {
+              item.previous_quantity = 0;
+            }
+            if (item.new_quantity === undefined) {
+              item.new_quantity = Number(item.quantity) || 0;
+            }
+            if (!item.notes) {
+              item.notes = item.reason || `Stock movement ${item.movement_type}`;
+            }
+            if (!item.created_by && item.user_id) {
+              item.created_by = item.user_id;
+            }
+            delete item.quantity_change;
+            delete item.reason;
+            delete item.reason_code;
+            delete item.user_id;
+            delete item.from_bin_id;
+            delete item.to_bin_id;
+            delete item.to_warehouse_id;
+          }
+        }
+
         const keys = Object.keys(dataArray[0]);
         const cols = keys.map((k) => `"${k}"`).join(", ");
 
@@ -621,6 +689,27 @@ class QueryBuilder implements PromiseLike<any> {
         }
         query += ` RETURNING *`;
       } else if (this.action === "update") {
+        if (this.tableName === "warehouses" && this.payload) {
+          if (this.payload.warehouse_code && !this.payload.code) {
+            this.payload.code = this.payload.warehouse_code;
+          }
+          if (this.payload.capacity_sqft !== undefined && this.payload.capacity === undefined) {
+            this.payload.capacity = this.payload.capacity_sqft ? Math.round(Number(this.payload.capacity_sqft)) : null;
+          }
+          delete this.payload.warehouse_code;
+          delete this.payload.capacity_sqft;
+          delete this.payload.type;
+          delete this.payload.status;
+        }
+
+        if (this.tableName === "inventory_levels" && this.payload) {
+          delete this.payload.bin_id;
+          delete this.payload.quantity_incoming;
+          delete this.payload.quantity_damaged;
+          delete this.payload.quantity_returned;
+          delete this.payload.safety_stock;
+        }
+
         const keys = Object.keys(this.payload);
         const sets = [];
         for (const key of keys) {
@@ -670,6 +759,14 @@ class QueryBuilder implements PromiseLike<any> {
         ...this.params
       )) as any[];
       let result = serializePlain(rawResult) as any[];
+
+      if (this.tableName === "warehouses" && result && result.length > 0) {
+        for (const row of result) {
+          if (row.code && !row.warehouse_code) {
+            row.warehouse_code = row.code;
+          }
+        }
+      }
 
       if (this.action === "select" && result && result.length > 0) {
         result = await this.attachRelations(result);

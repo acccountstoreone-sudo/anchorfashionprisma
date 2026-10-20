@@ -93,21 +93,55 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <GlobalProviders>{children}</GlobalProviders>
-        {/* JSON-LD Structured Data */}
+        {/* JSON-LD Structured Data: Organization & WebSite */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               "@context": "https://schema.org",
-              "@type": "WebSite",
-              name: "Anchor Fashion",
-              url: "https://anchorfashion.com",
-              potentialAction: {
-                "@type": "SearchAction",
-                target:
-                  "https://anchorfashion.com/products?search={search_term_string}",
-                "query-input": "required name=search_term_string",
-              },
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": "https://anchorfashion.com/#organization",
+                  name: "Anchor Fashion",
+                  url: "https://anchorfashion.com",
+                  logo: {
+                    "@type": "ImageObject",
+                    url: "https://anchorfashion.com/icon.png",
+                    width: 512,
+                    height: 512,
+                  },
+                  sameAs: [
+                    "https://www.facebook.com/anchorfashion",
+                    "https://www.instagram.com/anchorfashion",
+                    "https://twitter.com/anchorfashion",
+                  ],
+                  contactPoint: {
+                    "@type": "ContactPoint",
+                    telephone: "+880-1700-000000",
+                    contactType: "customer service",
+                    areaServed: "BD",
+                    availableLanguage: ["en", "bn"],
+                  },
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": "https://anchorfashion.com/#website",
+                  url: "https://anchorfashion.com",
+                  name: "Anchor Fashion",
+                  description:
+                    "Premium luxury fashion and modern apparel in Bangladesh.",
+                  publisher: {
+                    "@id": "https://anchorfashion.com/#organization",
+                  },
+                  potentialAction: {
+                    "@type": "SearchAction",
+                    target:
+                      "https://anchorfashion.com/products?search={search_term_string}",
+                    "query-input": "required name=search_term_string",
+                  },
+                },
+              ],
             }),
           }}
         />

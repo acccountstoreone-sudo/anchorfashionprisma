@@ -170,7 +170,7 @@ export class WarehouseRepository {
 
     // Enrich with live aggregated inventory stats in parallel
     const enriched = await Promise.all(
-      warehousesList.map(async (wh) => {
+      warehousesList.map(async (wh: any) => {
         try {
           const stats = await this.getWarehouseStats(wh.id);
           return {
@@ -373,7 +373,7 @@ export class WarehouseRepository {
       .eq("warehouse_id", id);
 
     const totalStock = (stockLevels || []).reduce(
-      (sum, row) => sum + (row.quantity_available || 0) + (row.quantity_reserved || 0) + (row.quantity_damaged || 0),
+      (sum: number, row: any) => sum + (row.quantity_available || 0) + (row.quantity_reserved || 0) + (row.quantity_damaged || 0),
       0
     );
 
@@ -473,7 +473,7 @@ export class WarehouseRepository {
 
     let binsCount = 0;
     if (zones && zones.length > 0) {
-      const zoneIds = zones.map((z) => z.id);
+      const zoneIds = zones.map((z: any) => z.id);
       const { count: bCount } = await supabase
         .from("warehouse_bins")
         .select("id", { count: "exact", head: true })
@@ -510,7 +510,7 @@ export class WarehouseRepository {
 
     const { data: whList } = await supabase.from("warehouses").select("id, is_active");
     const totalWarehouses = (whList || []).length;
-    const activeWarehouses = (whList || []).filter((w) => w.is_active).length;
+    const activeWarehouses = (whList || []).filter((w: any) => w.is_active).length;
 
     const { data: levels } = await supabase
       .from("inventory_levels")
@@ -568,7 +568,7 @@ export class WarehouseRepository {
         const binsList = bins || [];
         // Calculate distinct racks from bin codes (e.g., RACK-A01-S01 -> RACK-A01)
         const rackCodes = new Set<string>();
-        binsList.forEach((b) => {
+        binsList.forEach((b: any) => {
           const parts = b.code.split("-");
           if (parts.length >= 2) {
             rackCodes.add(`${parts[0]}-${parts[1]}`);
@@ -689,7 +689,7 @@ export class WarehouseRepository {
 
     // Group bins by rack prefix (e.g. "RACK-A01-S01" -> "RACK-A01")
     const rackMap = new Map<string, { bins: any[]; totalCapacity: number }>();
-    (bins || []).forEach((b) => {
+    (bins || []).forEach((b: any) => {
       const parts = b.code.split("-");
       const rackCode = parts.length >= 2 ? `${parts[0]}-${parts[1]}` : parts[0];
       if (!rackMap.has(rackCode)) {
@@ -768,13 +768,13 @@ export class WarehouseRepository {
       .ilike("code", `${rackCode}%`);
 
     if (bins && bins.length > 0) {
-      const binIds = bins.map((b) => b.id);
+      const binIds = bins.map((b: any) => b.id);
       const { data: stock } = await supabase
         .from("inventory_levels")
         .select("id, quantity_available")
         .in("bin_id", binIds);
 
-      const hasStock = (stock || []).some((s) => s.quantity_available > 0);
+      const hasStock = (stock || []).some((s: any) => s.quantity_available > 0);
       if (hasStock) {
         throw new Error("Cannot delete rack: products are currently stored in these shelves.");
       }
@@ -974,7 +974,7 @@ export class WarehouseRepository {
     if (filters?.search?.trim()) {
       const s = filters.search.toLowerCase();
       filteredItems = filteredItems.filter(
-        (i) =>
+        (i: any) =>
           i.sku.toLowerCase().includes(s) ||
           i.product_name.toLowerCase().includes(s) ||
           i.bin_code.toLowerCase().includes(s)
@@ -982,7 +982,7 @@ export class WarehouseRepository {
     }
 
     if (filters?.status && filters.status !== "all") {
-      filteredItems = filteredItems.filter((i) => i.stock_status.toLowerCase() === filters.status?.toLowerCase());
+      filteredItems = filteredItems.filter((i: any) => i.stock_status.toLowerCase() === filters.status?.toLowerCase());
     }
 
     const total = count || filteredItems.length;

@@ -51,6 +51,10 @@ export function LoginForm() {
     const email = values.email.trim().toLowerCase();
     const password = values.password.trim();
 
+    try {
+      await authClient.signOut();
+    } catch (_) {}
+
     const { data, error } = await authClient.signIn.email({
       email,
       password,

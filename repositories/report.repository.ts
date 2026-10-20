@@ -228,12 +228,12 @@ export class ReportRepository {
 
       const categories =
         catRes.data && catRes.data.length > 0
-          ? catRes.data.map((c) => c.name)
+          ? catRes.data.map((c: any) => c.name)
           : ["Ethnic Wear", "Western Wear", "Footwear", "Accessories", "Winter Collection"];
 
       const brands =
         brandRes.data && brandRes.data.length > 0
-          ? brandRes.data.map((b) => b.name)
+          ? brandRes.data.map((b: any) => b.name)
           : ["Anchor Signature", "Urban Canvas", "Loom & Craft", "Velvet Stitch"];
 
       const regions = ["Dhaka Metro", "Chittagong", "Sylhet", "Rajshahi", "Khulna"];

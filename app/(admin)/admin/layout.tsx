@@ -1,12 +1,10 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { ClientAdminSidebar } from "@/features/admin/components/ClientAdminSidebar";
 import { AdminHeader } from "@/features/admin/components/AdminHeader";
 import { MobileAppBanner } from "@/features/admin/components/MobileAppBanner";
-import { getServerSession } from "@/lib/auth/server";
-import { prisma } from "@/lib/prisma";
-import { STAFF_ROLES } from "@/lib/constants/auth";
+import { getServerSession, resolveUserRole } from "@/lib/auth/server";
+import { ADMIN_ROLES, MANAGER_ROLES } from "@/lib/constants/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -27,53 +25,13 @@ export default async function AdminLayout({
     redirect("/auth/login?next=/admin");
   }
 
-  let role = String((user as any).role || "").toUpperCase();
+  const role = (await resolveUserRole(user)).toUpperCase().trim();
 
-  if (!role || role === "CUSTOMER") {
-    try {
-      const isUuid =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          user.id
-        );
-      const profile = await prisma.profile.findFirst({
-        where: {
-          OR: [
-            ...(isUuid ? [{ id: user.id }] : []),
-            ...(user.email ? [{ email: user.email }] : []),
-          ],
-        },
-        include: {
-          role: true,
-        },
-      });
+  const isAdmin = ADMIN_ROLES.includes(role);
+  const isManager = MANAGER_ROLES.includes(role);
 
-      if (profile?.role?.name) {
-        role = profile.role.name.toUpperCase();
-      }
-    } catch (err) {
-      console.error("[Admin Layout] Error fetching role from database:", err);
-    }
-  }
-
-  if (!role) role = "CUSTOMER";
-
-  const isStaff =
-    (STAFF_ROLES as readonly string[]).includes(role) ||
-    [
-      "SUPERADMIN",
-      "SUPER_ADMIN",
-      "ADMIN",
-      "STAFF",
-      "MANAGER",
-      "WAREHOUSE_MANAGER",
-      "MARKETING_MANAGER",
-      "FINANCE_MANAGER",
-      "MARKETING",
-      "SUPPORT",
-    ].includes(role);
-
-  if (!isStaff) {
-    redirect("/account/profile");
+  if (!isAdmin) {
+    redirect(isManager ? "/manager" : "/account/profile");
   }
 
   // Ensure plain JSON object across RSC boundary to prevent serialization issues

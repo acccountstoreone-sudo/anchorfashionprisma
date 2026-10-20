@@ -52,7 +52,7 @@ export class QueueService {
       return [];
     }
 
-    const jobIds = jobs.map((j) => j.id);
+    const jobIds = jobs.map((j: any) => j.id);
 
     // Claim jobs
     const { error: updateError } = await supabase

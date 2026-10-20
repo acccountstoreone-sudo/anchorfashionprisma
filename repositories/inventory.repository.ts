@@ -218,12 +218,12 @@ export class InventoryRepository {
     let filtered = processed;
     if (search) {
       const s = search.toLowerCase();
-      filtered = processed.filter(p => p.sku.toLowerCase().includes(s) || p.name.toLowerCase().includes(s));
+      filtered = processed.filter((p: any) => p.sku.toLowerCase().includes(s) || p.name.toLowerCase().includes(s));
     }
 
-    const totalInStock = processed.reduce((acc, curr) => acc + curr.available, 0);
-    const lowStockCount = processed.filter(p => p.status === "Low Stock").length;
-    const outOfStockCount = processed.filter(p => p.status === "Out of Stock").length;
+    const totalInStock = processed.reduce((acc: number, curr: any) => acc + curr.available, 0);
+    const lowStockCount = processed.filter((p: any) => p.status === "Low Stock").length;
+    const outOfStockCount = processed.filter((p: any) => p.status === "Out of Stock").length;
 
     return {
       items: filtered,
@@ -373,11 +373,7 @@ export class InventoryRepository {
             warehouseId: toWarehouseId,
             quantityAvailable: quantity,
             quantityReserved: 0,
-            quantityIncoming: 0,
-            quantityDamaged: 0,
-            quantityReturned: 0,
             reorderPoint: 5,
-            safetyStock: 2,
           },
         });
       }

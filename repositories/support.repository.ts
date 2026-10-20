@@ -55,7 +55,7 @@ export class SupportRepository {
 
     // Collect profile IDs
     const profileIds = Array.from(
-      new Set(tickets.map((t) => t.profile_id).filter(Boolean))
+      new Set(tickets.map((t: any) => t.profile_id).filter(Boolean))
     ) as string[];
 
     let profilesMap: Record<string, { full_name: string; phone?: string | null }> = {};
@@ -66,7 +66,7 @@ export class SupportRepository {
         .in("id", profileIds);
 
       if (profiles) {
-        profilesMap = profiles.reduce((acc, p) => {
+        profilesMap = profiles.reduce((acc: any, p: any) => {
           const name = [p.first_name, p.last_name].filter(Boolean).join(" ") || "Customer";
           acc[p.id] = { full_name: name, phone: p.phone };
           return acc;
@@ -76,7 +76,7 @@ export class SupportRepository {
 
     // Attach customer and message stats
     const enriched: SupportTicketRecord[] = await Promise.all(
-      tickets.map(async (t) => {
+      tickets.map(async (t: any) => {
         // Fetch last message
         const { data: lastMsg } = await supabase
           .from("ticket_messages")
@@ -458,7 +458,7 @@ export class SupportRepository {
       .eq("is_active", true)
       .limit(30);
 
-    const existingUserIds = new Set((agents || []).map((a) => a.user_id));
+    const existingUserIds = new Set((agents || []).map((a: any) => a.user_id));
 
     if (profiles && profiles.length > 0) {
       for (const p of profiles) {
@@ -486,7 +486,7 @@ export class SupportRepository {
       return acc;
     }, {});
 
-    return (agents || []).map((a) => {
+    return (agents || []).map((a: any) => {
       const p = profileMap[a.user_id];
       const name = p
         ? [p.first_name, p.last_name].filter(Boolean).join(" ")

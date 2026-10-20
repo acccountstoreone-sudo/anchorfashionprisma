@@ -20,14 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AnchorFashionLogo } from "@/components/shared/logo";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { PremiumMobileMenu } from "@/components/layout/mobile-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ADMIN_ROLES, MANAGER_ROLES } from "@/lib/constants/auth";
 import { useCartStore } from "@/stores/use-cart-store";
@@ -645,7 +638,6 @@ export function StoreHeader({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<string[]>(["Shop"]);
   const [mounted, setMounted] = useState(false);
   const [isScrollingDown, setIsScrollingDown] = useState(false);
   const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
@@ -890,12 +882,6 @@ export function StoreHeader({
     }
   };
 
-  const toggleExpand = (label: string) => {
-    setExpandedItems((prev) =>
-      prev.includes(label) ? prev.filter((item) => item !== label) : [...prev, label]
-    );
-  };
-
   return (
     <>
       {/* Announcement Bar */}
@@ -918,102 +904,30 @@ export function StoreHeader({
           {/* Mobile Menu Button */}
           <div className="flex items-center lg:hidden">
             {mounted ? (
-              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetTrigger asChild>
+              <PremiumMobileMenu
+                open={mobileMenuOpen}
+                onOpenChange={setMobileMenuOpen}
+                categories={categories}
+                navLinks={navLinks}
+                user={user}
+                cartItemCount={cartItemCount}
+                wishlistItemCount={wishlistItemCount}
+                contactPhone={contactPhone}
+                announcementBar={announcementBar}
+                triggerButton={
                   <button
                     type="button"
                     aria-label="Open navigation menu"
-                    className="inline-flex items-center justify-center rounded-md p-2 text-gray-700 transition-colors hover:bg-gray-100 hover:text-black focus:outline-none cursor-pointer"
+                    className="inline-flex items-center justify-center rounded-lg p-2 text-gray-800 transition-colors hover:bg-gray-100 hover:text-black focus:outline-none cursor-pointer"
                   >
                     <Menu className="h-6 w-6" />
                   </button>
-                </SheetTrigger>
-                <SheetContent side="left" className="flex h-full w-[85vw] max-w-sm flex-col bg-white p-0">
-                  <SheetHeader className="border-b border-gray-100 p-4 text-left">
-                    <AnchorFashionLogo noLink className="w-full max-w-[140px]" />
-                    <SheetTitle className="sr-only">Menu</SheetTitle>
-                    <SheetDescription className="sr-only">Navigation</SheetDescription>
-                  </SheetHeader>
-                  <nav className="flex-1 overflow-y-auto px-4 py-2">
-                    <div className="divide-y divide-gray-50">
-                      {navLinks.map((link) => (
-                        <div key={link.label} className="py-1">
-                          {link.megaMenu ? (
-                            <div>
-                              <div className="flex items-center justify-between">
-                                <Link
-                                  href={link.href}
-                                  onClick={() => setMobileMenuOpen(false)}
-                                  className="flex-1 py-2.5 text-sm font-semibold uppercase tracking-wider text-gray-800"
-                                >
-                                  {link.label}
-                                </Link>
-                                <button
-                                  type="button"
-                                  onClick={() => toggleExpand(link.label)}
-                                  aria-label={`Toggle ${link.label} submenu`}
-                                  className="p-2 text-gray-400 cursor-pointer"
-                                >
-                                  <ChevronDown
-                                    className={cn(
-                                      "h-4 w-4 transition-transform",
-                                      expandedItems.includes(link.label) && "rotate-180"
-                                    )}
-                                  />
-                                </button>
-                              </div>
-                              {expandedItems.includes(link.label) && (
-                                <div className="mb-2 space-y-4 rounded-md bg-gray-50 px-3 py-3">
-                                  {link.megaMenu.columns.map((col, idx) => (
-                                    <div key={idx}>
-                                      <div
-                                        className="flex items-center justify-between cursor-pointer py-1"
-                                        onClick={() => toggleExpand(`${link.label}-${col.title}`)}
-                                      >
-                                        <p className="text-xs font-bold uppercase text-gray-900">{col.title}</p>
-                                        <ChevronDown
-                                          className={cn(
-                                            "h-3 w-3 transition-transform text-gray-500",
-                                            expandedItems.includes(`${link.label}-${col.title}`) && "rotate-180"
-                                          )}
-                                        />
-                                      </div>
-                                      {expandedItems.includes(`${link.label}-${col.title}`) && (
-                                        <div className="flex flex-col gap-3 pl-2 mt-2 mb-1">
-                                          {col.links.map((sub) => (
-                                            <Link
-                                              key={sub.href}
-                                              href={sub.href}
-                                              onClick={() => setMobileMenuOpen(false)}
-                                              className="text-xs font-medium text-gray-600 hover:text-[#C9A86A]"
-                                            >
-                                              {sub.label}
-                                            </Link>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <Link
-                              href={link.href}
-                              onClick={() => setMobileMenuOpen(false)}
-                              className="flex items-center py-2.5 text-sm font-semibold uppercase tracking-wider text-gray-800"
-                            >
-                              {link.label}
-                            </Link>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </nav>
-                </SheetContent>
-              </Sheet>
+                }
+              />
             ) : (
-              <Menu className="h-6 w-6 text-gray-700" />
+              <div className="inline-flex items-center justify-center p-2 text-gray-700">
+                <Menu className="h-6 w-6" />
+              </div>
             )}
           </div>
 

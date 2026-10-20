@@ -661,7 +661,7 @@ export class AnalyticsRepository {
       customers?.filter((c) => c.accepts_marketing).length || 0;
 
     const couponUsageStats: Record<string, number> = {};
-    coupons?.forEach((c) => {
+    coupons?.forEach((c: any) => {
       if (c.code) {
         couponUsageStats[c.code] = (couponUsageStats[c.code] || 0) + 1;
       }

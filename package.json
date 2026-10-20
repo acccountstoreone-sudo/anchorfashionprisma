@@ -10,6 +10,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run --passWithNoTests",
+    "test:qa": "npx tsx scripts/qa_full_suite.ts",
+    "seed:roles": "npx tsx scripts/seed_all_qa_roles.ts",
+    "purge:qa": "npx tsx scripts/purge_qa_users.ts",
     "test:e2e": "echo 'No E2E tests configured yet'",
     "postinstall": "prisma generate"
   },

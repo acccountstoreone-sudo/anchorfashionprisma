@@ -3,13 +3,41 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  compress: true,
+  poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.neon.tech",
+      },
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "**.amazonaws.com",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
       },
     ],
   },
@@ -17,30 +45,27 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   staticPageGenerationTimeout: 120,
-  outputFileTracingExcludes: {
-    "*": [
-      "./marketplaceandaffiliateplartform/**",
-      "./tests/**",
-      "./e2e/**",
-    ],
-  },
-
-  experimental: {
-    cpus: 2,
-    turbopackMemoryLimit: 1024 * 1024 * 1024,
-    turbopackFileSystemCacheForBuild: true,
-    turbopackFileSystemCacheForDev: true,
-    optimizePackageImports: [
-      "lucide-react",
-      "framer-motion",
-      "@radix-ui/react-icons",
-      "recharts",
-      "date-fns",
-    ],
-  },
 
   async headers() {
     return [
+      {
+        source: "/images/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=2592000, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
+        source: "/fonts/(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
       {
         source: "/(.*)",
         headers: [
