@@ -13,6 +13,7 @@ import { createInventoryMasterIntakeAction, generateProductCodeAction } from "@/
 import { generateEAN13Sync } from "@/lib/utils/barcode";
 import { PrintBarcodeModal, BarcodeLabelData } from "@/components/admin/inventory/PrintBarcodeModal";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   PackagePlus,
   Boxes,
@@ -30,6 +31,8 @@ import {
   TrendingUp,
   Tag,
   Wand2,
+  Layers,
+  ArrowUpRight,
 } from "lucide-react";
 
 interface CategoryOption {
@@ -44,8 +47,9 @@ interface InventoryMasterIntakeDialogProps {
   onSuccess?: () => void;
 }
 
+import { APPAREL_SIZE_SYSTEMS, detectApparelSystemForCategory } from "@/lib/utils/product-code";
+
 const PRESET_COLORS = ["Black", "Navy Blue", "White", "Maroon", "Olive Green", "Charcoal Grey", "Beige", "Sky Blue"];
-const PRESET_SIZES = ["S", "M", "L", "XL", "XXL", "3XL"];
 
 export function InventoryMasterIntakeDialog({
   open,
@@ -63,11 +67,37 @@ export function InventoryMasterIntakeDialog({
   const [totalQuantity, setTotalQuantity] = useState<number>(100);
   const [notes, setNotes] = useState("");
 
-  // Variants selection
+  // Variants selection & Apparel Size System
+  const [activeSizeSystem, setActiveSizeSystem] = useState<string>("alpha");
   const [selectedColors, setSelectedColors] = useState<string[]>(["Black", "Navy Blue"]);
   const [newColorInput, setNewColorInput] = useState("");
   const [selectedSizes, setSelectedSizes] = useState<string[]>(["M", "L", "XL", "XXL"]);
   const [newSizeInput, setNewSizeInput] = useState("");
+
+  // Category-Aware Size System Auto Switch
+  useEffect(() => {
+    if (!categoryId) return;
+    const cat = categories.find((c) => c.id === categoryId);
+    if (cat) {
+      const detected = detectApparelSystemForCategory(cat.name);
+      setActiveSizeSystem(detected.systemId);
+      setSelectedSizes(detected.defaultSizes);
+    }
+  }, [categoryId, categories]);
+
+  // Current system sizes available
+  const currentSystemSizes = useMemo(() => {
+    const sys = APPAREL_SIZE_SYSTEMS.find((s) => s.id === activeSizeSystem);
+    return sys ? sys.sizes : ["S", "M", "L", "XL", "XXL", "3XL"];
+  }, [activeSizeSystem]);
+
+  const handleSelectSizeSystem = (systemId: string) => {
+    setActiveSizeSystem(systemId);
+    const found = APPAREL_SIZE_SYSTEMS.find((s) => s.id === systemId);
+    if (found) {
+      setSelectedSizes(found.sizes.slice(0, 4));
+    }
+  };
 
   // Distribution Matrix: Record<`${color}-${size}`, number>
   const [matrix, setMatrix] = useState<Record<string, number>>({});
@@ -122,6 +152,12 @@ export function InventoryMasterIntakeDialog({
   const totalCostValuation = allocatedTotal * costPrice;
   const totalRetailValuation = allocatedTotal * basePrice;
   const totalProjectedProfit = totalRetailValuation - totalCostValuation;
+
+  // Merchandising Break-Even Calculations
+  const breakEvenUnits = basePrice > 0 ? Math.ceil(totalCostValuation / basePrice) : 0;
+  const breakEvenPercent = allocatedTotal > 0 ? Math.min(100, Math.round((breakEvenUnits / allocatedTotal) * 100)) : 0;
+  const pureProfitUnits = Math.max(0, allocatedTotal - breakEvenUnits);
+  const pureProfitRevenue = pureProfitUnits * basePrice;
 
   const isBalanced = allocatedTotal === totalQuantity;
 
@@ -437,6 +473,59 @@ export function InventoryMasterIntakeDialog({
                   <p className="text-base font-bold text-foreground">৳{totalProjectedProfit.toLocaleString()}</p>
                 </div>
               </div>
+
+              {/* Merchandising & Break-Even Intelligence Card */}
+              <div className="p-3.5 bg-gradient-to-br from-emerald-500/10 via-primary/5 to-transparent rounded-xl border border-emerald-500/30 space-y-2.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-600">
+                      <TrendingUp className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        Merchandising Intelligence & Break-Even Analysis
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground">
+                        Sell <span className="font-semibold text-emerald-600">{breakEvenUnits}</span> out of {allocatedTotal} units ({breakEvenPercent}%) to fully recover batch investment.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs shrink-0">
+                    <Badge variant="outline" className="border-emerald-500/40 text-emerald-700 bg-emerald-50/50">
+                      Markup: {Math.round(markupPercent)}%
+                    </Badge>
+                    <Badge variant="outline" className="border-primary/40 text-primary bg-primary/5">
+                      Margin: {Math.round(marginPercent * 10) / 10}%
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Visual Progress Bar: Break-Even Recovery vs Pure Profit Zone */}
+                <div className="space-y-1">
+                  <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden flex">
+                    <div
+                      className="bg-amber-500 h-full transition-all"
+                      style={{ width: `${breakEvenPercent}%` }}
+                      title={`Break-Even Point: ${breakEvenUnits} units`}
+                    />
+                    <div
+                      className="bg-emerald-500 h-full transition-all"
+                      style={{ width: `${100 - breakEvenPercent}%` }}
+                      title={`Pure Profit Zone: ${pureProfitUnits} units`}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-amber-500 inline-block" />
+                      Recovery Phase: <strong>{breakEvenUnits} units</strong> (৳{totalCostValuation.toLocaleString()})
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+                      Pure Profit Runway: <strong>{pureProfitUnits} units</strong> (+৳{pureProfitRevenue.toLocaleString()})
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Step 3: Colors Selection */}
@@ -479,24 +568,68 @@ export function InventoryMasterIntakeDialog({
               </div>
             </div>
 
-            {/* Step 4: Sizes Selection */}
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">4. Select Available Sizes</Label>
+            {/* Step 4: Sizes Selection with Apparel Size Systems */}
+            <div className="space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <Label className="text-xs font-semibold">4. Select Size System & Available Sizes</Label>
+                <span className="text-[11px] text-muted-foreground">Auto-adapts to category presets</span>
+              </div>
+
+              {/* Size System Category Pills */}
               <div className="flex flex-wrap gap-1.5">
-                {PRESET_SIZES.map((size) => {
+                {APPAREL_SIZE_SYSTEMS.map((sys) => {
+                  const isActive = activeSizeSystem === sys.id;
+                  return (
+                    <Button
+                      key={sys.id}
+                      type="button"
+                      variant={isActive ? "default" : "outline"}
+                      size="sm"
+                      className={cn(
+                        "h-7 text-xs px-2.5 rounded-full transition-all cursor-pointer",
+                        isActive ? "shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                      )}
+                      onClick={() => handleSelectSizeSystem(sys.id)}
+                    >
+                      {sys.label}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              {/* Sizes within Active System */}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {currentSystemSizes.map((size) => {
                   const isSelected = selectedSizes.includes(size);
                   return (
                     <Badge
                       key={size}
                       variant={isSelected ? "default" : "outline"}
-                      className="cursor-pointer px-3 py-1 text-xs transition-all"
+                      className={cn(
+                        "cursor-pointer px-3 py-1 text-xs transition-all",
+                        isSelected ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-muted"
+                      )}
                       onClick={() => toggleSize(size)}
                     >
                       {size}
-                      {isSelected && <span className="ml-1 text-xs opacity-70">✓</span>}
+                      {isSelected && <span className="ml-1 text-xs opacity-80">✓</span>}
                     </Badge>
                   );
                 })}
+
+                {/* Custom Sizes not in current system */}
+                {selectedSizes
+                  .filter((s) => !currentSystemSizes.includes(s))
+                  .map((customSize) => (
+                    <Badge
+                      key={customSize}
+                      variant="default"
+                      className="cursor-pointer px-3 py-1 text-xs transition-all bg-purple-600 hover:bg-purple-700 text-white"
+                      onClick={() => toggleSize(customSize)}
+                    >
+                      {customSize} <span className="ml-1 text-xs opacity-80">✓</span>
+                    </Badge>
+                  ))}
               </div>
 
               {/* Add Custom Size */}

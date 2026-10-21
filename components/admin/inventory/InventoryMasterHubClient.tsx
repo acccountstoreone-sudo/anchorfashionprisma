@@ -37,6 +37,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { InventoryMasterIntakeDialog } from "@/components/admin/inventory/InventoryMasterIntakeDialog";
 import { BranchTransferModal } from "@/components/admin/inventory/BranchTransferModal";
 import { PrintBarcodeModal, BarcodeLabelData } from "@/components/admin/inventory/PrintBarcodeModal";
@@ -79,6 +86,7 @@ export function InventoryMasterHubClient({
   // Search & Filters
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
 
   // Modals
   const [intakeOpen, setIntakeOpen] = useState(false);
@@ -109,10 +117,14 @@ export function InventoryMasterHubClient({
         item.category?.toLowerCase().includes(q);
 
       const matchStatus = statusFilter === "ALL" || item.status === statusFilter;
+      const matchCategory =
+        categoryFilter === "ALL" ||
+        item.category?.toLowerCase() === categoryFilter.toLowerCase() ||
+        item.categoryId === categoryFilter;
 
-      return matchQuery && matchStatus;
+      return matchQuery && matchStatus && matchCategory;
     });
-  }, [masterItems, search, statusFilter]);
+  }, [masterItems, search, statusFilter, categoryFilter]);
 
   // Handle Publish Toggle
   const handleTogglePublish = async (productId: string) => {
@@ -390,7 +402,7 @@ export function InventoryMasterHubClient({
         {/* ─── TAB 1: MASTER INVENTORY CATALOG ─────────────────────────────── */}
         <TabsContent value="catalog" className="space-y-4">
           {/* Search & Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 bg-card p-3 rounded-xl border">
+          <div className="flex flex-col md:flex-row items-center gap-3 bg-card p-3 rounded-xl border">
             <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -400,13 +412,32 @@ export function InventoryMasterHubClient({
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
+
+            {/* Category Dropdown Filter */}
+            <div className="w-full sm:w-48 shrink-0">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="ALL">All Categories</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.name}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Status Filter Buttons */}
+            <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto overflow-x-auto">
               {["ALL", "DRAFT", "ACTIVE"].map((st) => (
                 <Button
                   key={st}
                   variant={statusFilter === st ? "default" : "outline"}
                   size="sm"
-                  className="text-xs h-9"
+                  className="text-xs h-9 cursor-pointer"
                   onClick={() => setStatusFilter(st)}
                 >
                   {st === "DRAFT" ? "Draft in Inventory" : st === "ACTIVE" ? "Published to Store" : "All Products"}

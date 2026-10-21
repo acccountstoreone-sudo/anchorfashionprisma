@@ -254,3 +254,28 @@ export function formatVariantSku(baseCode: string, color?: string, size?: string
 
   return parts.join("-");
 }
+
+export const APPAREL_SIZE_SYSTEMS = [
+  { id: "alpha", label: "👕 Tops (S-3XL)", sizes: ["S", "M", "L", "XL", "XXL", "3XL"] },
+  { id: "waist", label: "👖 Bottoms (28-38)", sizes: ["28", "30", "32", "34", "36", "38"] },
+  { id: "traditional", label: "🥻 Panjabi/Kurti (38-46)", sizes: ["38", "40", "42", "44", "46"] },
+  { id: "footwear", label: "👟 Footwear (39-44)", sizes: ["39", "40", "41", "42", "43", "44"] },
+  { id: "standard", label: "👜 Free Size", sizes: ["Free Size"] },
+];
+
+export function detectApparelSystemForCategory(categoryName: string): { systemId: string; defaultSizes: string[] } {
+  const norm = (categoryName || "").toLowerCase();
+  if (norm.match(/pant|bottom|trouser|jean|denim|boxer|short|jogger|chino/)) {
+    return { systemId: "waist", defaultSizes: ["28", "30", "32", "34", "36"] };
+  }
+  if (norm.match(/panjabi|punjabi|kurti|kurta|sherwani|kameez|pajama|payjama/)) {
+    return { systemId: "traditional", defaultSizes: ["38", "40", "42", "44"] };
+  }
+  if (norm.match(/shoe|sandal|sneaker|footwear|boot|loafer|slipper/)) {
+    return { systemId: "footwear", defaultSizes: ["40", "41", "42", "43"] };
+  }
+  if (norm.match(/bag|cap|belt|accessory|wallet|tie|sunglass|watch/)) {
+    return { systemId: "standard", defaultSizes: ["Free Size"] };
+  }
+  return { systemId: "alpha", defaultSizes: ["M", "L", "XL", "XXL"] };
+}
