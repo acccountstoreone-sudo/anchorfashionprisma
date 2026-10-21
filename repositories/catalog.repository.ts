@@ -274,6 +274,9 @@ export const CatalogRepository = {
             { description: { contains: term, mode: "insensitive" } },
             { shortDescription: { contains: term, mode: "insensitive" } },
             { sku: { contains: term, mode: "insensitive" } },
+            { barcode: { contains: term, mode: "insensitive" } },
+            { variants: { some: { sku: { contains: term, mode: "insensitive" } } } },
+            { variants: { some: { barcode: { contains: term, mode: "insensitive" } } } },
           ],
         });
       }
@@ -331,7 +334,10 @@ export const CatalogRepository = {
       const [product, bestPromo] = await Promise.all([
         prisma.product.findFirst({
           where: {
-            slug,
+            OR: [
+              { slug },
+              { sku: { equals: slug, mode: "insensitive" } },
+            ],
             deletedAt: null,
           },
           include: {

@@ -6,9 +6,11 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Plus, Trash2, Upload, ImagePlus, X, Loader2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Upload, ImagePlus, X, Loader2, Sparkles, Tag, Boxes, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import { InventoryPickerModal } from "@/components/admin/inventory/InventoryPickerModal";
+import { generateProductCodeAction } from "@/lib/actions/admin/inventory-master.actions";
+import { formatVariantSku } from "@/lib/utils/product-code";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -81,10 +83,13 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
   const [tags, setTags] = useState<TagOption[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+
   const handleSelectInventoryProduct = (item: any) => {
-    if (item.id) {
-      toast.success(`Opening "${item.name}" from inventory. Add description, images, and click Publish!`);
-      router.push(`/admin/products/${item.id}/edit`);
+    const editBase = returnPath.startsWith("/manager") ? "/manager" : "/admin";
+    if (item.id && (!initialData || initialData.id !== item.id)) {
+      toast.success(`Opening inventory style "${item.name}" (${item.sku || "N/A"}). Add images, description & click Publish!`);
+      router.push(`${editBase}/products/${item.id}/edit`);
       return;
     }
 
@@ -92,25 +97,70 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
     form.setValue("slug", item.slug, { shouldValidate: true });
     if (item.categoryId) form.setValue("categoryId", item.categoryId, { shouldValidate: true });
     form.setValue("basePrice", item.basePrice, { shouldValidate: true });
-    if (item.costPrice !== undefined) form.setValue("costPrice", item.costPrice, { shouldValidate: true });
+    if (item.costPrice !== undefined && item.costPrice !== null) {
+      form.setValue("costPrice", item.costPrice, { shouldValidate: true });
+    }
     if (item.sku) form.setValue("sku", item.sku, { shouldValidate: true });
     if (item.barcode) form.setValue("barcode", item.barcode, { shouldValidate: true });
     form.setValue("stockQuantity", item.totalAvailable || 0, { shouldValidate: true });
 
     if (item.variants && item.variants.length > 0) {
-      const mapped = item.variants.map((v: any) => ({
-        sku: v.sku,
-        barcode: v.barcode || "",
-        priceOverride: v.price || item.basePrice,
-        costPrice: v.cost || item.costPrice,
-        stockQuantity: v.available || 0,
-        attributes: v.attributes || {},
-        isActive: true,
-      }));
+      const mapped = item.variants.map((v: any, idx: number) => {
+        const color = (v.attributes as any)?.Color || v.color || "";
+        const size = (v.attributes as any)?.Size || v.size || "";
+        return {
+          id: v.id,
+          sku: v.sku || formatVariantSku(item.sku || "AFPRD", color, size) || `VAR-${idx + 1}`,
+          barcode: v.barcode || "",
+          priceOverride: v.price || item.basePrice,
+          costPrice: v.cost || item.costPrice,
+          stockQuantity: v.available ?? 0,
+          attributes: v.attributes || (color || size ? { Color: color, Size: size } : {}),
+          isActive: true,
+        };
+      });
       form.setValue("variants", mapped, { shouldValidate: true });
     }
 
-    toast.success(`Loaded "${item.name}" from inventory with ${item.variantCount || item.variants?.length || 0} variants! Add description, images, and click Publish.`);
+    toast.success(`Loaded "${item.name}" (${item.sku}) from inventory! Buy: ৳${item.costPrice} | Sell: ৳${item.basePrice}. Add media, description & click Publish.`);
+  };
+
+  const handleGenerateCode = async () => {
+    try {
+      setIsGeneratingCode(true);
+      const name = form.getValues("name") || "";
+      const catId = form.getValues("categoryId") || "";
+      const brand = brands.find((b) => b.id === form.getValues("brandId"))?.name || "AF";
+      const brandPrefix = brand.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 2) || "AF";
+
+      const code = await generateProductCodeAction({
+        productName: name,
+        categoryNameOrId: catId,
+        brandPrefix,
+      });
+
+      form.setValue("sku", code, { shouldValidate: true });
+
+      // Update variant SKUs
+      const currentVariants = form.getValues("variants") || [];
+      if (currentVariants.length > 0) {
+        const updated = currentVariants.map((v, idx) => {
+          const color = (v.attributes as any)?.Color || (v.attributes as any)?.color || "";
+          const size = (v.attributes as any)?.Size || (v.attributes as any)?.size || "";
+          return {
+            ...v,
+            sku: formatVariantSku(code, color, size) || `${code}-V${idx + 1}`,
+          };
+        });
+        form.setValue("variants", updated, { shouldValidate: true });
+      }
+
+      toast.success(`Generated unique style code: "${code}"!`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to generate style code.");
+    } finally {
+      setIsGeneratingCode(false);
+    }
   };
 
   useEffect(() => {
@@ -207,12 +257,24 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
       Object.keys(rawVariants[0]?.attributes || {}).length === 0 ||
       rawVariants[0]?.attributes?.Standard === "Default");
 
+  const totalVariantStock = rawVariants.reduce((sum: number, v: any) => {
+    const vStock =
+      v.stockQuantity ??
+      v.stock_quantity ??
+      (Array.isArray(v.inventory_levels)
+        ? v.inventory_levels.reduce((s: number, l: any) => s + (l.quantity_available || 0), 0)
+        : 0);
+    return sum + (Number(vStock) || 0);
+  }, 0);
+
   const normalizedVariants = isDefaultVariantOnly
     ? []
     : rawVariants.map((v: any) => ({
+        id: v.id,
         sku: v.sku || "",
         barcode: v.barcode ?? undefined,
         priceOverride: v.price_override ?? v.priceOverride ?? undefined,
+        costPrice: v.cost_price ?? v.costPrice ?? undefined,
         salePrice: v.sale_price ?? v.salePrice ?? undefined,
         isActive: v.is_active ?? v.isActive ?? true,
         attributes: v.attributes || {},
@@ -225,17 +287,19 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
       }));
 
   const initialStock =
-    (initialData as any)?.stockQuantity ??
-    (initialData as any)?.stock_quantity ??
-    (isDefaultVariantOnly && rawVariants[0]
-      ? rawVariants[0].stockQuantity ??
-        (Array.isArray(rawVariants[0].inventory_levels)
-          ? rawVariants[0].inventory_levels.reduce(
-              (s: number, l: any) => s + (l.quantity_available || 0),
-              0
-            )
-          : 0)
-      : 0);
+    totalVariantStock > 0
+      ? totalVariantStock
+      : (initialData as any)?.stockQuantity ??
+        (initialData as any)?.stock_quantity ??
+        (isDefaultVariantOnly && rawVariants[0]
+          ? rawVariants[0].stockQuantity ??
+            (Array.isArray(rawVariants[0].inventory_levels)
+              ? rawVariants[0].inventory_levels.reduce(
+                  (s: number, l: any) => s + (l.quantity_available || 0),
+                  0
+                )
+              : 0)
+          : 0);
 
   const normalizedSeo = initialData?.seo
     ? {
@@ -415,18 +479,21 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
           </div>
         </div>
 
-        {/* Load from Inventory Master Quick Banner */}
-        {!initialData && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/25 rounded-2xl gap-4 shadow-sm">
+        {/* Master Inventory POS Integration Banner */}
+        {!initialData ? (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/25 rounded-2xl gap-4 shadow-xs">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-amber-500" />
                 <span className="font-bold text-sm text-foreground">
-                  Already added this item into Inventory? (ইনভেন্টরি থেকে দ্রুত লোড করুন)
+                  Clothing Brand POS &amp; Inventory Integration
                 </span>
+                <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-300 font-medium">
+                  Inventory-First POS
+                </Badge>
               </div>
               <p className="text-xs text-muted-foreground">
-                Load colors, sizes, barcodes, SKU, and stock counts directly from your Inventory intake in 1-click.
+                Select an existing style from your Master Inventory to auto-fill Category, Buy/Cost Price, Sell Price, Short Code (AFPTS1), and all Color/Size Variants!
               </p>
             </div>
             <Button
@@ -436,9 +503,56 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
               className="bg-amber-600 hover:bg-amber-500 text-white shrink-0 gap-1.5 shadow-sm cursor-pointer"
               onClick={() => setPickerOpen(true)}
             >
-              <Sparkles className="h-3.5 w-3.5" />
+              <Boxes className="h-3.5 w-3.5" />
               Select from Inventory
             </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl gap-4 shadow-xs">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-amber-600 text-white flex items-center gap-1 shadow-xs">
+                  <Tag className="h-3 w-3" />
+                  Code: {initialData.sku || "N/A"}
+                </span>
+                <Badge variant={initialData.status === "ACTIVE" ? "default" : "secondary"}>
+                  {initialData.status === "ACTIVE" ? "Live on Store" : "Draft in Inventory"}
+                </Badge>
+                {initialData.category && (
+                  <Badge variant="outline" className="text-xs bg-white/80">{initialData.category.name}</Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                📦 Central Inventory: <strong>{totalVariantStock || initialData.basePrice} units in stock</strong> &bull; Buy: <strong>৳{initialData.costPrice || 0}</strong> &bull; Sell: <strong>৳{initialData.basePrice}</strong>
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {initialData.status !== "ACTIVE" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold gap-1.5 shadow-sm cursor-pointer"
+                  onClick={() => {
+                    form.setValue("status", "ACTIVE");
+                    form.handleSubmit((data) => onSubmit(data))();
+                  }}
+                  disabled={isLoading || isPublishing}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Publish to Store
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs cursor-pointer gap-1.5"
+                onClick={() => setPickerOpen(true)}
+              >
+                <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
+                Change Inventory Link
+              </Button>
+            </div>
           </div>
         )}
 
@@ -487,14 +601,35 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                     name="sku"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>SKU</FormLabel>
+                        <div className="flex items-center justify-between">
+                          <FormLabel>Style Code / SKU</FormLabel>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-[11px] px-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 cursor-pointer gap-1"
+                            onClick={handleGenerateCode}
+                            disabled={isGeneratingCode}
+                          >
+                            {isGeneratingCode ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Sparkles className="h-3 w-3" />
+                            )}
+                            Auto-Generate Code
+                          </Button>
+                        </div>
                         <FormControl>
                           <Input
-                            placeholder="TIE-NVY-SLK"
+                            placeholder="e.g. AFPTS1"
                             {...field}
                             value={field.value || ""}
+                            className="font-mono font-medium"
                           />
                         </FormControl>
+                        <FormDescription className="text-xs">
+                          Short unique code (e.g. AFPTS1) displayed to shoppers on store, cart &amp; invoice.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -949,6 +1084,31 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                   )}
                 />
 
+                {/* Live Profit Margin Intelligence Indicator */}
+                {(() => {
+                  const base = Number(form.watch("basePrice")) || 0;
+                  const cost = Number(form.watch("costPrice")) || 0;
+                  const profit = base - cost;
+                  const margin = base > 0 ? Math.round((profit / base) * 100) : 0;
+                  if (base > 0 && cost > 0) {
+                    return (
+                      <div className="rounded-lg bg-emerald-50/80 border border-emerald-200/80 p-3 text-xs text-emerald-950 flex items-center justify-between shadow-xs">
+                        <div>
+                          <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Unit Gross Profit</p>
+                          <p className="font-bold text-sm text-emerald-900">+৳{profit.toLocaleString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Margin</p>
+                          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs">
+                            {margin}%
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
                 {/* Sale / Discount Price */}
                 <FormField
                   control={form.control}
@@ -1187,6 +1347,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
         open={pickerOpen}
         onOpenChange={setPickerOpen}
         onSelectProduct={handleSelectInventoryProduct}
+        categories={categories}
       />
     </Form>
   );

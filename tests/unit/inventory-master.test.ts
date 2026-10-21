@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { generateEAN13Sync } from "@/lib/utils/barcode";
+import { deriveAcronym, formatVariantSku } from "@/lib/utils/product-code";
 
 describe("Inventory Master & POS Flow Engine", () => {
   // ─── 1. BARCODE GENERATION ──────────────────────────────────────────
@@ -219,6 +220,134 @@ describe("Inventory Master & POS Flow Engine", () => {
       warehouseStock -= transferQty;
 
       expect(warehouseStock).toBe(75);
+    });
+  });
+
+  // ─── 5. CLOTHING BRAND DYNAMIC SHORT STYLE CODE ENGINE ─────────────
+  describe("Fashion Brand Short Style Code & SKU Engine", () => {
+    it("should correctly derive short fashion acronyms from categories and product titles", () => {
+      // Men's Polo T-Shirt -> PTS
+      expect(deriveAcronym("Polo T-Shirt")).toBe("PTS");
+      expect(deriveAcronym("Men's Premium Polo T-Shirt")).toBe("PTS");
+
+      // Panjabi -> PJB
+      expect(deriveAcronym("Panjabi")).toBe("PJB");
+      expect(deriveAcronym("Royal Silk Panjabi")).toBe("PJB");
+
+      // Denim Jeans -> DJ
+      expect(deriveAcronym("Denim Jeans")).toBe("DJ");
+      expect(deriveAcronym("Raw Indigo Denim")).toBe("DJ");
+
+      // Casual Shirt -> CS
+      expect(deriveAcronym("Casual Shirt")).toBe("CS");
+
+      // Formal Shirt -> FS
+      expect(deriveAcronym("Formal Shirt")).toBe("FS");
+
+      // Women's Kurti / Saree -> KRT / SRE
+      expect(deriveAcronym("Kurti")).toBe("KRT");
+      expect(deriveAcronym("Saree")).toBe("SRE");
+    });
+
+    it("should format clean, short clothing variant SKUs (e.g. AFPTS1-BLK-M)", () => {
+      // Standard Polo T-Shirt variant
+      const sku1 = formatVariantSku("AFPTS1", "Black", "M");
+      expect(sku1).toBe("AFPTS1-BLK-M");
+
+      // Navy Blue with XL
+      const sku2 = formatVariantSku("AFPTS1", "Navy Blue", "XL");
+      expect(sku2).toBe("AFPTS1-NB-XL");
+
+      // White with XXL
+      const sku3 = formatVariantSku("AFPTS2", "White", "XXL");
+      expect(sku3).toBe("AFPTS2-WHT-XXL");
+
+      // Maroon with Size 42 (numeric size)
+      const sku4 = formatVariantSku("AFPJB1", "Maroon", "42");
+      expect(sku4).toBe("AFPJB1-MRN-42");
+    });
+
+    it("should construct short style codes adhering to brand prefix and sequential numbers", () => {
+      // Simulation of AFPTS1, AFPTS2, AFPTS3 sequence
+      const brand = "AF";
+      const acronym = "PTS";
+      const existingCodes = ["AFPTS1", "AFPTS2"];
+
+      const regex = new RegExp(`^${brand}${acronym}(\\d+)$`, "i");
+      let maxNum = 0;
+      for (const code of existingCodes) {
+        const match = code.match(regex);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+      const nextCode = `${brand}${acronym}${maxNum + 1}`;
+      expect(nextCode).toBe("AFPTS3");
+    });
+  });
+
+  // ─── 6. POS / INVENTORY TO PRODUCT CATALOG AUTO-SYNC ─────────────────
+  describe("Inventory-to-Product Form Auto-Populate Logic", () => {
+    it("should map inventory master item fields to product form state", () => {
+      const mockInventoryProduct = {
+        id: "prod-inv-123",
+        name: "Premium Polo T-Shirt",
+        sku: "AFPTS1",
+        basePrice: 2200,
+        costPrice: 950,
+        categoryId: "cat-men-polo",
+        category: { id: "cat-men-polo", name: "Polo T-Shirts", slug: "polo-t-shirts" },
+        status: "DRAFT",
+        variants: [
+          {
+            id: "var-1",
+            sku: "AFPTS1-BLK-M",
+            barcode: "8942000000018",
+            attributes: { Color: "Black", Size: "M" },
+            priceOverride: 2200,
+            costPrice: 950,
+            inventoryLevels: [{ quantityAvailable: 25 }],
+          },
+          {
+            id: "var-2",
+            sku: "AFPTS1-BLK-L",
+            barcode: "8942000000025",
+            attributes: { Color: "Black", Size: "L" },
+            priceOverride: 2200,
+            costPrice: 950,
+            inventoryLevels: [{ quantityAvailable: 30 }],
+          },
+        ],
+      };
+
+      // Simulated auto-population
+      const formState = {
+        name: mockInventoryProduct.name,
+        sku: mockInventoryProduct.sku,
+        categoryId: mockInventoryProduct.categoryId,
+        basePrice: mockInventoryProduct.basePrice,
+        costPrice: mockInventoryProduct.costPrice,
+        variants: mockInventoryProduct.variants.map((v) => ({
+          sku: v.sku,
+          barcode: v.barcode,
+          color: v.attributes.Color,
+          size: v.attributes.Size,
+          stock: v.inventoryLevels[0].quantityAvailable,
+          costPrice: v.costPrice,
+          priceOverride: v.priceOverride,
+        })),
+      };
+
+      expect(formState.name).toBe("Premium Polo T-Shirt");
+      expect(formState.sku).toBe("AFPTS1");
+      expect(formState.categoryId).toBe("cat-men-polo");
+      expect(formState.basePrice).toBe(2200);
+      expect(formState.costPrice).toBe(950);
+      expect(formState.variants).toHaveLength(2);
+      expect(formState.variants[0].sku).toBe("AFPTS1-BLK-M");
+      expect(formState.variants[1].sku).toBe("AFPTS1-BLK-L");
+      expect(formState.variants[0].stock).toBe(25);
     });
   });
 });

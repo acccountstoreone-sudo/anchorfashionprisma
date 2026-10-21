@@ -3,7 +3,8 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { ProductActions } from "./product-actions";
 import { cn, formatCurrency } from "@/lib/utils";
-import { Check, AlertCircle, Zap } from "lucide-react";
+import { Check, AlertCircle, Zap, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { SizeGuideModal } from "./size-guide-modal";
 import { SizeChart } from "@/types/catalog.types";
 
@@ -477,10 +478,24 @@ export function ProductVariantSelector({
           )}
         </div>
 
-        {/* Dynamic SKU Display */}
+        {/* Dynamic Product Code & SKU Display with Copy */}
         {currentSku && (
-          <div className="text-xs font-medium tracking-wider text-gray-400 uppercase">
-            SKU: <span className="text-gray-700 font-mono">{currentSku}</span>
+          <div className="flex items-center gap-1.5 bg-zinc-50 border border-zinc-200/80 px-2.5 py-1 rounded-md text-xs font-medium tracking-wider text-zinc-500 uppercase">
+            <span>Product Code:</span>
+            <span className="text-zinc-900 font-mono font-bold">{currentSku}</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  navigator.clipboard.writeText(currentSku);
+                  toast.success(`Copied product code: ${currentSku}`);
+                }
+              }}
+              title="Copy Product Code / SKU"
+              className="ml-1 text-zinc-400 hover:text-zinc-800 transition-colors p-0.5 rounded hover:bg-zinc-200/60"
+            >
+              <Copy className="h-3 w-3" />
+            </button>
           </div>
         )}
       </div>

@@ -308,14 +308,21 @@ export function ProductCard({ product, className }: ProductCardProps) {
         {/* Product Details Section */}
         <div className="flex flex-1 flex-col p-3.5 sm:p-4 justify-between bg-white">
           <div>
-            {/* Brand & Rating Row */}
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-400 group-hover:text-[#C9A86A] transition-colors truncate">
-                {brandName}
-              </span>
+            {/* Brand, Product Code & Rating Row */}
+            <div className="flex items-center justify-between mb-1 gap-1">
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-400 group-hover:text-[#C9A86A] transition-colors truncate">
+                  {brandName}
+                </span>
+                {product.sku && (
+                  <span className="inline-flex items-center px-1.5 py-0.2 text-[9px] font-mono font-semibold uppercase tracking-wider bg-zinc-100 text-zinc-600 rounded border border-zinc-200/80">
+                    {product.sku}
+                  </span>
+                )}
+              </div>
 
               {rating > 0 && (
-                <div className="flex items-center gap-1 text-[11px] font-medium text-zinc-700">
+                <div className="flex items-center gap-1 text-[11px] font-medium text-zinc-700 shrink-0">
                   <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                   <span>{rating.toFixed(1)}</span>
                 </div>

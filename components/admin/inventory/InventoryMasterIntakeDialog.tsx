@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { createInventoryMasterIntakeAction } from "@/lib/actions/admin/inventory-master.actions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { createInventoryMasterIntakeAction, generateProductCodeAction } from "@/lib/actions/admin/inventory-master.actions";
 import { generateEAN13Sync } from "@/lib/utils/barcode";
 import { PrintBarcodeModal, BarcodeLabelData } from "@/components/admin/inventory/PrintBarcodeModal";
 import { toast } from "sonner";
@@ -27,6 +28,8 @@ import {
   RefreshCw,
   Percent,
   TrendingUp,
+  Tag,
+  Wand2,
 } from "lucide-react";
 
 interface CategoryOption {
@@ -53,6 +56,8 @@ export function InventoryMasterIntakeDialog({
   // Master Details
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState(categories[0]?.id || "");
+  const [styleCode, setStyleCode] = useState("");
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [basePrice, setBasePrice] = useState<number>(5000);
   const [costPrice, setCostPrice] = useState<number>(2300);
   const [totalQuantity, setTotalQuantity] = useState<number>(100);
@@ -172,6 +177,28 @@ export function InventoryMasterIntakeDialog({
     }));
   };
 
+  // Generate Unique Dynamic Style Code (e.g. AFPTS1)
+  const handleGenerateCode = async () => {
+    if (!name.trim()) {
+      toast.warning("Please enter a product name first to generate a style code.");
+      return;
+    }
+    try {
+      setIsGeneratingCode(true);
+      const code = await generateProductCodeAction({
+        productName: name.trim(),
+        categoryNameOrId: categoryId,
+        brandPrefix: "AF",
+      });
+      setStyleCode(code);
+      toast.success(`Generated short style code: ${code}`);
+    } catch (err: any) {
+      toast.error("Failed to generate style code");
+    } finally {
+      setIsGeneratingCode(false);
+    }
+  };
+
   // Submit Handler
   const handleSubmit = async (publishImmediately: boolean) => {
     if (!name.trim()) {
@@ -212,6 +239,7 @@ export function InventoryMasterIntakeDialog({
         colorVariants,
         publishImmediately,
         notes,
+        skuPrefix: styleCode.trim() || undefined,
       });
 
       if (res.success && res.data) {
@@ -259,31 +287,77 @@ export function InventoryMasterIntakeDialog({
           </DialogHeader>
 
           <div className="space-y-5 py-2">
-            {/* Step 1: Core Product & Category */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">1. Category</Label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Step 1: Core Product, Category & Dynamic Style Code */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">1. Category</Label>
+                  <Select value={categoryId} onValueChange={setCategoryId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">2. Product Name / Title</Label>
+                  <Input
+                    placeholder="e.g. Polo T-Shirt / Oxford Cotton Shirt"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">2. Product Name / Title</Label>
-                <Input
-                  placeholder="e.g. Royal Oxford Premium Cotton Shirt"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
+              {/* Dynamic Clothing Brand Product Style Code */}
+              <div className="p-3 bg-muted/40 border border-primary/20 rounded-xl space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <Label className="text-xs font-bold flex items-center gap-1.5 text-foreground">
+                      <Tag className="h-3.5 w-3.5 text-primary" />
+                      Dynamic Product Style Code (POS & Storefront SKU)
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground">
+                      Unique clothing brand code (e.g. <span className="font-mono font-semibold text-primary">AFPTS1</span> for Anchor Fashion Polo T-Shirt #1).
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateCode}
+                    disabled={isGeneratingCode || !name.trim()}
+                    className="h-8 gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/10 shrink-0"
+                  >
+                    {isGeneratingCode ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Wand2 className="h-3.5 w-3.5" />
+                    )}
+                    Generate Code
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="e.g. AFPTS1 (or leave blank to auto-generate)"
+                    value={styleCode}
+                    onChange={(e) => setStyleCode(e.target.value.toUpperCase())}
+                    className="font-mono font-bold tracking-wider text-sm h-9 bg-background"
+                  />
+                  {styleCode && (
+                    <Badge variant="secondary" className="h-9 px-3 font-mono text-xs shrink-0 flex items-center gap-1">
+                      Preview: {styleCode}-{selectedColors[0]?.slice(0, 3).toUpperCase() || "BLK"}-{selectedSizes[0] || "M"}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
 

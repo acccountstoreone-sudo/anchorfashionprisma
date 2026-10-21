@@ -5,9 +5,28 @@ import { prisma } from "@/lib/prisma";
 import { invalidateProductCache } from "@/lib/cache/invalidate-catalog";
 
 import { generateEAN13Sync } from "@/lib/utils/barcode";
+import { generateUniqueProductCode, formatVariantSku } from "@/lib/utils/product-code";
 
 export async function generateEAN13BarcodeAction(prefix = "89420"): Promise<string> {
   return generateEAN13Sync(prefix);
+}
+
+export async function generateProductCodeAction(params: {
+  productName: string;
+  categoryNameOrId?: string;
+  brandPrefix?: string;
+}): Promise<string> {
+  let categoryNameOrSlug = params.categoryNameOrId;
+  if (params.categoryNameOrId && params.categoryNameOrId.length > 20) {
+    try {
+      const cat = await prisma.category.findUnique({
+        where: { id: params.categoryNameOrId },
+        select: { name: true, slug: true },
+      });
+      if (cat) categoryNameOrSlug = cat.name || cat.slug;
+    } catch (_) {}
+  }
+  return await generateUniqueProductCode(params.productName, categoryNameOrSlug, params.brandPrefix || "AF");
 }
 
 export interface ColorSizeMatrixItem {
@@ -106,9 +125,8 @@ export async function createInventoryMasterIntakeAction(input: InventoryMasterIn
       slug = `${prodSlugPart}-${slugCounter++}`;
     }
 
-    // Base SKU and Barcode
-    const randomSuffix = Math.floor(100 + Math.random() * 900);
-    const baseSku = input.skuPrefix?.trim() || `AF-${catSlugPart}-${prodSlugPart.toUpperCase().slice(0, 6)}-${randomSuffix}`;
+    // Base SKU and Barcode (Short dynamic unique clothing brand style code e.g. AFPTS1)
+    const baseSku = input.skuPrefix?.trim() || (await generateUniqueProductCode(name, category?.name || category?.slug));
     const baseBarcode = input.barcodeBase?.trim() || generateEAN13Sync();
 
     const status = publishImmediately ? "ACTIVE" : "DRAFT";
@@ -125,12 +143,10 @@ export async function createInventoryMasterIntakeAction(input: InventoryMasterIn
 
     for (const cv of colorVariants) {
       const colorName = cv.color.trim();
-      const colorCode = colorName.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) || "CLR";
 
       for (const sz of cv.sizes) {
         const sizeName = sz.size.trim();
-        const sizeCode = sizeName.toUpperCase().replace(/[^A-Z0-9]/g, "");
-        const variantSku = sz.sku?.trim() || `${baseSku}-${colorCode}-${sizeCode}`;
+        const variantSku = sz.sku?.trim() || formatVariantSku(baseSku, colorName, sizeName);
         const variantBarcode = sz.barcode?.trim() || generateEAN13Sync();
         const qty = Math.max(0, Number(sz.quantity) || 0);
 
@@ -268,12 +284,14 @@ export async function createInventoryMasterIntakeAction(input: InventoryMasterIn
 export async function getInventoryMasterListAction(params?: {
   search?: string;
   status?: string;
+  categoryId?: string;
   limit?: number;
   page?: number;
 }) {
   try {
     const search = params?.search?.trim() || "";
     const status = params?.status || "ALL";
+    const categoryId = params?.categoryId;
     const limit = params?.limit || 50;
     const page = params?.page || 1;
     const skip = (page - 1) * limit;
@@ -302,6 +320,10 @@ export async function getInventoryMasterListAction(params?: {
 
     if (status !== "ALL") {
       where.status = status;
+    }
+
+    if (categoryId && categoryId !== "ALL") {
+      where.categoryId = categoryId;
     }
 
     const [products, total] = await Promise.all([
