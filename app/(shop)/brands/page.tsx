@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function BrandsPage() {
-  const products = await CatalogRepository.getProducts({ limit: 8 });
+  const products = await CatalogRepository.getProducts({ limit: 8 }).catch(() => ({ data: [] }));
   
   return (
     <div className="flex flex-col min-h-screen pt-10">

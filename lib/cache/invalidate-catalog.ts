@@ -18,8 +18,8 @@ export function invalidateProductCache(slug?: string) {
     // Also revalidate key path segments
     revalidatePath("/products");
     revalidatePath("/(shop)", "layout");
-  } catch (error) {
-    console.warn("Failed to invalidate product cache tags:", error);
+  } catch {
+    // Outside request context (e.g. background job / CLI script), cache revalidation is safely skipped
   }
 }
 

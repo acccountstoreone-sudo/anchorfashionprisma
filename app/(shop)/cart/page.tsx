@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import { fetchCartAction } from "@/lib/actions/cart.actions";
 import { CartClient } from "@/components/cart/cart-client";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Your Cart | Anchor Fashion",
   description: "Review your cart items before checkout.",

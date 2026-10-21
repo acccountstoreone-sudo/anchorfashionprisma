@@ -9,6 +9,7 @@ import { z } from "zod";
 import { Plus, Trash2, Upload, ImagePlus, X, Loader2, Sparkles, Tag, Boxes, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import { InventoryPickerModal } from "@/components/admin/inventory/InventoryPickerModal";
+import { InventoryMasterIntakeDialog } from "@/components/admin/inventory/InventoryMasterIntakeDialog";
 import { StorefrontLivePreview } from "@/features/admin/components/products/StorefrontLivePreview";
 import { InventoryPOSQuickShelf } from "@/features/admin/components/products/InventoryPOSQuickShelf";
 import { generateProductCodeAction } from "@/lib/actions/admin/inventory-master.actions";
@@ -84,6 +85,9 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
   const [brands, setBrands] = useState<BrandOption[]>([]);
   const [tags, setTags] = useState<TagOption[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [intakeModalOpen, setIntakeModalOpen] = useState(false);
+  const [intakeDefaultCategory, setIntakeDefaultCategory] = useState<string | undefined>(undefined);
+  const [intakeRefreshTrigger, setIntakeRefreshTrigger] = useState(0);
 
   const [activeInventoryItem, setActiveInventoryItem] = useState<any>(initialData || null);
   const [linkedProductId, setLinkedProductId] = useState<string | null>(initialData?.id || null);
@@ -514,6 +518,15 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
           activeItem={activeInventoryItem}
           onOpenFullModal={() => setPickerOpen(true)}
           categories={categories}
+          selectedCategoryId={form.watch("categoryId") || undefined}
+          onSelectCategory={(catId) =>
+            form.setValue("categoryId", catId === "ALL" ? "" : catId, { shouldValidate: true })
+          }
+          onOpenIntakeDialog={(catId) => {
+            setIntakeDefaultCategory(catId || form.getValues("categoryId") || undefined);
+            setIntakeModalOpen(true);
+          }}
+          refreshTrigger={intakeRefreshTrigger}
         />
 
         <div className="grid gap-6 md:grid-cols-3 pb-8">
@@ -1268,16 +1281,10 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                         <Select
                           onValueChange={field.onChange}
                           value={field.value || ""}
-                          items={categories.map((cat) => ({
-                            value: cat.id,
-                            label: cat.name,
-                          }))}
                         >
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a category">
-                                {selectedCategory ? selectedCategory.name : undefined}
-                              </SelectValue>
+                            <SelectTrigger className="bg-background/90 text-sm">
+                              <SelectValue placeholder="Select a category" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -1366,6 +1373,33 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
         onOpenChange={setPickerOpen}
         onSelectProduct={handleSelectInventoryProduct}
         categories={categories}
+      />
+
+      {/* Intake directly into Inventory Modal */}
+      <InventoryMasterIntakeDialog
+        open={intakeModalOpen}
+        onOpenChange={setIntakeModalOpen}
+        categories={categories}
+        defaultCategoryId={intakeDefaultCategory}
+        onSuccess={(created) => {
+          setIntakeRefreshTrigger((prev) => prev + 1);
+          if (created) {
+            const prod = created.product || created;
+            const mappedItem = {
+              id: prod.id,
+              name: prod.name,
+              slug: prod.slug,
+              sku: prod.sku,
+              barcode: prod.barcode,
+              categoryId: prod.categoryId,
+              basePrice: Number(prod.basePrice || 0),
+              costPrice: Number(prod.costPrice || 0),
+              totalAvailable: created.totalStockUnits || 0,
+              variants: created.variants || prod.variants || [],
+            };
+            handleSelectInventoryProduct(mappedItem);
+          }
+        }}
       />
     </Form>
   );

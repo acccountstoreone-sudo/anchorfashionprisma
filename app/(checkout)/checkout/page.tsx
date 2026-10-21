@@ -6,6 +6,8 @@ import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { OrderSummary } from "@/components/checkout/order-summary";
 import { CheckoutStoreInitializer } from "./initializer";
 
+export const dynamic = "force-dynamic";
+
 export default async function CheckoutPage() {
   const { createClient } = await import("@/lib/supabase/server");
   const { ADMIN_ROLES } = await import("@/lib/constants/auth");

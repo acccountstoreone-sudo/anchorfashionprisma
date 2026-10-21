@@ -27,7 +27,7 @@ import { Clock } from "lucide-react";
  * High-Traffic Production Caching (10,000+ Daily Visitors)
  * Revalidates every 60 seconds (ISR) and uses tag-based invalidation.
  */
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Home | Anchor Fashion Enterprise",
@@ -36,7 +36,7 @@ export const metadata = {
 };
 
 export default async function HomePage() {
-  // Fetch cached catalog data in parallel (Served from memory across visitors)
+  // Fetch cached catalog data in parallel with resilient fallbacks
   const [
     categories,
     collections,
@@ -52,19 +52,19 @@ export default async function HomePage() {
     whyChooseUsData,
     curatedCategoriesData,
   ] = await Promise.all([
-    getCachedCategories(),
-    getCachedCollections(),
-    getCachedProducts({ category: "mens", limit: 8 }),
-    getCachedProducts({ category: "womens", limit: 8 }),
-    getCachedProducts({ category: "kids", limit: 4 }),
-    getCachedProducts({ category: "accessories", limit: 4 }),
-    getCachedFeaturedProducts(4),
-    getCachedProducts({ sortBy: "rating", limit: 8 }),
-    getCachedHeroSlides(),
-    FlashSaleService.getActiveFlashSales(),
-    getCachedFeaturedPromoBanner(),
-    getCachedWhyChooseUs(),
-    getCachedCuratedCategoriesData(),
+    getCachedCategories().catch(() => []),
+    getCachedCollections().catch(() => []),
+    getCachedProducts({ category: "mens", limit: 8 }).catch(() => ({ data: [] })),
+    getCachedProducts({ category: "womens", limit: 8 }).catch(() => ({ data: [] })),
+    getCachedProducts({ category: "kids", limit: 4 }).catch(() => ({ data: [] })),
+    getCachedProducts({ category: "accessories", limit: 4 }).catch(() => ({ data: [] })),
+    getCachedFeaturedProducts(4).catch(() => []),
+    getCachedProducts({ sortBy: "rating", limit: 8 }).catch(() => ({ data: [] })),
+    getCachedHeroSlides().catch(() => []),
+    FlashSaleService.getActiveFlashSales().catch(() => []),
+    getCachedFeaturedPromoBanner().catch(() => null),
+    getCachedWhyChooseUs().catch(() => []),
+    getCachedCuratedCategoriesData().catch(() => null),
   ]);
 
   return (

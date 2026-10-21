@@ -81,7 +81,7 @@ export default async function InventoryDashboardPage() {
         initialFinancialReport={finRes.data}
         categories={categories}
         warehouses={warehouses}
-        branches={branches}
+        branches={branches.map((b) => ({ id: b.id, name: b.name, code: b.code || undefined }))}
         allVariants={allVariants}
       />
     </div>

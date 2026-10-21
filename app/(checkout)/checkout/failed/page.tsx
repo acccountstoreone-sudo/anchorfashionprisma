@@ -14,6 +14,8 @@ import { StoreFooter } from "@/components/layout/store-footer";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { SSLCommerzService } from "@/lib/services/payment/sslcommerz.service";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Payment Unsuccessful | Anchor Fashion",
   description: "We could not complete your payment transaction.",

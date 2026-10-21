@@ -11,7 +11,7 @@ export const metadata = {
 };
 
 export default async function CollectionsIndexPage() {
-  const collections = await getCachedCollections(true);
+  const collections = (await getCachedCollections(true).catch(() => [])) || [];
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] pb-24">

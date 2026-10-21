@@ -25,12 +25,13 @@ export interface StorefrontLivePreviewProps {
   basePrice: number;
   salePrice?: number | null;
   costPrice?: number | null;
-  media: Array<{ url?: string; altText?: string; isPrimary?: boolean }>;
+  media: Array<{ url?: string; altText?: string | null; isPrimary?: boolean; [key: string]: any }>;
   variants: Array<{
     attributes?: Record<string, any>;
     stockQuantity?: number;
     sku?: string;
-    priceOverride?: number;
+    priceOverride?: number | null;
+    [key: string]: any;
   }>;
   status?: string;
 }

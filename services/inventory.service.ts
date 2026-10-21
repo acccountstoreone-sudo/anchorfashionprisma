@@ -2,6 +2,7 @@ import { InventoryRepository } from "@/repositories/inventory.repository";
 import { InventoryLevel } from "@/types/inventory.types";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { prisma } from "@/lib/prisma";
+import { invalidateProductCache } from "@/lib/cache/invalidate-catalog";
 
 // ---------------------------------------------------------------------------
 // Application-level error codes surfaced to the checkout / order flow.
@@ -476,6 +477,147 @@ export class InventoryService {
       }
     } catch (e) {
       console.warn("Prisma confirmOrderInventory error:", e);
+    }
+  }
+
+  /**
+   * Permanently deduct variant stock when an order is placed/confirmed.
+   * Decrements quantityAvailable in Neon PostgreSQL and logs a StockMovement.
+   */
+  async deductStockForOrderItems(
+    orderId: string,
+    items: Array<{
+      productId?: string | null;
+      variantId?: string | null;
+      sku?: string | null;
+      color?: string | null;
+      size?: string | null;
+      quantity: number;
+    }>
+  ): Promise<void> {
+    if (!items || items.length === 0) return;
+
+    for (const item of items) {
+      try {
+        const qty = Math.max(1, Number(item.quantity) || 1);
+        let variant: any = null;
+
+        // 1. By variantId
+        if (item.variantId) {
+          variant = await prisma.variant.findUnique({
+            where: { id: item.variantId },
+            include: {
+              inventoryLevels: true,
+              product: { select: { slug: true, name: true } },
+            },
+          });
+        }
+
+        // 2. By SKU
+        if (!variant && item.sku) {
+          variant = await prisma.variant.findUnique({
+            where: { sku: item.sku },
+            include: {
+              inventoryLevels: true,
+              product: { select: { slug: true, name: true } },
+            },
+          });
+        }
+
+        // 3. By productId + (color / size)
+        if (!variant && item.productId) {
+          const variants = await prisma.variant.findMany({
+            where: { productId: item.productId, isActive: true },
+            include: {
+              inventoryLevels: true,
+              product: { select: { slug: true, name: true } },
+            },
+          });
+
+          if (variants.length === 1) {
+            variant = variants[0];
+          } else if (variants.length > 1) {
+            const colorLower = (item.color || "").toLowerCase().trim();
+            const sizeLower = (item.size || "").toLowerCase().trim();
+
+            const matched = variants.find((v) => {
+              const attr = (v.attributes as any) || {};
+              const vColor = (attr.Color || attr.color || "").toLowerCase().trim();
+              const vSize = (attr.Size || attr.size || "").toLowerCase().trim();
+
+              if (colorLower && sizeLower) {
+                return vColor === colorLower && vSize === sizeLower;
+              }
+              if (colorLower) return vColor === colorLower;
+              if (sizeLower) return vSize === sizeLower;
+              return false;
+            });
+
+            variant = matched || variants[0];
+          }
+        }
+
+        if (!variant) {
+          console.warn(`[Inventory] Could not resolve variant for order item:`, item);
+          continue;
+        }
+
+        // Find inventory level to deduct from
+        let targetLevel =
+          variant.inventoryLevels.find((lvl: any) => lvl.quantityAvailable >= qty) ||
+          variant.inventoryLevels[0];
+
+        if (!targetLevel) {
+          // Find default warehouse
+          const defaultWh = await prisma.warehouse.findFirst({
+            where: { isActive: true },
+            select: { id: true },
+          });
+          if (defaultWh) {
+            targetLevel = await prisma.inventoryLevel.create({
+              data: {
+                variantId: variant.id,
+                warehouseId: defaultWh.id,
+                quantityAvailable: 0,
+                quantityReserved: 0,
+                reorderPoint: 5,
+              },
+            });
+          }
+        }
+
+        if (targetLevel) {
+          const prevQty = targetLevel.quantityAvailable;
+          const newQty = Math.max(0, prevQty - qty);
+
+          await prisma.inventoryLevel.update({
+            where: { id: targetLevel.id },
+            data: {
+              quantityAvailable: newQty,
+            },
+          });
+
+          await prisma.stockMovement.create({
+            data: {
+              variantId: variant.id,
+              warehouseId: targetLevel.warehouseId,
+              movementType: "OUT",
+              quantity: -qty,
+              previousQuantity: prevQty,
+              newQuantity: newQty,
+              referenceType: "ORDER",
+              referenceId: orderId,
+              notes: `Order item purchased: ${variant.sku || item.sku || "Variant"} (${item.color || ""} ${item.size || ""})`,
+            },
+          });
+
+          if (variant.product?.slug) {
+            invalidateProductCache(variant.product.slug);
+          }
+        }
+      } catch (deductErr) {
+        console.error(`[Inventory] Failed deducting stock for item in order ${orderId}:`, deductErr);
+      }
     }
   }
 }

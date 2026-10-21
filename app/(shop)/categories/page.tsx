@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function CategoriesPage() {
-  const dbCategories: any[] = (await CatalogRepository.getCategories()) || [];
+  const dbCategories: any[] = (await CatalogRepository.getCategories().catch(() => [])) || [];
 
   // Include all active valid categories
   const validCategories = dbCategories.filter(

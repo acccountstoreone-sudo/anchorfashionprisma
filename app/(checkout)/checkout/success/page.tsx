@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Order Placed | Anchor Fashion",
   description: "Thank you for your purchase.",

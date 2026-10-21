@@ -1,4 +1,15 @@
-export function exportToCsv<T>(filename: string, rows: T[]) {
+export function exportToCsv<T>(arg1: string | T[], arg2?: string | T[]) {
+  let filename: string;
+  let rows: T[];
+
+  if (typeof arg1 === "string") {
+    filename = arg1;
+    rows = (arg2 as T[]) || [];
+  } else {
+    rows = arg1 || [];
+    filename = typeof arg2 === "string" ? arg2 : "export.csv";
+  }
+
   if (!rows || !rows.length) {
     return;
   }

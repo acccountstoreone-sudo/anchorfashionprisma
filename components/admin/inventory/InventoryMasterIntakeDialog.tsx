@@ -44,22 +44,38 @@ interface InventoryMasterIntakeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   categories: CategoryOption[];
-  onSuccess?: () => void;
+  onSuccess?: (createdProduct?: any) => void;
+  defaultCategoryId?: string;
 }
 
 import { APPAREL_SIZE_SYSTEMS, detectApparelSystemForCategory } from "@/lib/utils/product-code";
 
-const PRESET_COLORS = ["Black", "Navy Blue", "White", "Maroon", "Olive Green", "Charcoal Grey", "Beige", "Sky Blue"];
+const PRESET_COLORS = [
+  "Black",
+  "Navy Blue",
+  "White",
+  "Maroon",
+  "Orange",
+  "Olive Green",
+  "Charcoal Grey",
+  "Beige",
+  "Sky Blue",
+  "Red",
+  "Royal Blue",
+  "Golden",
+  "Emerald Green",
+];
 
 export function InventoryMasterIntakeDialog({
   open,
   onOpenChange,
   categories = [],
   onSuccess,
+  defaultCategoryId,
 }: InventoryMasterIntakeDialogProps) {
   // Master Details
   const [name, setName] = useState("");
-  const [categoryId, setCategoryId] = useState(categories[0]?.id || "");
+  const [categoryId, setCategoryId] = useState(defaultCategoryId || categories[0]?.id || "");
   const [styleCode, setStyleCode] = useState("");
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [basePrice, setBasePrice] = useState<number>(5000);
@@ -75,6 +91,12 @@ export function InventoryMasterIntakeDialog({
   const [newSizeInput, setNewSizeInput] = useState("");
 
   // Category-Aware Size System Auto Switch
+  useEffect(() => {
+    if (open && defaultCategoryId) {
+      setCategoryId(defaultCategoryId);
+    }
+  }, [open, defaultCategoryId]);
+
   useEffect(() => {
     if (!categoryId) return;
     const cat = categories.find((c) => c.id === categoryId);
@@ -293,7 +315,7 @@ export function InventoryMasterIntakeDialog({
 
         setPrintLabels(labels);
 
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess(res.data);
         onOpenChange(false);
 
         // Prompt to print stickers

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
 import { AlphaSmsService } from '@/lib/services/sms/alpha-sms.service';
+import { InventoryService } from '@/services/inventory.service';
 
 export async function POST(request: Request) {
   try {
@@ -115,6 +116,24 @@ export async function POST(request: Request) {
       }
     } catch (itemsErr) {
       console.warn('[Store Orders API] Warning inserting order_items:', itemsErr);
+    }
+
+    // 3b. Real-time Inventory stock deduction in Neon PostgreSQL
+    try {
+      const inventoryService = new InventoryService();
+      await inventoryService.deductStockForOrderItems(
+        orderId,
+        (items || []).map((it: any) => ({
+          productId: it.id && String(it.id).length === 36 ? it.id : (it.productId || null),
+          variantId: it.variantId || null,
+          sku: it.sku || (typeof it.id === 'string' && it.id.length < 30 ? it.id : null),
+          color: it.color || null,
+          size: it.size || null,
+          quantity: Number(it.quantity) || 1,
+        }))
+      );
+    } catch (invErr) {
+      console.error('[Store Orders API] Error deducting inventory stock:', invErr);
     }
 
     // 4. Asynchronously send rich confirmation SMS to customer with complete details

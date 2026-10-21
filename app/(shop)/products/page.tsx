@@ -52,7 +52,7 @@ export const metadata = {
   },
 };
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function ProductsPage({
   searchParams,
@@ -91,7 +91,7 @@ export default async function ProductsPage({
   if (maxPrice !== undefined) safeParams.maxPrice = String(maxPrice);
 
   // Fetch catalog data in parallel
-  const [{ data: products, total: count }, rawCategories, rawBrands] =
+  const [prodResult, rawCategories, rawBrands] =
     await Promise.all([
       CatalogService.getProducts({
         category,
@@ -105,6 +105,9 @@ export default async function ProductsPage({
       CatalogService.getCategories(),
       CatalogService.getBrands(),
     ]);
+
+  const products = prodResult?.data || [];
+  const count = prodResult?.count ?? products.length;
 
   // Clean real categories and brands (remove placeholder/QA records)
   const filteredCategories: any[] = ((rawCategories as any[]) || []).filter(

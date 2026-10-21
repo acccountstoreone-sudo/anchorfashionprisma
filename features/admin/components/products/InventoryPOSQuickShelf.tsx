@@ -13,19 +13,32 @@ import {
   ChevronUp,
   Loader2,
   Layers,
-  TrendingUp,
+  Plus,
+  PackagePlus,
+  AlertCircle,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getInventoryMasterListAction } from "@/lib/actions/admin/inventory-master.actions";
-import { formatCurrency } from "@/lib/utils";
 
 export interface InventoryPOSQuickShelfProps {
   onSelectItem: (item: any) => void;
   activeItem?: any;
   onOpenFullModal: () => void;
   categories?: Array<{ id: string; name: string }>;
+  selectedCategoryId?: string;
+  onSelectCategory?: (categoryId: string) => void;
+  onOpenIntakeDialog?: (categoryId?: string) => void;
+  refreshTrigger?: number;
 }
 
 export function InventoryPOSQuickShelf({
@@ -33,10 +46,24 @@ export function InventoryPOSQuickShelf({
   activeItem,
   onOpenFullModal,
   categories = [],
+  selectedCategoryId,
+  onSelectCategory,
+  onOpenIntakeDialog,
+  refreshTrigger = 0,
 }: InventoryPOSQuickShelfProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("ALL");
+  // Internal category state fallback if not controlled
+  const [internalCategory, setInternalCategory] = useState("ALL");
+  const effectiveCategory = selectedCategoryId !== undefined ? selectedCategoryId : internalCategory;
+
+  const handleCategoryChange = (catId: string) => {
+    setInternalCategory(catId);
+    if (onSelectCategory) {
+      onSelectCategory(catId);
+    }
+  };
+
   const [shelfItems, setShelfItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -47,8 +74,8 @@ export function InventoryPOSQuickShelf({
         setIsLoading(true);
         const res = await getInventoryMasterListAction({
           search,
-          categoryId: selectedCategory !== "ALL" ? selectedCategory : undefined,
-          limit: 8,
+          categoryId: effectiveCategory && effectiveCategory !== "ALL" ? effectiveCategory : undefined,
+          limit: 12,
         });
         if (!isCancelled && res.success && res.data) {
           setShelfItems(res.data.items);
@@ -64,10 +91,13 @@ export function InventoryPOSQuickShelf({
     return () => {
       isCancelled = true;
     };
-  }, [search, selectedCategory]);
+  }, [search, effectiveCategory, refreshTrigger]);
+
+  const currentCategoryObj = categories.find((c) => c.id === effectiveCategory);
+  const currentCategoryName = currentCategoryObj ? currentCategoryObj.name : "Selected Category";
 
   return (
-    <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-5 shadow-xs transition-all space-y-4">
+    <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-5 shadow-xs transition-all space-y-4">
       {/* Top Banner Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="space-y-1">
@@ -76,30 +106,43 @@ export function InventoryPOSQuickShelf({
               <Boxes className="h-4 w-4" />
             </span>
             <h3 className="font-bold text-base text-foreground">
-              Clothing POS &amp; Warehouse Inventory Master
+              Step 1: Select Category &amp; Import from Inventory
             </h3>
             <Badge
               variant="outline"
               className="text-[11px] bg-amber-50 text-amber-900 border-amber-300 font-semibold dark:bg-amber-950/40 dark:text-amber-300"
             >
-              POS Sync Active
+              Inventory-First Policy
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            Select any inventory style to automatically load Category, Buy/Cost Price, Sell Price, Short Code (AFPTS1), and Matrix!
+            All storefront products originate in Inventory. Choose a category below to import an existing inventory style, or add a new one into Inventory first.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {onOpenIntakeDialog && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 border-amber-500/40 text-amber-700 hover:bg-amber-500/10 dark:text-amber-300 font-semibold text-xs gap-1.5 cursor-pointer"
+              onClick={() => onOpenIntakeDialog(effectiveCategory !== "ALL" ? effectiveCategory : undefined)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add to Inventory First
+            </Button>
+          )}
+
           <Button
             type="button"
             variant="default"
             size="sm"
-            className="bg-amber-600 hover:bg-amber-500 text-white font-semibold gap-1.5 shadow-sm cursor-pointer text-xs"
+            className="h-8 bg-amber-600 hover:bg-amber-500 text-white font-semibold gap-1.5 shadow-sm cursor-pointer text-xs"
             onClick={onOpenFullModal}
           >
             <Sparkles className="h-3.5 w-3.5" />
-            Browse Full Inventory
+            Browse All Inventory
           </Button>
 
           <Button
@@ -117,11 +160,11 @@ export function InventoryPOSQuickShelf({
 
       {/* Currently Linked Style Badge (if an item is loaded) */}
       {activeItem && (
-        <div className="flex flex-wrap items-center justify-between p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs gap-2">
+        <div className="flex flex-wrap items-center justify-between p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="font-semibold text-emerald-950 dark:text-emerald-200">
-              Active Style Loaded:
+              Active Inventory Style Imported:
             </span>
             <span className="font-bold text-foreground">{activeItem.name}</span>
             <span className="font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30">
@@ -151,71 +194,114 @@ export function InventoryPOSQuickShelf({
       {/* Expandable Quick POS Shelf */}
       {isOpen && (
         <div className="space-y-3 pt-1">
-          {/* Filter and Search Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-            {/* Quick Category Chips */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+          {/* Category Dropdown and Search Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+            {/* Direct Category Dropdown (Clean, human-readable names) */}
+            <div className="sm:col-span-5 flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground shrink-0 flex items-center gap-1">
+                <Filter className="h-3.5 w-3.5 text-amber-600" />
+                Category:
+              </span>
+              <Select
+                value={effectiveCategory || "ALL"}
+                onValueChange={handleCategoryChange}
+              >
+                <SelectTrigger className="h-9 bg-background/90 text-xs font-medium border-border/80">
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Categories</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Quick Search Input */}
+            <div className="sm:col-span-7 relative">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search style name, style code (e.g. AFPTS1, AFPNJ1), or barcode..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-9 pl-8 text-xs bg-background/90 border-border/80"
+              />
+            </div>
+          </div>
+
+          {/* Quick Category Chips for Fast 1-Click Filtering */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => handleCategoryChange("ALL")}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                effectiveCategory === "ALL" || !effectiveCategory
+                  ? "bg-amber-600 text-white shadow-2xs"
+                  : "bg-background/80 text-muted-foreground hover:bg-background border border-border"
+              }`}
+            >
+              All Categories
+            </button>
+            {categories.map((cat) => (
               <button
+                key={cat.id}
                 type="button"
-                onClick={() => setSelectedCategory("ALL")}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                  selectedCategory === "ALL"
+                onClick={() => handleCategoryChange(cat.id)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  effectiveCategory === cat.id
                     ? "bg-amber-600 text-white shadow-2xs"
                     : "bg-background/80 text-muted-foreground hover:bg-background border border-border"
                 }`}
               >
-                All Styles
+                {cat.name}
               </button>
-              {categories.slice(0, 6).map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                    selectedCategory === cat.id
-                      ? "bg-amber-600 text-white shadow-2xs"
-                      : "bg-background/80 text-muted-foreground hover:bg-background border border-border"
-                  }`}
-                >
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-
-            {/* Quick Search Input */}
-            <div className="relative w-full sm:w-56 shrink-0">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search style or code..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-8 pl-8 text-xs bg-background/80"
-              />
-            </div>
+            ))}
           </div>
 
           {/* Horizontal / Grid Cards of Inventory Styles */}
           {isLoading ? (
             <div className="flex items-center justify-center py-8 text-muted-foreground gap-2">
               <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
-              <span className="text-xs">Loading POS inventory shelf...</span>
+              <span className="text-xs">Loading inventory products...</span>
             </div>
           ) : shelfItems.length === 0 ? (
-            <div className="text-center py-6 border border-dashed rounded-xl bg-background/40">
-              <p className="text-xs text-muted-foreground">
-                No inventory styles found for this filter.
-              </p>
+            <div className="rounded-xl border border-dashed border-amber-500/40 bg-card/60 p-6 text-center space-y-3">
+              <div className="flex justify-center">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600">
+                  <PackagePlus className="h-5 w-5" />
+                </span>
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-sm text-foreground">
+                  No inventory products found {effectiveCategory !== "ALL" ? `under "${currentCategoryName}"` : ""}
+                </h4>
+                <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                  Every storefront product must be registered in Inventory first with its cost price, sell price, and color/size quantity matrix.
+                </p>
+              </div>
+              {onOpenIntakeDialog && (
+                <Button
+                  type="button"
+                  onClick={() => onOpenIntakeDialog(effectiveCategory !== "ALL" ? effectiveCategory : undefined)}
+                  className="bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add {effectiveCategory !== "ALL" ? `"${currentCategoryName}"` : "Product"} to Inventory First
+                </Button>
+              )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
               {shelfItems.map((item) => {
-                const profit = Number(item.basePrice || 0) - Number(item.costPrice || 0);
                 const isSelected = activeItem?.id === item.id || activeItem?.sku === item.sku;
 
                 return (
                   <div
                     key={item.id}
-                    className={`group relative rounded-xl border p-3 bg-card hover:border-amber-500/50 hover:shadow-sm transition-all flex flex-col justify-between space-y-2 cursor-pointer ${
+                    className={`group relative rounded-xl border p-3.5 bg-card hover:border-amber-500/50 hover:shadow-sm transition-all flex flex-col justify-between space-y-2.5 cursor-pointer ${
                       isSelected
                         ? "border-amber-500 bg-amber-500/5 ring-1 ring-amber-500/30"
                         : "border-border/70"
@@ -239,9 +325,9 @@ export function InventoryPOSQuickShelf({
                         {item.name}
                       </h4>
 
-                      {/* Category */}
-                      <p className="text-[10px] text-muted-foreground">
-                        {item.category} &bull; {item.variantCount} variants
+                      {/* Category & Variants count */}
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {item.category?.name || item.category || "General"} &bull; {item.variantCount || item.variants?.length || 0} variants
                       </p>
                     </div>
 
@@ -249,10 +335,10 @@ export function InventoryPOSQuickShelf({
                     <div className="pt-2 border-t border-border/50 flex items-center justify-between text-xs">
                       <div className="space-y-0.5">
                         <p className="text-[10px] text-muted-foreground">
-                          Buy: <strong>৳{item.costPrice}</strong>
+                          Buy: <strong>৳{item.costPrice || 0}</strong>
                         </p>
                         <p className="font-bold text-foreground">
-                          Sell: ৳{item.basePrice}
+                          Sell: ৳{item.basePrice || 0}
                         </p>
                       </div>
 
@@ -270,7 +356,7 @@ export function InventoryPOSQuickShelf({
                           onSelectItem(item);
                         }}
                       >
-                        {isSelected ? "Selected" : "Populate"}
+                        {isSelected ? "Imported ✓" : "Import Style"}
                         <ArrowRight className="h-3 w-3" />
                       </Button>
                     </div>
