@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../prisma";
 
 /**
  * Standard Clothing Brand Product Code / Style Code Generator.

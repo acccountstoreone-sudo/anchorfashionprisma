@@ -334,6 +334,17 @@ export async function getInventoryMasterListAction(params?: {
         orderBy: { createdAt: "desc" },
         include: {
           category: { select: { id: true, name: true, slug: true } },
+          media: {
+            select: {
+              id: true,
+              url: true,
+              altText: true,
+              isPrimary: true,
+              mediaType: true,
+              displayOrder: true,
+            },
+            orderBy: { displayOrder: "asc" },
+          },
           variants: {
             include: {
               inventoryLevels: true,
@@ -390,6 +401,7 @@ export async function getInventoryMasterListAction(params?: {
         totalDispatched,
         totalCostValue,
         totalRetailValue,
+        media: p.media || [],
         variantCount: p.variants.length,
         variants: p.variants.map((v) => {
           const avail = v.inventoryLevels.reduce((s, l) => s + (l.quantityAvailable || 0), 0);

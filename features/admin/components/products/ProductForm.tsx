@@ -9,6 +9,8 @@ import { z } from "zod";
 import { Plus, Trash2, Upload, ImagePlus, X, Loader2, Sparkles, Tag, Boxes, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import { InventoryPickerModal } from "@/components/admin/inventory/InventoryPickerModal";
+import { StorefrontLivePreview } from "@/features/admin/components/products/StorefrontLivePreview";
+import { InventoryPOSQuickShelf } from "@/features/admin/components/products/InventoryPOSQuickShelf";
 import { generateProductCodeAction } from "@/lib/actions/admin/inventory-master.actions";
 import { formatVariantSku } from "@/lib/utils/product-code";
 
@@ -83,15 +85,14 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
   const [tags, setTags] = useState<TagOption[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  const [activeInventoryItem, setActiveInventoryItem] = useState<any>(initialData || null);
+  const [linkedProductId, setLinkedProductId] = useState<string | null>(initialData?.id || null);
+
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   const handleSelectInventoryProduct = (item: any) => {
-    const editBase = returnPath.startsWith("/manager") ? "/manager" : "/admin";
-    if (item.id && (!initialData || initialData.id !== item.id)) {
-      toast.success(`Opening inventory style "${item.name}" (${item.sku || "N/A"}). Add images, description & click Publish!`);
-      router.push(`${editBase}/products/${item.id}/edit`);
-      return;
-    }
+    setActiveInventoryItem(item);
+    if (item.id) setLinkedProductId(item.id);
 
     form.setValue("name", item.name, { shouldValidate: true });
     form.setValue("slug", item.slug, { shouldValidate: true });
@@ -103,6 +104,18 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
     if (item.sku) form.setValue("sku", item.sku, { shouldValidate: true });
     if (item.barcode) form.setValue("barcode", item.barcode, { shouldValidate: true });
     form.setValue("stockQuantity", item.totalAvailable || 0, { shouldValidate: true });
+
+    // Populate media if available on inventory style
+    if (item.media && item.media.length > 0) {
+      const mediaList = item.media.map((m: any, idx: number) => ({
+        url: m.url,
+        altText: m.altText || item.name,
+        displayOrder: idx,
+        isPrimary: m.isPrimary ?? idx === 0,
+        mediaType: m.mediaType || "IMAGE",
+      }));
+      form.setValue("media", mediaList, { shouldValidate: true });
+    }
 
     if (item.variants && item.variants.length > 0) {
       const mapped = item.variants.map((v: any, idx: number) => {
@@ -122,7 +135,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
       form.setValue("variants", mapped, { shouldValidate: true });
     }
 
-    toast.success(`Loaded "${item.name}" (${item.sku}) from inventory! Buy: ৳${item.costPrice} | Sell: ৳${item.basePrice}. Add media, description & click Publish.`);
+    toast.success(`✨ Loaded "${item.name}" (${item.sku}) from inventory! Buy: ৳${item.costPrice} | Sell: ৳${item.basePrice}. Add photos & click "Publish Product" to go live!`);
   };
 
   const handleGenerateCode = async () => {
@@ -409,10 +422,17 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
     else setIsLoading(true);
 
     try {
-      if (initialData) {
-        const res = await updateAdminProductAction({ id: initialData.id, data });
+      const targetId = linkedProductId || initialData?.id;
+      if (targetId) {
+        const res = await updateAdminProductAction({ id: targetId, data });
         if (res.success) {
-          toast.success(status === "ACTIVE" ? "Product published!" : status === "DRAFT" ? "Saved as draft" : "Product updated!");
+          toast.success(
+            status === "ACTIVE"
+              ? "🎉 Product published live to storefront!"
+              : status === "DRAFT"
+              ? "Saved as inventory draft"
+              : "Product updated!"
+          );
           router.push(returnPath);
           router.refresh();
         } else {
@@ -421,7 +441,13 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
       } else {
         const res = await createAdminProductAction(data);
         if (res.success) {
-          toast.success(status === "ACTIVE" ? "Product published!" : status === "DRAFT" ? "Product created as draft" : "Product created!");
+          toast.success(
+            status === "ACTIVE"
+              ? "🎉 Product published live to storefront!"
+              : status === "DRAFT"
+              ? "Product created as draft"
+              : "Product created!"
+          );
           router.push(returnPath);
           router.refresh();
         } else {
@@ -482,82 +508,13 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
           </div>
         </div>
 
-        {/* Master Inventory POS Integration Banner */}
-        {!initialData ? (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/25 rounded-2xl gap-4 shadow-xs">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-amber-500" />
-                <span className="font-bold text-sm text-foreground">
-                  Clothing Brand POS &amp; Inventory Integration
-                </span>
-                <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-300 font-medium">
-                  Inventory-First POS
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Select an existing style from your Master Inventory to auto-fill Category, Buy/Cost Price, Sell Price, Short Code (AFPTS1), and all Color/Size Variants!
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              className="bg-amber-600 hover:bg-amber-500 text-white shrink-0 gap-1.5 shadow-sm cursor-pointer"
-              onClick={() => setPickerOpen(true)}
-            >
-              <Boxes className="h-3.5 w-3.5" />
-              Select from Inventory
-            </Button>
-          </div>
-        ) : (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl gap-4 shadow-xs">
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-amber-600 text-white flex items-center gap-1 shadow-xs">
-                  <Tag className="h-3 w-3" />
-                  Code: {initialData.sku || "N/A"}
-                </span>
-                <Badge variant={initialData.status === "ACTIVE" ? "default" : "secondary"}>
-                  {initialData.status === "ACTIVE" ? "Live on Store" : "Draft in Inventory"}
-                </Badge>
-                {initialData.category && (
-                  <Badge variant="outline" className="text-xs bg-white/80">{initialData.category.name}</Badge>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                📦 Central Inventory: <strong>{totalVariantStock || initialData.basePrice} units in stock</strong> &bull; Buy: <strong>৳{initialData.costPrice || 0}</strong> &bull; Sell: <strong>৳{initialData.basePrice}</strong>
-              </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {initialData.status !== "ACTIVE" && (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold gap-1.5 shadow-sm cursor-pointer"
-                  onClick={() => {
-                    form.setValue("status", "ACTIVE");
-                    form.handleSubmit((data) => onSubmit(data))();
-                  }}
-                  disabled={isLoading || isPublishing}
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Publish to Store
-                </Button>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-xs cursor-pointer gap-1.5"
-                onClick={() => setPickerOpen(true)}
-              >
-                <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
-                Change Inventory Link
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Clothing POS Inventory Master Rack */}
+        <InventoryPOSQuickShelf
+          onSelectItem={handleSelectInventoryProduct}
+          activeItem={activeInventoryItem}
+          onOpenFullModal={() => setPickerOpen(true)}
+          categories={categories}
+        />
 
         <div className="grid gap-6 md:grid-cols-3 pb-8">
           {/* Main Info Column */}
@@ -605,12 +562,19 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center justify-between">
-                          <FormLabel>Style Code / SKU</FormLabel>
+                          <div className="flex items-center gap-1.5">
+                            <FormLabel className="text-xs font-semibold">Style Code / Short SKU</FormLabel>
+                            {field.value && (
+                              <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-800 border-emerald-300 font-mono py-0 px-1.5">
+                                ✓ Unique
+                              </Badge>
+                            )}
+                          </div>
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="h-6 text-[11px] px-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 cursor-pointer gap-1"
+                            className="h-6 text-[11px] px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 cursor-pointer gap-1 font-semibold"
                             onClick={handleGenerateCode}
                             disabled={isGeneratingCode}
                           >
@@ -619,19 +583,22 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                             ) : (
                               <Sparkles className="h-3 w-3" />
                             )}
-                            Auto-Generate Code
+                            Auto-Generate (AFPTS1)
                           </Button>
                         </div>
                         <FormControl>
-                          <Input
-                            placeholder="e.g. AFPTS1"
-                            {...field}
-                            value={field.value || ""}
-                            className="font-mono font-medium"
-                          />
+                          <div className="relative">
+                            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input
+                              placeholder="e.g. AFPTS1"
+                              {...field}
+                              value={field.value || ""}
+                              className="pl-8 font-mono font-bold tracking-wider text-sm bg-background border-border/80"
+                            />
+                          </div>
                         </FormControl>
-                        <FormDescription className="text-xs">
-                          Short unique code (e.g. AFPTS1) displayed to shoppers on store, cart &amp; invoice.
+                        <FormDescription className="text-xs text-muted-foreground">
+                          Unique fashion style code (e.g. AFPTS1) displayed on the live website, PDP badge, cart, and invoices.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -1057,6 +1024,20 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
 
           {/* Right Sidebar Column */}
           <div className="space-y-6">
+            {/* Real-time Storefront Live Preview Card */}
+            <StorefrontLivePreview
+              name={form.watch("name") || ""}
+              categoryName={categories.find((c) => c.id === form.watch("categoryId"))?.name}
+              brandName={brands.find((b) => b.id === form.watch("brandId"))?.name}
+              sku={form.watch("sku") || ""}
+              basePrice={Number(form.watch("basePrice")) || 0}
+              salePrice={form.watch("salePrice")}
+              costPrice={form.watch("costPrice")}
+              media={form.watch("media") || []}
+              variants={form.watch("variants") || []}
+              status={form.watch("status") || "DRAFT"}
+            />
+
             <Card className="border-border/60 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-lg">Pricing</CardTitle>

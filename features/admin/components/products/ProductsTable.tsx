@@ -17,6 +17,7 @@ import {
   Package,
   LayoutGrid,
   List,
+  Tag,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -442,7 +443,8 @@ export function ProductsTable({
                             {product.name}
                           </span>
                           {product.sku && (
-                            <span className="text-xs text-muted-foreground font-mono">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 w-fit mt-0.5">
+                              <Tag className="h-2.5 w-2.5 shrink-0" />
                               {product.sku}
                             </span>
                           )}
