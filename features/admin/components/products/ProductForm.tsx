@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -41,6 +41,7 @@ import { CreateProductSchema, Product } from "@/types/catalog.types";
 import {
   createAdminProductAction,
   updateAdminProductAction,
+  getAdminProductByIdAction,
   getCategoriesAction,
   getBrandsAction,
   getTagsAction,
@@ -89,6 +90,9 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
   const [intakeDefaultCategory, setIntakeDefaultCategory] = useState<string | undefined>(undefined);
   const [intakeRefreshTrigger, setIntakeRefreshTrigger] = useState(0);
 
+  const searchParams = useSearchParams();
+  const importId = searchParams ? (searchParams.get("importId") || searchParams.get("inventoryId")) : null;
+
   const [activeInventoryItem, setActiveInventoryItem] = useState<any>(initialData || null);
   const [linkedProductId, setLinkedProductId] = useState<string | null>(initialData?.id || null);
 
@@ -108,7 +112,9 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
     }
     if (item.sku) form.setValue("sku", item.sku, { shouldValidate: true });
     if (item.barcode) form.setValue("barcode", item.barcode, { shouldValidate: true });
-    form.setValue("stockQuantity", item.totalAvailable || 0, { shouldValidate: true });
+    form.setValue("stockQuantity", item.totalAvailable ?? item.stockQuantity ?? 0, { shouldValidate: true });
+    if (item.shortDescription) form.setValue("shortDescription", item.shortDescription, { shouldValidate: true });
+    if (item.description) form.setValue("description", item.description, { shouldValidate: true });
 
     // Populate media if available on inventory style
     if (item.media && item.media.length > 0) {
@@ -130,9 +136,9 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
           id: v.id,
           sku: v.sku || formatVariantSku(item.sku || "AFPRD", color, size) || `VAR-${idx + 1}`,
           barcode: v.barcode || "",
-          priceOverride: v.price || item.basePrice,
-          costPrice: v.cost || item.costPrice,
-          stockQuantity: v.available ?? 0,
+          priceOverride: v.priceOverride || v.price || item.basePrice,
+          costPrice: v.costPrice || v.cost || item.costPrice,
+          stockQuantity: v.stockQuantity ?? v.available ?? 0,
           attributes: v.attributes || (color || size ? { Color: color, Size: size } : {}),
           isActive: true,
         };
@@ -142,6 +148,54 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
 
     toast.success(`✨ Loaded "${item.name}" (${item.sku}) from inventory! Buy: ৳${item.costPrice} | Sell: ৳${item.basePrice}. Add photos & click "Publish Product" to go live!`);
   };
+
+  useEffect(() => {
+    if (!importId || initialData) return;
+
+    let isMounted = true;
+    async function loadImportedStyle() {
+      try {
+        setIsLoading(true);
+        const res = await getAdminProductByIdAction({ id: importId! });
+        if (isMounted && res.success && res.data) {
+          const item = res.data;
+          handleSelectInventoryProduct({
+            id: item.id,
+            name: item.name,
+            slug: item.slug,
+            categoryId: item.categoryId,
+            basePrice: item.basePrice,
+            costPrice: item.costPrice,
+            sku: item.sku,
+            barcode: item.barcode,
+            totalAvailable: item.stockQuantity || 0,
+            shortDescription: item.shortDescription,
+            description: item.description,
+            media: item.media,
+            variants: item.variants?.map((v: any) => ({
+              id: v.id,
+              sku: v.sku,
+              barcode: v.barcode,
+              available: v.stockQuantity,
+              stockQuantity: v.stockQuantity,
+              price: v.priceOverride || item.basePrice,
+              cost: v.costPrice || item.costPrice,
+              attributes: v.attributes,
+            })),
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load imported product:", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadImportedStyle();
+    return () => {
+      isMounted = false;
+    };
+  }, [importId, initialData]);
 
   const handleGenerateCode = async () => {
     try {

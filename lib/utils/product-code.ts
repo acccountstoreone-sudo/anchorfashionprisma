@@ -279,3 +279,5 @@ export function detectApparelSystemForCategory(categoryName: string): { systemId
   }
   return { systemId: "alpha", defaultSizes: ["M", "L", "XL", "XXL"] };
 }
+
+export { generateEAN13Sync as generateEAN13Barcode } from "./barcode";

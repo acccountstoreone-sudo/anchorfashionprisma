@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ import {
   Wand2,
   Layers,
   ArrowUpRight,
+  ArrowRight,
 } from "lucide-react";
 
 interface CategoryOption {
@@ -73,15 +75,20 @@ export function InventoryMasterIntakeDialog({
   onSuccess,
   defaultCategoryId,
 }: InventoryMasterIntakeDialogProps) {
+  const router = useRouter();
+
   // Master Details
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState(defaultCategoryId || categories[0]?.id || "");
   const [styleCode, setStyleCode] = useState("");
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
-  const [basePrice, setBasePrice] = useState<number>(5000);
-  const [costPrice, setCostPrice] = useState<number>(2300);
+  const [basePrice, setBasePrice] = useState<number>(2500);
+  const [costPrice, setCostPrice] = useState<number>(1500);
   const [totalQuantity, setTotalQuantity] = useState<number>(100);
   const [notes, setNotes] = useState("");
+
+  // Post-Intake Success Action State
+  const [createdIntakeSuccess, setCreatedIntakeSuccess] = useState<any | null>(null);
 
   // Variants selection & Apparel Size System
   const [activeSizeSystem, setActiveSizeSystem] = useState<string>("alpha");
@@ -318,8 +325,13 @@ export function InventoryMasterIntakeDialog({
         if (onSuccess) onSuccess(res.data);
         onOpenChange(false);
 
-        // Prompt to print stickers
-        setPrintModalOpen(true);
+        if (publishImmediately) {
+          toast.success("🚀 Product published live to storefront!");
+          setPrintModalOpen(true);
+        } else {
+          // Open decision prompt: Publish with images/description, print stickers, or view in inventory
+          setCreatedIntakeSuccess(res.data);
+        }
       } else {
         toast.error(res.error || "Failed to create master inventory intake.");
       }
@@ -813,6 +825,103 @@ export function InventoryMasterIntakeDialog({
         onOpenChange={setPrintModalOpen}
         labels={printLabels}
       />
+
+      {/* Post-Intake Action Modal (Seamless Transition to Storefront Product Add) */}
+      <Dialog
+        open={Boolean(createdIntakeSuccess)}
+        onOpenChange={(v) => {
+          if (!v) setCreatedIntakeSuccess(null);
+        }}
+      >
+        <DialogContent className="max-w-md sm:max-w-lg">
+          <DialogHeader>
+            <div className="flex items-center gap-2.5 text-emerald-600 mb-1">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600">
+                <CheckCircle2 className="h-6 w-6" />
+              </span>
+              <div>
+                <DialogTitle className="text-xl font-bold text-foreground">
+                  Master Intake Created!
+                </DialogTitle>
+                <DialogDescription className="text-xs">
+                  Stock units have been allocated and assigned unique EAN-13 barcodes.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="rounded-xl border bg-muted/40 p-4 space-y-2.5 text-xs">
+            <div className="flex justify-between items-center pb-1.5 border-b border-border/50">
+              <span className="text-muted-foreground font-medium">Product Name:</span>
+              <span className="font-bold text-foreground text-sm">
+                {createdIntakeSuccess?.product?.name}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground font-medium">Style Code (SKU):</span>
+              <span className="font-mono font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-500/30">
+                {createdIntakeSuccess?.product?.sku}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground font-medium">Allocated Quantity:</span>
+              <span className="font-bold text-emerald-600">
+                {createdIntakeSuccess?.totalStockUnits || allocatedTotal} units across{" "}
+                {createdIntakeSuccess?.totalCreatedVariants || createdIntakeSuccess?.variants?.length} variants
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground font-medium">Pricing &amp; Margins:</span>
+              <span className="font-semibold text-foreground">
+                Buy: ৳{costPrice} &rarr; Sell: ৳{basePrice} (+৳{basePrice - costPrice} profit/pc)
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-2">
+            <Button
+              type="button"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-2 cursor-pointer shadow-md py-5 text-sm"
+              onClick={() => {
+                const prodId = createdIntakeSuccess?.product?.id;
+                setCreatedIntakeSuccess(null);
+                router.push(`/admin/products/new?importId=${prodId}`);
+              }}
+            >
+              <Sparkles className="h-4 w-4" />
+              Add Photos &amp; Publish to Storefront
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-1.5 cursor-pointer text-xs"
+                onClick={() => {
+                  setCreatedIntakeSuccess(null);
+                  setPrintModalOpen(true);
+                }}
+              >
+                <Printer className="h-3.5 w-3.5 text-blue-600" />
+                Print Barcode Stickers
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full cursor-pointer text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setCreatedIntakeSuccess(null);
+                  router.refresh();
+                }}
+              >
+                Done (Stay in Inventory)
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

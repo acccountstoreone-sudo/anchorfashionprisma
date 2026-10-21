@@ -73,6 +73,7 @@ export const ProductVariantSchema = z.object({
   isActive: z.boolean().default(true),
   attributes: z.record(z.string()).optional(), // { Color: 'Red', Size: 'M' }
   stockQuantity: z.coerce.number().int().min(0).optional().default(0),
+  soldQuantity: z.coerce.number().int().min(0).optional().default(0),
 });
 
 export const ProductMediaSchema = z.object({
@@ -120,6 +121,8 @@ export const ProductSchema = z.object({
       z.number().min(0).optional().nullable()
     ),
   stockQuantity: z.coerce.number().int().min(0).optional().default(0),
+  soldCount: z.coerce.number().int().min(0).optional().default(0),
+  totalSold: z.coerce.number().int().min(0).optional().default(0),
   sku: z
     .string()
     .max(100)

@@ -178,6 +178,14 @@ export function InventoryPOSQuickShelf({
             <span className="text-muted-foreground">
               Buy: <strong>৳{activeItem.costPrice || 0}</strong> &rarr; Sell: <strong>৳{activeItem.basePrice || 0}</strong>
             </span>
+            {(activeItem.totalSold || activeItem.soldCount || 0) > 0 && (
+              <>
+                <span className="text-muted-foreground">&bull;</span>
+                <span className="font-semibold text-blue-700 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-300 px-2 py-0.5 rounded border border-blue-200">
+                  🛒 {activeItem.totalSold || activeItem.soldCount} units sold
+                </span>
+              </>
+            )}
           </div>
           <Button
             type="button"
@@ -315,9 +323,16 @@ export function InventoryPOSQuickShelf({
                           <Tag className="h-2.5 w-2.5" />
                           {item.sku || "N/A"}
                         </span>
-                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 px-1.5 py-0.5 rounded">
-                          {item.totalAvailable} in stock
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 px-1.5 py-0.5 rounded">
+                            {item.totalAvailable} in stock
+                          </span>
+                          {(item.totalSold || 0) > 0 && (
+                            <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-300 px-1.5 py-0.5 rounded">
+                              {item.totalSold} sold
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Title */}

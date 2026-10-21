@@ -481,23 +481,32 @@ export function ProductsTable({
                       )}
                     </TableCell>
                     <TableCell>
-                      {(product as any).stockQuantity !== undefined ? (
-                        (product as any).stockQuantity > 5 ? (
-                          <span className="inline-flex items-center text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                            {(product as any).stockQuantity} in stock
-                          </span>
-                        ) : (product as any).stockQuantity > 0 ? (
-                          <span className="inline-flex items-center text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                            {(product as any).stockQuantity} low stock
+                      <div className="flex flex-col gap-1 items-start">
+                        {(product as any).stockQuantity !== undefined ? (
+                          (product as any).stockQuantity > 5 ? (
+                            <span className="inline-flex items-center text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                              {(product as any).stockQuantity} in stock
+                            </span>
+                          ) : (product as any).stockQuantity > 0 ? (
+                            <span className="inline-flex items-center text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                              {(product as any).stockQuantity} low stock
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center text-xs font-semibold text-zinc-600 bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded">
+                              Out of stock
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                        {((product as any).soldCount || (product as any).totalSold || 0) > 0 ? (
+                          <span className="inline-flex items-center text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded">
+                            🛒 {((product as any).soldCount || (product as any).totalSold)} sold
                           </span>
                         ) : (
-                          <span className="inline-flex items-center text-xs font-semibold text-zinc-600 bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded">
-                            Out of stock
-                          </span>
-                        )
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
+                          <span className="text-[10px] text-muted-foreground">0 sold</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5">

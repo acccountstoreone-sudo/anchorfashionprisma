@@ -6,6 +6,7 @@ import { generateUniqueProductCode } from "@/lib/utils/product-code";
 function mapToAdminProduct(p: any): Product {
   const variants = p.variants || [];
   let totalStock = 0;
+  let totalSold = 0;
 
   const mappedVariants = variants.map((v: any) => {
     const vStock = (v.inventoryLevels || []).reduce(
@@ -13,6 +14,12 @@ function mapToAdminProduct(p: any): Product {
       0
     );
     totalStock += vStock;
+
+    const vSold = (v.orderItems || []).reduce(
+      (sum: number, oi: any) => sum + (Number(oi.quantity) || 0),
+      0
+    );
+    totalSold += vSold;
 
     return {
       id: v.id,
@@ -26,6 +33,7 @@ function mapToAdminProduct(p: any): Product {
       attributes: v.attributes,
       isActive: v.isActive,
       stockQuantity: vStock,
+      soldQuantity: vSold,
       inventory_levels: (v.inventoryLevels || []).map((il: any) => ({
         id: il.id,
         variant_id: il.variantId,
@@ -106,6 +114,8 @@ function mapToAdminProduct(p: any): Product {
       : null,
     tags: (p.productTags || []).map((pt: any) => pt.tag).filter(Boolean),
     stockQuantity: totalStock,
+    soldCount: totalSold,
+    totalSold: totalSold,
   } as unknown as Product;
 }
 
@@ -191,6 +201,16 @@ export class ProductRepository {
             variants: {
               include: {
                 inventoryLevels: true,
+                orderItems: {
+                  where: {
+                    order: {
+                      status: { not: "CANCELLED" },
+                    },
+                  },
+                  select: {
+                    quantity: true,
+                  },
+                },
               },
             },
             media: { orderBy: { displayOrder: "asc" } },
@@ -226,6 +246,18 @@ export class ProductRepository {
           variants: {
             include: {
               inventoryLevels: true,
+              orderItems: {
+                where: {
+                  order: {
+                    status: { not: "CANCELLED" },
+                  },
+                },
+                select: {
+                  quantity: true,
+                  unitPrice: true,
+                  totalPrice: true,
+                },
+              },
             },
           },
           media: { orderBy: { displayOrder: "asc" } },

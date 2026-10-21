@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -22,6 +22,7 @@ import {
   RefreshCw,
   ExternalLink,
   ChevronRight,
+  ChevronDown,
   Barcode as BarcodeIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,18 @@ export function InventoryMasterHubClient({
 
   // Action Loading
   const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  // Expanded variant rows
+  const [expandedProductIds, setExpandedProductIds] = useState<Set<string>>(new Set());
+
+  const toggleExpandProduct = (productId: string) => {
+    setExpandedProductIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  };
 
   const masterItems: any[] = initialMasterData?.items || [];
   const finSummary = initialFinancialReport?.summary || {};
@@ -193,6 +206,10 @@ export function InventoryMasterHubClient({
       "Unit Profit (BDT)": p.unitProfit,
       "Profit Margin (%)": p.marginPercent,
       "In Stock Units": p.inStock,
+      "Units Sold": p.soldUnits || 0,
+      "Realized Sales Revenue (BDT)": p.soldRevenue || 0,
+      "Realized Profit (BDT)": p.realizedProfit || 0,
+      "Sell-Through Rate (%)": p.sellThroughRate || 0,
       "Stock Cost Valuation": p.costValuation,
       "Stock Retail Valuation": p.retailValuation,
       "Projected Gross Profit": p.projectedProfit,
@@ -265,7 +282,7 @@ export function InventoryMasterHubClient({
       </div>
 
       {/* Financial & Operational KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3.5">
         <Card className="shadow-xs border-border/70">
           <CardContent className="p-4">
             <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -274,31 +291,59 @@ export function InventoryMasterHubClient({
             <div className="text-2xl font-black text-foreground mt-1">
               {(finSummary.totalInStockUnits ?? 0).toLocaleString()}
             </div>
-            <span className="text-[11px] text-muted-foreground">across central warehouse</span>
+            <span className="text-[11px] text-muted-foreground">across warehouse</span>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-xs border-border/70 bg-blue-500/5 border-blue-500/20">
+          <CardContent className="p-4">
+            <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wider flex items-center gap-1">
+              <Boxes className="h-3 w-3 text-blue-600" />
+              Units Sold
+            </span>
+            <div className="text-2xl font-black text-blue-700 dark:text-blue-300 mt-1">
+              {(finSummary.totalSoldUnits ?? 0).toLocaleString()}
+            </div>
+            <span className="text-[11px] text-blue-600/80 font-medium">
+              {finSummary.overallSellThroughRate ?? 0}% sell-through
+            </span>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-xs border-border/70">
+          <CardContent className="p-4">
+            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <DollarSign className="h-3 w-3 text-emerald-500" />
+              Sales Revenue
+            </span>
+            <div className="text-2xl font-black text-emerald-600 mt-1">
+              ৳{(finSummary.totalRealizedRevenue ?? 0).toLocaleString()}
+            </div>
+            <span className="text-[11px] text-emerald-600/80 font-medium">realized sales</span>
           </CardContent>
         </Card>
 
         <Card className="shadow-xs border-border/70">
           <CardContent className="p-4">
             <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Stock Valuation (Cost)
+              Stock Cost (COGS)
             </span>
             <div className="text-2xl font-black text-foreground mt-1">
               ৳{(finSummary.totalStockCostValue ?? 0).toLocaleString()}
             </div>
-            <span className="text-[11px] text-muted-foreground">total COGS investment</span>
+            <span className="text-[11px] text-muted-foreground">in-stock investment</span>
           </CardContent>
         </Card>
 
         <Card className="shadow-xs border-border/70">
           <CardContent className="p-4">
             <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Retail Valuation (MRP)
+              Retail MRP Value
             </span>
             <div className="text-2xl font-black text-foreground mt-1">
               ৳{(finSummary.totalStockRetailValue ?? 0).toLocaleString()}
             </div>
-            <span className="text-[11px] text-muted-foreground">expected gross sales</span>
+            <span className="text-[11px] text-muted-foreground">projected gross</span>
           </CardContent>
         </Card>
 
@@ -306,25 +351,14 @@ export function InventoryMasterHubClient({
           <CardContent className="p-4">
             <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
               <TrendingUp className="h-3 w-3 text-emerald-500" />
-              Projected Gross Profit
-            </span>
-            <div className="text-2xl font-black text-emerald-600 mt-1">
-              ৳{(finSummary.totalProjectedGrossProfit ?? 0).toLocaleString()}
-            </div>
-            <span className="text-[11px] text-emerald-600/80 font-medium">potential retail profit</span>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-xs border-border/70">
-          <CardContent className="p-4">
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-              <Percent className="h-3 w-3 text-primary" />
-              Weighted Margin
+              Profit Margin
             </span>
             <div className="text-2xl font-black text-primary mt-1">
               {finSummary.overallGrossMargin ?? 0}%
             </div>
-            <span className="text-[11px] text-muted-foreground">average profit margin</span>
+            <span className="text-[11px] text-muted-foreground font-medium">
+              ৳{(finSummary.totalProjectedGrossProfit ?? 0).toLocaleString()} potential
+            </span>
           </CardContent>
         </Card>
 
@@ -332,13 +366,13 @@ export function InventoryMasterHubClient({
           <CardContent className="p-4">
             <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
               <Building2 className="h-3 w-3 text-purple-500" />
-              Sent to Branches
+              Branch Sent
             </span>
             <div className="text-2xl font-black text-purple-600 mt-1">
               {(branchSummary.overallUnitsSent ?? 0).toLocaleString()}
             </div>
             <span className="text-[11px] text-purple-600/80 font-medium">
-              to {branchSummary.branchesCount ?? 5} retail outlets
+              to {branchSummary.branchesCount ?? 5} outlets
             </span>
           </CardContent>
         </Card>
@@ -454,6 +488,7 @@ export function InventoryMasterHubClient({
                   <TableHead className="font-semibold">Product Name & Category</TableHead>
                   <TableHead className="font-semibold">SKU & Barcode</TableHead>
                   <TableHead className="font-semibold text-center">Available Stock</TableHead>
+                  <TableHead className="font-semibold text-center">Units Sold</TableHead>
                   <TableHead className="font-semibold text-right">Cost Price</TableHead>
                   <TableHead className="font-semibold text-right">Selling Price</TableHead>
                   <TableHead className="font-semibold text-right">Unit Profit</TableHead>
@@ -465,129 +500,222 @@ export function InventoryMasterHubClient({
               <TableBody>
                 {filteredCatalog.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
                       No inventory products found matching your search.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredCatalog.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-muted/20 text-xs">
-                      <TableCell className="font-medium">
-                        <div>
-                          <p className="font-semibold text-foreground text-sm leading-tight">{item.name}</p>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                              {item.category}
-                            </Badge>
-                            <span className="text-[11px] text-muted-foreground">
-                              {item.variantCount} color/size variants
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
+                  filteredCatalog.map((item) => {
+                    const isExpanded = expandedProductIds.has(item.id);
+                    return (
+                      <Fragment key={item.id}>
+                        <TableRow className="hover:bg-muted/20 text-xs">
+                          <TableCell className="font-medium">
+                            <div className="flex items-start gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground shrink-0 mt-0.5"
+                                onClick={() => toggleExpandProduct(item.id)}
+                                title={isExpanded ? "Collapse Variants" : "Expand Color/Size Breakdown"}
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4 text-primary" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <div>
+                                <p className="font-semibold text-foreground text-sm leading-tight">{item.name}</p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                    {item.category}
+                                  </Badge>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleExpandProduct(item.id)}
+                                    className="text-[11px] text-muted-foreground hover:text-primary transition-colors cursor-pointer underline-offset-2 hover:underline"
+                                  >
+                                    {item.variantCount} color/size variants
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
 
-                      <TableCell>
-                        <div className="font-mono text-[11px] space-y-0.5">
-                          <p className="text-foreground">{item.sku}</p>
-                          <p className="text-muted-foreground flex items-center gap-1">
-                            <BarcodeIcon className="h-3 w-3" />
-                            {item.barcode}
-                          </p>
-                        </div>
-                      </TableCell>
+                          <TableCell>
+                            <div className="font-mono text-[11px] space-y-0.5">
+                              <p className="text-foreground">{item.sku}</p>
+                              <p className="text-muted-foreground flex items-center gap-1">
+                                <BarcodeIcon className="h-3 w-3" />
+                                {item.barcode}
+                              </p>
+                            </div>
+                          </TableCell>
 
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={item.totalAvailable <= 0 ? "destructive" : item.totalAvailable <= 10 ? "secondary" : "outline"}
-                          className="font-bold text-xs"
-                        >
-                          {item.totalAvailable} units
-                        </Badge>
-                        {item.totalDispatched > 0 && (
-                          <p className="text-[10px] text-purple-600 mt-0.5 font-medium">
-                            +{item.totalDispatched} in branches
-                          </p>
-                        )}
-                      </TableCell>
-
-                      <TableCell className="text-right font-medium text-muted-foreground">
-                        ৳{item.costPrice.toLocaleString()}
-                      </TableCell>
-
-                      <TableCell className="text-right font-bold text-foreground">
-                        ৳{item.basePrice.toLocaleString()}
-                      </TableCell>
-
-                      <TableCell className="text-right font-semibold text-emerald-600">
-                        +৳{item.unitProfit.toLocaleString()}
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
-                          {item.profitMarginPercent}%
-                        </span>
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={item.status === "ACTIVE" ? "default" : "secondary"}
-                          className="text-[10px] cursor-pointer"
-                          onClick={() => handleTogglePublish(item.id)}
-                          title="Click to toggle publish status"
-                        >
-                          {item.status === "ACTIVE" ? "Published (Live)" : "Draft in Inventory"}
-                        </Badge>
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 px-2 text-xs gap-1"
-                            title="Print Barcode Stickers"
-                            onClick={() => handlePrintItemBarcodes(item)}
-                          >
-                            <Printer className="h-3.5 w-3.5 text-blue-600" />
-                            Print
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 px-2 text-xs gap-1"
-                            title="Dispatch to Retail Branch"
-                            onClick={() => handleOpenTransferForProduct(item)}
-                          >
-                            <ArrowRightLeft className="h-3.5 w-3.5 text-purple-600" />
-                            Branch
-                          </Button>
-
-                          <Link href={`/admin/products/${item.id}/edit`}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-xs gap-1"
-                              title="Edit Description, Media & Images"
+                          <TableCell className="text-center">
+                            <Badge
+                              variant={item.totalAvailable <= 0 ? "destructive" : item.totalAvailable <= 10 ? "secondary" : "outline"}
+                              className="font-bold text-xs"
                             >
-                              <ExternalLink className="h-3.5 w-3.5 text-amber-600" />
-                              Media
-                            </Button>
-                          </Link>
+                              {item.totalAvailable} units
+                            </Badge>
+                            {item.totalDispatched > 0 && (
+                              <p className="text-[10px] text-purple-600 mt-0.5 font-medium">
+                                +{item.totalDispatched} in branches
+                              </p>
+                            )}
+                          </TableCell>
 
-                          <Button
-                            variant={item.status === "ACTIVE" ? "outline" : "default"}
-                            size="sm"
-                            className="h-7 px-2 text-xs gap-1"
-                            disabled={togglingId === item.id}
-                            onClick={() => handleTogglePublish(item.id)}
-                          >
-                            {item.status === "ACTIVE" ? "Unpublish" : "Publish"}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                          <TableCell className="text-center">
+                            {item.totalSold > 0 ? (
+                              <div className="flex flex-col items-center">
+                                <Badge
+                                  variant="outline"
+                                  className="font-bold text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300"
+                                >
+                                  {item.totalSold} sold
+                                </Badge>
+                                <span className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+                                  {item.sellThroughRate}% rate
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center">
+                                <span className="text-[11px] text-muted-foreground font-medium">0 sold</span>
+                                <span className="text-[10px] text-muted-foreground/70">
+                                  {item.totalInflow || item.totalAvailable} intake
+                                </span>
+                              </div>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="text-right font-medium text-muted-foreground">
+                            ৳{item.costPrice.toLocaleString()}
+                          </TableCell>
+
+                          <TableCell className="text-right font-bold text-foreground">
+                            ৳{item.basePrice.toLocaleString()}
+                          </TableCell>
+
+                          <TableCell className="text-right font-semibold text-emerald-600">
+                            +৳{item.unitProfit.toLocaleString()}
+                          </TableCell>
+
+                          <TableCell className="text-center">
+                            <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                              {item.profitMarginPercent}%
+                            </span>
+                          </TableCell>
+
+                          <TableCell className="text-center">
+                            <Badge
+                              variant={item.status === "ACTIVE" ? "default" : "secondary"}
+                              className="text-[10px] cursor-pointer"
+                              onClick={() => handleTogglePublish(item.id)}
+                              title="Click to toggle publish status"
+                            >
+                              {item.status === "ACTIVE" ? "Published (Live)" : "Draft in Inventory"}
+                            </Badge>
+                          </TableCell>
+
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                              {item.status === "DRAFT" ? (
+                                <Link href={`/admin/products/new?importId=${item.id}`}>
+                                  <Button
+                                    size="sm"
+                                    className="h-7 px-2.5 text-xs gap-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold cursor-pointer shadow-xs"
+                                    title="Open Product Form with pre-populated colors, sizes and barcodes to add photos & publish live"
+                                  >
+                                    <Sparkles className="h-3 w-3" />
+                                    Publish to Store
+                                  </Button>
+                                </Link>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs gap-1"
+                                  disabled={togglingId === item.id}
+                                  onClick={() => handleTogglePublish(item.id)}
+                                >
+                                  Unpublish
+                                </Button>
+                              )}
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs gap-1"
+                                title="Print Barcode Stickers"
+                                onClick={() => handlePrintItemBarcodes(item)}
+                              >
+                                <Printer className="h-3.5 w-3.5 text-blue-600" />
+                                Print
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs gap-1"
+                                title="Dispatch to Retail Branch"
+                                onClick={() => handleOpenTransferForProduct(item)}
+                              >
+                                <ArrowRightLeft className="h-3.5 w-3.5 text-purple-600" />
+                                Branch
+                              </Button>
+
+                              <Link href={`/admin/products/${item.id}/edit`}>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs gap-1"
+                                  title="Edit Description, Media & Images"
+                                >
+                                  <ExternalLink className="h-3.5 w-3.5 text-amber-600" />
+                                  Media
+                                </Button>
+                              </Link>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Variant Expansion Row */}
+                        {isExpanded && (
+                          <TableRow className="bg-muted/15 border-b hover:bg-muted/15">
+                            <TableCell colSpan={10} className="p-3 pl-12 bg-slate-50/70 dark:bg-slate-900/40">
+                              <div className="rounded-lg border bg-background p-3 shadow-2xs space-y-2">
+                                <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground pb-1.5 border-b">
+                                  <span>Color &amp; Size Breakdown for &quot;{item.name}&quot; ({item.variants.length} variants)</span>
+                                  <span className="font-mono text-[11px]">Base SKU: {item.sku}</span>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 pt-1">
+                                  {item.variants.map((v: any) => {
+                                    const color = v.attributes?.Color || v.attributes?.color || "Standard";
+                                    const size = v.attributes?.Size || v.attributes?.size || "Default";
+                                    return (
+                                      <div key={v.id} className="rounded-md border p-2 bg-card text-xs space-y-1">
+                                        <div className="flex items-center justify-between font-bold">
+                                          <span className="truncate">{color}</span>
+                                          <Badge variant="secondary" className="text-[10px] px-1 py-0">{size}</Badge>
+                                        </div>
+                                        <p className="font-mono text-[10px] text-muted-foreground truncate">{v.sku}</p>
+                                        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-border/40">
+                                          <span className="text-emerald-600 font-semibold">{v.available} in stock</span>
+                                          <span className="text-blue-600 font-semibold">{v.sold || 0} sold</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </Fragment>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -735,7 +863,8 @@ export function InventoryMasterHubClient({
                   <TableHead className="font-semibold text-right">Unit Gross Profit</TableHead>
                   <TableHead className="font-semibold text-center">Margin %</TableHead>
                   <TableHead className="font-semibold text-center">In-Stock</TableHead>
-                  <TableHead className="font-semibold text-right">Total Cost Value</TableHead>
+                  <TableHead className="font-semibold text-center">Units Sold</TableHead>
+                  <TableHead className="font-semibold text-right">Realized Profit</TableHead>
                   <TableHead className="font-semibold text-right">Potential Gross Revenue</TableHead>
                   <TableHead className="font-semibold text-center">Margin Health</TableHead>
                 </tr>
@@ -773,8 +902,11 @@ export function InventoryMasterHubClient({
                       <TableCell className="text-center font-semibold text-foreground">
                         {p.inStock} units
                       </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        ৳{p.costValuation.toLocaleString()}
+                      <TableCell className="text-center font-bold text-blue-600">
+                        {p.soldUnits || 0} sold
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-emerald-600">
+                        ৳{(p.realizedProfit || 0).toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right font-bold text-foreground">
                         ৳{p.retailValuation.toLocaleString()}

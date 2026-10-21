@@ -351,6 +351,18 @@ export async function getInventoryMasterListAction(params?: {
               branchTransfers: {
                 select: { quantity: true, status: true },
               },
+              orderItems: {
+                where: {
+                  order: {
+                    status: { not: "CANCELLED" },
+                  },
+                },
+                select: {
+                  quantity: true,
+                  unitPrice: true,
+                  totalPrice: true,
+                },
+              },
             },
           },
         },
@@ -362,6 +374,8 @@ export async function getInventoryMasterListAction(params?: {
       let totalAvailable = 0;
       let totalReserved = 0;
       let totalDispatched = 0;
+      let totalSold = 0;
+      let totalSoldRevenue = 0;
 
       for (const v of p.variants) {
         for (const l of v.inventoryLevels) {
@@ -373,7 +387,15 @@ export async function getInventoryMasterListAction(params?: {
             totalDispatched += bt.quantity || 0;
           }
         }
+        for (const oi of (v as any).orderItems || []) {
+          const qty = Number(oi.quantity || 0);
+          totalSold += qty;
+          totalSoldRevenue += Number(oi.totalPrice || (oi.unitPrice ? Number(oi.unitPrice) * qty : 0));
+        }
       }
+
+      const totalInflow = totalAvailable + totalReserved + totalDispatched + totalSold;
+      const sellThroughRate = totalInflow > 0 ? Math.round((totalSold / totalInflow) * 1000) / 10 : 0;
 
       const sellingPrice = Number(p.basePrice || 0);
       const costPrice = Number(p.costPrice || 0);
@@ -399,6 +421,10 @@ export async function getInventoryMasterListAction(params?: {
         totalAvailable,
         totalReserved,
         totalDispatched,
+        totalSold,
+        totalSoldRevenue,
+        totalInflow,
+        sellThroughRate,
         totalCostValue,
         totalRetailValue,
         media: p.media || [],
@@ -406,6 +432,7 @@ export async function getInventoryMasterListAction(params?: {
         variants: p.variants.map((v) => {
           const avail = v.inventoryLevels.reduce((s, l) => s + (l.quantityAvailable || 0), 0);
           const res = v.inventoryLevels.reduce((s, l) => s + (l.quantityReserved || 0), 0);
+          const sold = ((v as any).orderItems || []).reduce((s: number, oi: any) => s + (Number(oi.quantity) || 0), 0);
           return {
             id: v.id,
             sku: v.sku,
@@ -413,6 +440,7 @@ export async function getInventoryMasterListAction(params?: {
             attributes: v.attributes,
             available: avail,
             reserved: res,
+            sold,
             price: Number(v.priceOverride || p.basePrice || 0),
             cost: Number(v.costPrice || p.costPrice || 0),
           };
@@ -698,7 +726,7 @@ export async function getBranchTransfersReportAction(params?: {
  */
 export async function getInventoryFinancialReportAction() {
   try {
-    const [products, inventoryLevels, branchTransfers] = await Promise.all([
+    const [products, inventoryLevels, branchTransfers, orderItems] = await Promise.all([
       prisma.product.findMany({
         where: { deletedAt: null },
         select: {
@@ -732,6 +760,20 @@ export async function getInventoryFinancialReportAction() {
           quantity: true,
         },
       }),
+      prisma.orderItem.findMany({
+        where: {
+          order: {
+            status: { not: "CANCELLED" },
+          },
+        },
+        select: {
+          variantId: true,
+          productId: true,
+          quantity: true,
+          unitPrice: true,
+          totalPrice: true,
+        },
+      }),
     ]);
 
     // Create variant stock map
@@ -750,22 +792,45 @@ export async function getInventoryFinancialReportAction() {
       dispatchedMap.set(bt.variantId, (dispatchedMap.get(bt.variantId) || 0) + bt.quantity);
     }
 
+    // Sales map per variant
+    const soldMap = new Map<string, { quantity: number; revenue: number }>();
+    for (const oi of orderItems) {
+      if (oi.variantId) {
+        const cur = soldMap.get(oi.variantId) || { quantity: 0, revenue: 0 };
+        const qty = Number(oi.quantity || 0);
+        const rev = Number(oi.totalPrice || (oi.unitPrice ? Number(oi.unitPrice) * qty : 0));
+        soldMap.set(oi.variantId, {
+          quantity: cur.quantity + qty,
+          revenue: cur.revenue + rev,
+        });
+      }
+    }
+
     let totalStockUnits = 0;
     let totalReservedUnits = 0;
     let totalStockCostValue = 0;
     let totalStockRetailValue = 0;
     let totalDispatchedUnits = 0;
+    let totalSoldUnits = 0;
+    let totalRealizedRevenue = 0;
+    let totalRealizedProfit = 0;
 
     const productBreakdown = products.map((p) => {
       let pAvailable = 0;
       let pReserved = 0;
       let pDispatched = 0;
+      let pSold = 0;
+      let pSoldRevenue = 0;
 
       for (const v of p.variants) {
         const s = stockMap.get(v.id) || { available: 0, reserved: 0 };
         pAvailable += s.available;
         pReserved += s.reserved;
         pDispatched += dispatchedMap.get(v.id) || 0;
+
+        const soldInfo = soldMap.get(v.id) || { quantity: 0, revenue: 0 };
+        pSold += soldInfo.quantity;
+        pSoldRevenue += soldInfo.revenue;
       }
 
       const retail = Number(p.basePrice || 0);
@@ -774,12 +839,19 @@ export async function getInventoryFinancialReportAction() {
       const marginPercent = retail > 0 ? (unitProfit / retail) * 100 : 0;
       const costValuation = pAvailable * cost;
       const retailValuation = pAvailable * retail;
+      const pRealizedProfit = pSoldRevenue - (pSold * cost);
+
+      const pTotalInflow = pAvailable + pReserved + pDispatched + pSold;
+      const pSellThroughRate = pTotalInflow > 0 ? Math.round((pSold / pTotalInflow) * 1000) / 10 : 0;
 
       totalStockUnits += pAvailable;
       totalReservedUnits += pReserved;
       totalStockCostValue += costValuation;
       totalStockRetailValue += retailValuation;
       totalDispatchedUnits += pDispatched;
+      totalSoldUnits += pSold;
+      totalRealizedRevenue += pSoldRevenue;
+      totalRealizedProfit += pRealizedProfit;
 
       return {
         id: p.id,
@@ -794,6 +866,11 @@ export async function getInventoryFinancialReportAction() {
         inStock: pAvailable,
         reserved: pReserved,
         dispatched: pDispatched,
+        soldUnits: pSold,
+        soldRevenue: pSoldRevenue,
+        realizedProfit: pRealizedProfit,
+        totalInflow: pTotalInflow,
+        sellThroughRate: pSellThroughRate,
         costValuation,
         retailValuation,
         projectedProfit: retailValuation - costValuation,
@@ -805,6 +882,11 @@ export async function getInventoryFinancialReportAction() {
       ? (totalProjectedGrossProfit / totalStockRetailValue) * 100
       : 0;
 
+    const totalInflowAll = totalStockUnits + totalReservedUnits + totalDispatchedUnits + totalSoldUnits;
+    const overallSellThroughRate = totalInflowAll > 0
+      ? Math.round((totalSoldUnits / totalInflowAll) * 1000) / 10
+      : 0;
+
     return {
       success: true,
       data: {
@@ -813,6 +895,10 @@ export async function getInventoryFinancialReportAction() {
           totalInStockUnits: totalStockUnits,
           totalReservedUnits: totalReservedUnits,
           totalDispatchedUnits: totalDispatchedUnits,
+          totalSoldUnits,
+          totalRealizedRevenue,
+          totalRealizedProfit,
+          overallSellThroughRate,
           totalStockCostValue,
           totalStockRetailValue,
           totalProjectedGrossProfit,
