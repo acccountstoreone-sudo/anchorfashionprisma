@@ -397,6 +397,9 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                 stockQuantity: Number(v.stockQuantity ?? 0),
                 barcode: v.barcode && v.barcode.trim() !== "" ? v.barcode.trim() : null,
                 sku: v.sku?.trim() || fallbackSku,
+                costPrice: v.costPrice !== undefined && v.costPrice !== null && (v.costPrice as any) !== "" ? Number(v.costPrice) : null,
+                priceOverride: v.priceOverride !== undefined && v.priceOverride !== null && (v.priceOverride as any) !== "" ? Number(v.priceOverride) : null,
+                salePrice: v.salePrice !== undefined && v.salePrice !== null && (v.salePrice as any) !== "" ? Number(v.salePrice) : null,
               };
             })
           : [],
@@ -873,18 +876,24 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                         <Trash2 className="mr-1 h-3 w-3" /> Remove
                       </Button>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                      {/* Name/Color — stored as attributes.Color */}
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
+                      {/* Name/Color — stored as attributes */}
                       <FormField
                         control={form.control}
                         name={`variants.${index}.attributes`}
                         render={({ field }) => (
                           <FormItem className="col-span-2 md:col-span-1">
-                            <FormLabel className="text-xs">Name / Color</FormLabel>
+                            <FormLabel className="text-xs">Color / Size</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="e.g. Black, Red, XL"
-                                value={field.value ? Object.values(field.value as Record<string, string>)[0] || "" : ""}
+                                placeholder="e.g. Black / XL"
+                                value={
+                                  field.value
+                                    ? Object.entries(field.value as Record<string, string>)
+                                        .map(([_, v]) => `${v}`)
+                                        .join(" / ") || ""
+                                    : ""
+                                }
                                 onChange={(e) => field.onChange({ Color: e.target.value })}
                                 className="h-8 text-sm"
                               />
@@ -899,7 +908,48 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                           <FormItem>
                             <FormLabel className="text-xs">Variant SKU</FormLabel>
                             <FormControl>
-                              <Input placeholder="SKU-BLK-M" {...field} className="h-8 text-sm" />
+                              <Input placeholder="AFPTS1-BLK-M" {...field} className="h-8 text-sm font-mono" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`variants.${index}.barcode`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Barcode (EAN-13)</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="89420..."
+                                {...field}
+                                value={field.value || ""}
+                                className="h-8 text-sm font-mono"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`variants.${index}.costPrice`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Buy Price ({CURRENCY_SYMBOL})</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                {...field}
+                                value={field.value ?? ""}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
+                                }
+                                className="h-8 text-sm"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -910,30 +960,17 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                         name={`variants.${index}.priceOverride`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs">Price ({CURRENCY_SYMBOL})</FormLabel>
+                            <FormLabel className="text-xs">Sell Price ({CURRENCY_SYMBOL})</FormLabel>
                             <FormControl>
                               <Input
-                                type="number" step="0.01" placeholder="0.00"
-                                {...field} value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                                className="h-8 text-sm"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`variants.${index}.salePrice`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Sale Price ({CURRENCY_SYMBOL})</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number" step="0.01" placeholder="0.00"
-                                {...field} value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                {...field}
+                                value={field.value ?? ""}
+                                onChange={(e) =>
+                                  field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
+                                }
                                 className="h-8 text-sm"
                               />
                             </FormControl>
@@ -955,7 +992,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                                 {...field}
                                 value={field.value ?? 0}
                                 onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                                className="h-8 text-sm"
+                                className="h-8 text-sm font-semibold"
                               />
                             </FormControl>
                             <FormMessage />
