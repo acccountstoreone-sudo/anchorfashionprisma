@@ -4,21 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { invalidateProductCache } from "@/lib/cache/invalidate-catalog";
 
-/**
- * Generate a standard, valid EAN-13 barcode with country code (894 for BD) and checksum.
- */
-export function generateEAN13Sync(prefix = "89420"): string {
-  const randomPart = Math.floor(1000000 + Math.random() * 9000000).toString();
-  const raw12 = (prefix + randomPart).slice(0, 12);
-
-  let sum = 0;
-  for (let i = 0; i < 12; i++) {
-    const digit = parseInt(raw12[i], 10);
-    sum += i % 2 === 0 ? digit : digit * 3;
-  }
-  const checksum = (10 - (sum % 10)) % 10;
-  return `${raw12}${checksum}`;
-}
+import { generateEAN13Sync } from "@/lib/utils/barcode";
 
 export async function generateEAN13BarcodeAction(prefix = "89420"): Promise<string> {
   return generateEAN13Sync(prefix);
@@ -158,41 +144,27 @@ export async function createInventoryMasterIntakeAction(input: InventoryMasterIn
       }
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Create Master Product
-      const product = await tx.product.create({
-        data: {
-          name: name.trim(),
-          slug,
-          basePrice,
-          costPrice,
-          sku: baseSku,
-          barcode: baseBarcode,
-          status,
-          categoryId,
-          isFeatured: false,
-          isNewArrival: true,
-          shortDescription: notes || `Master inventory intake of ${name.trim()}`,
+    // 1. Create Master Product, ProductCategory, Variants and InventoryLevels in a single nested write
+    const product = await prisma.product.create({
+      data: {
+        name: name.trim(),
+        slug,
+        basePrice,
+        costPrice,
+        sku: baseSku,
+        barcode: baseBarcode,
+        status,
+        categoryId,
+        isFeatured: false,
+        isNewArrival: true,
+        shortDescription: notes || `Master inventory intake of ${name.trim()}`,
+        productCategories: {
+          create: {
+            categoryId,
+          },
         },
-      });
-
-      // 2. Link ProductCategory
-      await tx.productCategory.create({
-        data: {
-          productId: product.id,
-          categoryId,
-        },
-      });
-
-      // 3. Create Variants & Inventory Levels
-      let totalCreatedVariants = 0;
-      let totalStockUnits = 0;
-      const createdVariants: any[] = [];
-
-      for (const pv of preparedVariants) {
-        const variant = await tx.variant.create({
-          data: {
-            productId: product.id,
+        variants: {
+          create: preparedVariants.map((pv) => ({
             sku: pv.sku,
             barcode: pv.barcode,
             priceOverride: basePrice,
@@ -202,59 +174,70 @@ export async function createInventoryMasterIntakeAction(input: InventoryMasterIn
               Size: pv.size,
             },
             isActive: true,
-          },
-        });
-
-        // Create inventory level
-        await tx.inventoryLevel.create({
-          data: {
-            variantId: variant.id,
-            warehouseId: warehouse,
-            quantityAvailable: pv.quantity,
-            quantityReserved: 0,
-            reorderPoint: 5,
-          },
-        });
-
-        // Log initial stock movement
-        if (pv.quantity > 0) {
-          await tx.stockMovement.create({
-            data: {
-              variantId: variant.id,
-              warehouseId: warehouse,
-              movementType: "IN",
-              quantity: pv.quantity,
-              previousQuantity: 0,
-              newQuantity: pv.quantity,
-              referenceType: "INITIAL_INTAKE",
-              referenceId: product.id,
-              notes: `Initial stock intake: ${name} (${pv.color} - ${pv.size})`,
+            inventoryLevels: {
+              create: {
+                warehouseId: warehouse,
+                quantityAvailable: pv.quantity,
+                quantityReserved: 0,
+                reorderPoint: 5,
+              },
             },
-          });
-        }
-
-        totalCreatedVariants++;
-        totalStockUnits += pv.quantity;
-        createdVariants.push({
-          id: variant.id,
-          sku: pv.sku,
-          barcode: pv.barcode,
-          color: pv.color,
-          size: pv.size,
-          quantity: pv.quantity,
-        });
-      }
-
-      return {
-        product,
-        variants: createdVariants,
-        totalCreatedVariants,
-        totalStockUnits,
-      };
-    }, {
-      timeout: 30000,
-      maxWait: 15000,
+          })),
+        },
+      },
+      include: {
+        variants: {
+          include: {
+            inventoryLevels: true,
+          },
+        },
+      },
     });
+
+    // 2. Create StockMovements in bulk for variants with initial stock
+    const movementRecords = product.variants
+      .filter((v) => (v.inventoryLevels[0]?.quantityAvailable || 0) > 0)
+      .map((v) => {
+        const qty = v.inventoryLevels[0].quantityAvailable;
+        const color = (v.attributes as any)?.Color || "";
+        const size = (v.attributes as any)?.Size || "";
+        return {
+          variantId: v.id,
+          warehouseId: warehouse,
+          movementType: "IN" as const,
+          quantity: qty,
+          previousQuantity: 0,
+          newQuantity: qty,
+          referenceType: "INITIAL_INTAKE",
+          referenceId: product.id,
+          notes: `Initial stock intake: ${name} (${color} - ${size})`,
+        };
+      });
+
+    if (movementRecords.length > 0) {
+      await prisma.stockMovement.createMany({
+        data: movementRecords,
+      });
+    }
+
+    const createdVariants = product.variants.map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      barcode: v.barcode,
+      color: (v.attributes as any)?.Color || "",
+      size: (v.attributes as any)?.Size || "",
+      quantity: v.inventoryLevels[0]?.quantityAvailable || 0,
+    }));
+
+    const totalCreatedVariants = createdVariants.length;
+    const totalStockUnits = createdVariants.reduce((sum, v) => sum + v.quantity, 0);
+
+    const result = {
+      product,
+      variants: createdVariants,
+      totalCreatedVariants,
+      totalStockUnits,
+    };
 
     try {
       revalidatePath("/admin/inventory");

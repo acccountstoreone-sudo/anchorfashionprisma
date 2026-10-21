@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { createInventoryMasterIntakeAction, generateEAN13Sync } from "@/lib/actions/admin/inventory-master.actions";
+import { createInventoryMasterIntakeAction } from "@/lib/actions/admin/inventory-master.actions";
+import { generateEAN13Sync } from "@/lib/utils/barcode";
 import { PrintBarcodeModal, BarcodeLabelData } from "@/components/admin/inventory/PrintBarcodeModal";
 import { toast } from "sonner";
 import {

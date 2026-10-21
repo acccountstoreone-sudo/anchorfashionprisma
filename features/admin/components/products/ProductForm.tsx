@@ -82,6 +82,12 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const handleSelectInventoryProduct = (item: any) => {
+    if (item.id) {
+      toast.success(`Opening "${item.name}" from inventory. Add description, images, and click Publish!`);
+      router.push(`/admin/products/${item.id}/edit`);
+      return;
+    }
+
     form.setValue("name", item.name, { shouldValidate: true });
     form.setValue("slug", item.slug, { shouldValidate: true });
     if (item.categoryId) form.setValue("categoryId", item.categoryId, { shouldValidate: true });

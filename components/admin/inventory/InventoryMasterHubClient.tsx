@@ -532,6 +532,18 @@ export function InventoryMasterHubClient({
                             Branch
                           </Button>
 
+                          <Link href={`/admin/products/${item.id}/edit`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs gap-1"
+                              title="Edit Description, Media & Images"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5 text-amber-600" />
+                              Media
+                            </Button>
+                          </Link>
+
                           <Button
                             variant={item.status === "ACTIVE" ? "outline" : "default"}
                             size="sm"

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateEAN13Sync } from "@/lib/actions/admin/inventory-master.actions";
+import { generateEAN13Sync } from "@/lib/utils/barcode";
 
 describe("Inventory Master & POS Flow Engine", () => {
   // ─── 1. BARCODE GENERATION ──────────────────────────────────────────

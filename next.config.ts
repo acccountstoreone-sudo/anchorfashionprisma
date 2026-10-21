@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  staticPageGenerationTimeout: 120,
+  staticPageGenerationTimeout: 15,
 
   async headers() {
     return [
