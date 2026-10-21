@@ -91,7 +91,7 @@ export default async function ProductsPage({
   if (maxPrice !== undefined) safeParams.maxPrice = String(maxPrice);
 
   // Fetch catalog data in parallel
-  const [{ data: products, count }, rawCategories, rawBrands] =
+  const [{ data: products, total: count }, rawCategories, rawBrands] =
     await Promise.all([
       CatalogService.getProducts({
         category,

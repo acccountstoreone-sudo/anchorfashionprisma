@@ -114,6 +114,15 @@ export class OrderService {
       } catch (err) {
         console.error(`[OrderService] Failed to reverse loyalty for order ${id}:`, err);
       }
+
+      try {
+        // Authoritative inventory release back to available stock in Neon
+        const { InventoryService } = await import("@/services/inventory.service");
+        const invService = new InventoryService();
+        await invService.releaseOrderInventory(id);
+      } catch (invErr) {
+        console.error(`[OrderService] Failed to release inventory for order ${id}:`, invErr);
+      }
     } else if (lowerStatus === "confirmed") {
       try {
         const { AlphaSmsService } = await import("@/lib/services/sms/alpha-sms.service");

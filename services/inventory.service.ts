@@ -446,11 +446,6 @@ export class InventoryService {
     } catch (e) {
       console.warn("Prisma releaseOrderInventory error:", e);
     }
-
-    try {
-      const supabase = createAdminClient();
-      await supabase.rpc("release_order_inventory", { p_order_id: orderId });
-    } catch (_) {}
   }
 
   /**
@@ -482,10 +477,5 @@ export class InventoryService {
     } catch (e) {
       console.warn("Prisma confirmOrderInventory error:", e);
     }
-
-    try {
-      const supabase = createAdminClient();
-      await supabase.rpc("confirm_order_inventory", { p_order_id: orderId });
-    } catch (_) {}
   }
 }

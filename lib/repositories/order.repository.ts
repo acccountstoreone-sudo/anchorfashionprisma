@@ -237,6 +237,42 @@ export class OrderRepository {
     return records.map(mapPrismaOrderToCheckoutOrder);
   }
 
+  /**
+   * Update order status authoritative in Neon PostgreSQL
+   */
+  static async updateOrderStatus(
+    id: string,
+    status: string,
+    notes?: string,
+    changedBy?: string
+  ): Promise<void> {
+    const upper = status.toUpperCase();
+    await prisma.order.update({
+      where: { id },
+      data: {
+        status: upper,
+        updatedAt: new Date(),
+        statusHistory: {
+          create: {
+            status: upper,
+            notes: notes || `Order status updated to ${upper}`,
+            changedBy: changedBy || null,
+          },
+        },
+      },
+    });
+
+    if (upper === "CANCELLED" || upper === "REFUNDED" || upper === "RETURNED") {
+      try {
+        const { InventoryService } = await import("@/services/inventory.service");
+        const invService = new InventoryService();
+        await invService.releaseOrderInventory(id);
+      } catch (invErr) {
+        console.warn("[OrderRepository.updateOrderStatus] Inventory release notice:", invErr);
+      }
+    }
+  }
+
   // Instance method compatibility
   async getOrderById(id: string): Promise<Order | null> {
     return OrderRepository.getOrderById(id);
