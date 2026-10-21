@@ -93,6 +93,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
   const [linkedProductId, setLinkedProductId] = useState<string | null>(initialData?.id || null);
 
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+  const [isSlugCustomized, setIsSlugCustomized] = useState(Boolean(initialData?.slug));
 
   const handleSelectInventoryProduct = (item: any) => {
     setActiveInventoryItem(item);
@@ -547,6 +548,25 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                         <Input
                           placeholder="E.g. Navy Blue Silk Tie"
                           {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            if (!isSlugCustomized) {
+                              const autoSlug = e.target.value
+                                .toLowerCase()
+                                .trim()
+                                .replace(/[^\w\s-]/g, "")
+                                .replace(/\s+/g, "-");
+                              form.setValue("slug", autoSlug, { shouldValidate: true });
+                            }
+                          }}
+                          onBlur={() => {
+                            field.onBlur();
+                            const currentSku = form.getValues("sku");
+                            const currentCat = form.getValues("categoryId");
+                            if (!currentSku && currentCat && field.value?.trim()) {
+                              handleGenerateCode();
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -560,11 +580,21 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                     name="slug"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Slug</FormLabel>
+                        <div className="flex items-center justify-between">
+                          <FormLabel>Slug</FormLabel>
+                          <span className="text-[10px] text-muted-foreground font-medium">Auto-generated from name</span>
+                        </div>
                         <FormControl>
-                          <Input placeholder="navy-blue-silk-tie" {...field} />
+                          <Input
+                            placeholder="navy-blue-silk-tie"
+                            {...field}
+                            onChange={(e) => {
+                              setIsSlugCustomized(true);
+                              field.onChange(e);
+                            }}
+                          />
                         </FormControl>
-                        <FormDescription>The URL friendly name</FormDescription>
+                        <FormDescription>The URL friendly identifier</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1279,7 +1309,14 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                       <FormItem>
                         <FormLabel>Category *</FormLabel>
                         <Select
-                          onValueChange={field.onChange}
+                          onValueChange={(val) => {
+                            field.onChange(val);
+                            const currentSku = form.getValues("sku");
+                            const currentName = form.getValues("name");
+                            if (!currentSku && currentName?.trim()) {
+                              setTimeout(() => handleGenerateCode(), 100);
+                            }
+                          }}
                           value={field.value || ""}
                         >
                           <FormControl>

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { CreateProductInput, Product } from "@/types/catalog.types";
 import { cache } from "react";
+import { generateUniqueProductCode } from "@/lib/utils/product-code";
 
 function mapToAdminProduct(p: any): Product {
   const variants = p.variants || [];
@@ -247,25 +248,51 @@ export class ProductRepository {
   static async createProduct(input: CreateProductInput) {
     const { seo, tags, media, variants, ...productData } = input;
 
+    // 1. Auto-generate slug if missing
+    let finalSlug = productData.slug?.trim();
+    if (!finalSlug && productData.name) {
+      const baseSlug = productData.name
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .slice(0, 50);
+      finalSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
+    }
+
+    // 2. Auto-generate SKU if missing
+    let finalSku = productData.sku?.trim();
+    if (!finalSku && productData.name) {
+      try {
+        finalSku = await generateUniqueProductCode(
+          productData.name,
+          productData.categoryId || "general",
+          "AF"
+        );
+      } catch {
+        const cleanName = productData.name.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+        finalSku = `AF${cleanName || "PROD"}${Date.now().toString().slice(-4)}`;
+      }
+    }
+
     // Check duplicate SKU
-    if (productData.sku?.trim()) {
+    if (finalSku) {
       const existingSku = await prisma.product.findFirst({
-        where: { sku: productData.sku.trim(), deletedAt: null },
+        where: { sku: finalSku, deletedAt: null },
         select: { id: true },
       });
       if (existingSku) {
-        throw new Error(`A product with SKU "${productData.sku}" already exists.`);
+        throw new Error(`A product with SKU "${finalSku}" already exists.`);
       }
     }
 
     // Check duplicate slug
-    if (productData.slug?.trim()) {
+    if (finalSlug) {
       const existingSlug = await prisma.product.findFirst({
-        where: { slug: productData.slug.trim(), deletedAt: null },
+        where: { slug: finalSlug, deletedAt: null },
         select: { id: true },
       });
       if (existingSlug) {
-        throw new Error(`A product with URL slug "${productData.slug}" already exists.`);
+        throw new Error(`A product with URL slug "${finalSlug}" already exists.`);
       }
     }
 
@@ -281,7 +308,7 @@ export class ProductRepository {
       const createdProduct = await tx.product.create({
         data: {
           name: productData.name,
-          slug: productData.slug,
+          slug: finalSlug || `product-${Date.now()}`,
           shortDescription: productData.shortDescription,
           description: productData.description,
           categoryId: productData.categoryId,
@@ -289,7 +316,7 @@ export class ProductRepository {
           basePrice: productData.basePrice,
           costPrice: productData.costPrice ?? null,
           salePrice: productData.salePrice ?? null,
-          sku: productData.sku && productData.sku.trim() ? productData.sku.trim() : null,
+          sku: finalSku || null,
           barcode: productData.barcode && productData.barcode.trim() ? productData.barcode.trim() : null,
           status: productData.status || "DRAFT",
           gender: productData.gender || null,
