@@ -76,7 +76,7 @@ export class DataWarehouseService {
    * Retrieves high-level revenue metrics for a specific date range.
    */
   async getRevenueSummary(startDateKey: number, endDateKey: number) {
-    console.log(`[DataWarehouse] Mock getRevenueSummary ${startDateKey} to ${endDateKey}`);
+    console.warn(`[DataWarehouse] Mock getRevenueSummary ${startDateKey} to ${endDateKey}`);
     return {
       totalGrossRevenue: 0,
       totalNetRevenue: 0,
@@ -90,7 +90,7 @@ export class DataWarehouseService {
   async loadFactSales(
     salesBatch: Omit<FactSales, "sales_id" | "created_at">[]
   ) {
-    console.log(`[DataWarehouse] Mock loadFactSales for ${salesBatch.length} records`);
+    console.warn(`[DataWarehouse] Mock loadFactSales for ${salesBatch.length} records`);
   }
 }
 

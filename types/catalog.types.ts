@@ -243,9 +243,9 @@ export type Category = {
   image_url?: string | null;
   imageUrl?: string | null;
   parent_id: string | null;
-  icon_url: string | null;
+  icon_url?: string | null;
   is_active: boolean;
-  display_order: number;
+  display_order?: number;
   created_at: string;
   updated_at: string;
   // joined

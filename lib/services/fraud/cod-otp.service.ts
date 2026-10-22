@@ -258,7 +258,7 @@ export class CodOtpService {
 
     // In local development or testing sink, if live delivery cannot reach a customer address, log safely
     if (process.env.NODE_ENV !== "production") {
-      console.log(
+      console.warn(
         `[COD OTP DEV NOTIFICATION] Session: ${params.sessionId} | Target: ${this.maskTarget(targetValue, targetType)} | Status: Dispatched`
       );
     }

@@ -239,9 +239,9 @@ export async function updateCuratedCategoriesSettings(
     // 4. Targeted Next.js Cache Invalidation
     try {
       invalidateHomepageCache();
-      revalidateTag(CACHE_TAGS.HOMEPAGE);
-      revalidateTag(CACHE_TAGS.CATEGORIES);
-      revalidateTag("curated-categories");
+      revalidateTag(CACHE_TAGS.HOMEPAGE, "max");
+      revalidateTag(CACHE_TAGS.CATEGORIES, "max");
+      revalidateTag("curated-categories", "max");
       revalidatePath("/", "page");
       revalidatePath("/(shop)", "page");
       revalidatePath("/admin/cms/curated-categories");
@@ -273,8 +273,8 @@ export async function resetCuratedCategoriesSettings(): Promise<{ success: boole
 
     try {
       invalidateHomepageCache();
-      revalidateTag(CACHE_TAGS.HOMEPAGE);
-      revalidateTag("curated-categories");
+      revalidateTag(CACHE_TAGS.HOMEPAGE, "max");
+      revalidateTag("curated-categories", "max");
       revalidatePath("/", "page");
       revalidatePath("/admin/cms/curated-categories");
     } catch {}

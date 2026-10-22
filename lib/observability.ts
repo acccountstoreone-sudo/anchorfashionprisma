@@ -28,11 +28,11 @@ import { prisma } from "@/lib/prisma";
 
 export const ObservabilityService = {
   async log(entry: LogEntry) {
-    console.log("[Observability Log]", entry);
+    console.warn("[Observability Log]", entry);
   },
 
   async recordMetric(entry: MetricEntry) {
-    console.log("[Observability Metric]", entry);
+    console.warn("[Observability Metric]", entry);
   },
 
   async createIncident(entry: IncidentEntry) {
@@ -41,7 +41,7 @@ export const ObservabilityService = {
   },
 
   async recordAITelemetry(telemetry: any) {
-    console.log("[Observability AI Telemetry]", telemetry);
+    console.warn("[Observability AI Telemetry]", telemetry);
   },
 
   async runHealthChecks() {

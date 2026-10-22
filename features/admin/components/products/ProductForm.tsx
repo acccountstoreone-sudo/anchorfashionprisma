@@ -926,6 +926,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                       isActive: true,
                       attributes: {},
                       stockQuantity: 0,
+                      soldQuantity: 0,
                     });
                   }}
                 >

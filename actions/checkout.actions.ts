@@ -12,7 +12,7 @@ import { createClient } from "@/lib/supabase/server-client";
 import { redirect } from "next/navigation";
 import { CouponService } from "@/services/coupon.service";
 
-async function getUserId() {
+async function getUserId(): Promise<string | undefined> {
   try {
     const { getServerSession } = await import("@/lib/auth/server");
     const { user } = await getServerSession();
@@ -23,9 +23,9 @@ async function getUserId() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    return user?.id;
+    return user?.id ?? undefined;
   } catch (_) {
-    return null;
+    return undefined;
   }
 }
 

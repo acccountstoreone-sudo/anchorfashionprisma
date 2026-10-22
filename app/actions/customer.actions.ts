@@ -86,14 +86,17 @@ export async function uploadAvatarAction(formData: FormData) {
       avatar_url: avatarUrl,
     });
 
-    // Update auth user metadata in Better Auth
+    // Update auth user metadata in Neon/Better Auth if supported
     try {
-      await auth.updateUser({
-        headers: await headers(),
-        body: {
-          image: avatarUrl,
-        }
-      });
+      if (typeof (auth as any).updateUser === "function") {
+        const { headers } = await import("next/headers");
+        await (auth as any).updateUser({
+          headers: await headers(),
+          body: {
+            image: avatarUrl,
+          },
+        });
+      }
     } catch {}
 
     revalidatePath("/account/profile");

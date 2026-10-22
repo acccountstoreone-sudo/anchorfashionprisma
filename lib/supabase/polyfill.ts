@@ -1168,7 +1168,7 @@ export function createClient() {
       deleteBucket: async (name: string) => ({ data: null, error: null }),
     },
     auth: {
-      getUser: async () => {
+      getUser: async (_token?: string) => {
         try {
           if (typeof window !== "undefined") {
             const { authClient } = await import("@/lib/auth/client");

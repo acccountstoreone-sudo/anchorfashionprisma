@@ -45,7 +45,7 @@ export function ForgotPasswordForm() {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error((error as any)?.message || "Failed to send reset password link");
       setIsLoading(false);
       return;
     }

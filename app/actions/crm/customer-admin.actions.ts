@@ -267,7 +267,7 @@ export async function getCustomerPasswordAction(
     const { data, error } = await supabase.auth.admin.getUserById(cleanId);
     if (error) throw error;
 
-    const password = data.user?.user_metadata?.assigned_password || null;
+    const password = (data.user?.user_metadata as any)?.assigned_password || null;
     return { success: true, password };
   } catch (error: any) {
     console.error("[getCustomerPasswordAction] Error:", error);

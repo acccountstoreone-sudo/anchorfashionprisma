@@ -6,21 +6,21 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('Cleaning transactional data for client handover...')
+  console.warn('Cleaning transactional data for client handover...')
   
   // 1. Delete order related data (cascades handle items if configured properly, but doing explicitly is safer)
-  console.log('Deleting Orders...')
+  console.warn('Deleting Orders...')
   await prisma.orderItem.deleteMany()
   await prisma.orderStatusHistory.deleteMany()
   await prisma.order.deleteMany()
 
   // 2. Delete Cart & Wishlist
-  console.log('Deleting Carts & Wishlists...')
+  console.warn('Deleting Carts & Wishlists...')
   await prisma.cartItem.deleteMany()
   await prisma.wishlistItem.deleteMany()
 
   // 3. Delete CRM / Support / Reviews
-  console.log('Deleting Reviews & Support Tickets...')
+  console.warn('Deleting Reviews & Support Tickets...')
   await prisma.review.deleteMany()
   await prisma.ticketMessage.deleteMany()
   await prisma.supportTicket.deleteMany()
@@ -29,7 +29,7 @@ async function main() {
   // Assuming we want to delete all profiles EXCEPT admin.
   // Note: Adjust the email string to your actual admin email if needed.
   const adminEmail = 'dev.sazzadali@gmail.com'
-  console.log(`Deleting Profiles (Except Admin: ${adminEmail})...`)
+  console.warn(`Deleting Profiles (Except Admin: ${adminEmail})...`)
   await prisma.profile.deleteMany({
     where: {
       email: {
@@ -38,8 +38,8 @@ async function main() {
     }
   })
 
-  console.log('Transaction data cleanup complete!')
-  console.log('Catalog (Products, Categories, Brands) remains intact.')
+  console.warn('Transaction data cleanup complete!')
+  console.warn('Catalog (Products, Categories, Brands) remains intact.')
 }
 
 main()

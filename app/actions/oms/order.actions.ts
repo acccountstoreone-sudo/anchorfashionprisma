@@ -278,11 +278,10 @@ export async function cancelCustomerOrderAction(
       await prisma.orderStatusHistory.create({
         data: {
           orderId: order.id,
-          previousStatus: order.status,
-          newStatus: "CANCELLED",
-          reason: note ? `${reason}: ${note}` : reason,
+          status: "CANCELLED",
+          notes: note ? `${reason}: ${note}` : reason,
           changedBy: user.id,
-        }
+        },
       });
     } catch (histErr) {
       console.error("[cancelCustomerOrderAction] Failed to write status history", histErr);
@@ -292,14 +291,13 @@ export async function cancelCustomerOrderAction(
     try {
       await prisma.notification.create({
         data: {
-          profileId: user.id,
+          userId: user.id,
           title: `Order ${order.orderNumber} Cancelled`,
           message: `Your order has been cancelled successfully.${
             refundStatus !== "none" ? ` Refund status: ${refundStatus}.` : ""
           }`,
           type: "ORDER",
-          isRead: false,
-        }
+        },
       });
     } catch (notifErr) {
       console.error("[cancelCustomerOrderAction] Failed to create notification", notifErr);

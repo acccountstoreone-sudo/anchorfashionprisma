@@ -70,7 +70,7 @@ describe("Favicon & SEO Metadata System", () => {
     expect(meta.description).toBeDefined();
     expect(meta.alternates?.canonical).toBe("https://anchorfashion.com");
     expect(meta.openGraph?.title).toBeDefined();
-    expect(meta.twitter?.card).toBe("summary_large_image");
+    expect((meta.twitter as any)?.card).toBe("summary_large_image");
     expect(meta.robots).toBeDefined();
   });
 });

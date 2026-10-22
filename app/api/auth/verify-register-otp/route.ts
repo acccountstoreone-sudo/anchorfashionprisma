@@ -33,6 +33,10 @@ export async function POST(request: Request) {
     
     // Create profile
     try {
+      const customerRole = await prisma.role.findFirst({
+        where: { name: { equals: "CUSTOMER", mode: "insensitive" } },
+      });
+
       await prisma.profile.upsert({
         where: { email: cleanEmail },
         update: {},
@@ -41,8 +45,8 @@ export async function POST(request: Request) {
           email: cleanEmail,
           firstName: name.split(" ")[0] || name,
           lastName: name.split(" ").slice(1).join(" ") || "",
-          role: "customer"
-        }
+          roleId: customerRole?.id ?? null,
+        },
       });
     } catch (e) {
       console.warn("Could not upsert profile, maybe it exists?", e);

@@ -196,7 +196,7 @@ export class ReferralService {
         referenceId: attribution.id // Idempotent reference
       });
 
-      console.log(`Successfully rewarded referrer ${attribution.referrer_customer_id} with ${pointsEarned} points.`);
+      console.warn(`Successfully rewarded referrer ${attribution.referrer_customer_id} with ${pointsEarned} points.`);
     } catch (err) {
       console.error(`Error rewarding points for referral ${attribution.id}:`, err);
       // Rollback status if point issuance fails

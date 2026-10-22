@@ -99,6 +99,6 @@ export class NotificationService {
     status: string = "PENDING",
     errorMessage?: string
   ) {
-    console.log(`[Notification Log] User: ${userId}, Template: ${templateId}, Channel: ${channel}, Status: ${status}, Error: ${errorMessage}`);
+    console.warn(`[Notification Log] User: ${userId}, Template: ${templateId}, Channel: ${channel}, Status: ${status}, Error: ${errorMessage}`);
   }
 }

@@ -76,6 +76,6 @@ export class WebhookService {
     // In a real implementation, this would switch on event type (e.g. payment.success, refund.completed)
     // and update the corresponding transactions or orders.
     // For this architecture skeleton, we consider the processing done.
-    console.log(`Processing event for ${providerCode}`, payload);
+    console.warn(`Processing event for ${providerCode}`, payload);
   }
 }

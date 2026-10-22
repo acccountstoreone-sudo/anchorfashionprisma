@@ -78,7 +78,7 @@ export function BrandsClientPage({ initialBrands }: BrandsClientPageProps) {
 
       const res = await uploadImageAction(formData);
       if (res.success && res.url) {
-        setForm((f) => ({ ...f, logo_url: res.url }));
+        setForm((f) => ({ ...f, logo_url: res.url || "" }));
         toast.success("Brand logo uploaded successfully");
       } else {
         toast.error(res.error || "Failed to upload logo");

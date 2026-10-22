@@ -88,7 +88,7 @@ export class AlphaSmsService {
 
     // 2. Check if SMS sending is disabled globally
     if (!isSmsEnabled) {
-      console.log(`[Alpha SMS] SMS_ENABLED is false. Skipping dispatch to ${normalized}.`);
+      console.warn(`[Alpha SMS] SMS_ENABLED is false. Skipping dispatch to ${normalized}.`);
       return {
         success: true,
         status: "SKIPPED",
@@ -102,7 +102,7 @@ export class AlphaSmsService {
     // 3. Test Mode / Simulated Send (does not consume SMS credits)
     if (isTestMode) {
       const mockRequestId = `TEST-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
-      console.log(
+      console.warn(
         `[Alpha SMS] [TEST MODE] Simulated SMS sent to ${normalized}. RequestID: ${mockRequestId}. Message: "${message}"`
       );
 
@@ -203,7 +203,7 @@ export class AlphaSmsService {
         };
       }
 
-      console.log(
+      console.warn(
         `[Alpha SMS] Delivery successful to ${normalized}. RequestID: ${requestId}`
       );
 
@@ -312,7 +312,7 @@ export class AlphaSmsService {
       // 3. Duplicate SMS Protection
       if (!options?.force && order.confirmation_sms_sent === true) {
         const msg = `Confirmation SMS already sent for order ${order.order_number} (confirmation_sms_sent = true). Skipping duplicate.`;
-        console.log(`[Alpha SMS] ${msg}`);
+        console.warn(`[Alpha SMS] ${msg}`);
         return {
           success: true,
           status: "SKIPPED",
@@ -328,7 +328,7 @@ export class AlphaSmsService {
         const priorSentLog = await this.checkPriorSentLog(order.id);
         if (priorSentLog) {
           const msg = `Confirmation SMS already logged as SENT for order ${order.order_number}. Skipping duplicate.`;
-          console.log(`[Alpha SMS] ${msg}`);
+          console.warn(`[Alpha SMS] ${msg}`);
           // Sync confirmation_sms_sent flag
           await this.markOrderSmsSent(order.id);
           return {

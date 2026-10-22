@@ -63,7 +63,7 @@ export default async function HomePage() {
     getCachedHeroSlides().catch(() => []),
     FlashSaleService.getActiveFlashSales().catch(() => []),
     getCachedFeaturedPromoBanner().catch(() => null),
-    getCachedWhyChooseUs().catch(() => []),
+    getCachedWhyChooseUs().catch(() => null),
     getCachedCuratedCategoriesData().catch(() => null),
   ]);
 
@@ -94,7 +94,7 @@ export default async function HomePage() {
       <FadeIn delay={0.2} direction="up">
         <CategoryHighlight
           categories={categories}
-          curatedData={curatedCategoriesData}
+          curatedData={curatedCategoriesData ?? undefined}
         />
       </FadeIn>
 
@@ -111,16 +111,18 @@ export default async function HomePage() {
         {/* Kids and Accessories - MOVED DOWN */}
 
         {/* 7. Mid-Season Promo Banner */}
-        <FadeIn direction="left">
-          <PromoBanner
-            title={featuredPromoBanner.title}
-            subtitle={featuredPromoBanner.subtitle}
-            description={featuredPromoBanner.description}
-            ctaText={featuredPromoBanner.ctaText}
-            ctaLink={featuredPromoBanner.ctaLink}
-            imageUrl={featuredPromoBanner.imageUrl}
-          />
-        </FadeIn>
+        {featuredPromoBanner && (
+          <FadeIn direction="left">
+            <PromoBanner
+              title={featuredPromoBanner.title}
+              subtitle={featuredPromoBanner.subtitle}
+              description={featuredPromoBanner.description}
+              ctaText={featuredPromoBanner.ctaText}
+              ctaLink={featuredPromoBanner.ctaLink}
+              imageUrl={featuredPromoBanner.imageUrl}
+            />
+          </FadeIn>
+        )}
 
         {/* 8. Trending Products */}
         <FadeIn>
@@ -129,7 +131,7 @@ export default async function HomePage() {
 
         {/* 9. Brand Ethos / Story */}
         <FadeIn direction="right">
-          <WhyChooseUs data={whyChooseUsData} />
+          <WhyChooseUs data={whyChooseUsData?.data} />
         </FadeIn>
 
         {/* 10. Featured Products (New Arrivals) */}
