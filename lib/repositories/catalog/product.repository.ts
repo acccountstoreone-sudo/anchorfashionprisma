@@ -94,6 +94,10 @@ function mapToAdminProduct(p: any): Product {
     updatedAt: p.updatedAt ? new Date(p.updatedAt).toISOString() : new Date().toISOString(),
     updated_at: p.updatedAt ? new Date(p.updatedAt).toISOString() : new Date().toISOString(),
     category: p.category ? { id: p.category.id, name: p.category.name, slug: p.category.slug } : null,
+    categoryIds: (p.productCategories || []).map((pc: any) => pc.categoryId).filter(Boolean),
+    additionalCategories: (p.productCategories || [])
+      .map((pc: any) => (pc.category ? { id: pc.category.id, name: pc.category.name, slug: pc.category.slug } : null))
+      .filter(Boolean),
     brand: p.brand ? { id: p.brand.id, name: p.brand.name, slug: p.brand.slug } : null,
     variants: mappedVariants,
     media: mediaList,
@@ -182,8 +186,16 @@ export class ProductRepository {
         ];
       }
 
-      if (categoryId) {
-        where.categoryId = categoryId;
+      if (categoryId && categoryId !== "ALL") {
+        where.AND = [
+          ...(where.AND || []),
+          {
+            OR: [
+              { categoryId },
+              { productCategories: { some: { categoryId } } },
+            ],
+          },
+        ];
       }
       if (brandId) {
         where.brandId = brandId;
@@ -198,6 +210,11 @@ export class ProductRepository {
           include: {
             category: { select: { id: true, name: true, slug: true } },
             brand: { select: { id: true, name: true, slug: true } },
+            productCategories: {
+              include: {
+                category: { select: { id: true, name: true, slug: true } },
+              },
+            },
             variants: {
               include: {
                 inventoryLevels: true,
@@ -243,6 +260,11 @@ export class ProductRepository {
         include: {
           category: { select: { id: true, name: true, slug: true } },
           brand: { select: { id: true, name: true, slug: true } },
+          productCategories: {
+            include: {
+              category: { select: { id: true, name: true, slug: true } },
+            },
+          },
           variants: {
             include: {
               inventoryLevels: true,
@@ -278,7 +300,7 @@ export class ProductRepository {
    * Creates a new product along with variants, media, SEO, and inventory.
    */
   static async createProduct(input: CreateProductInput) {
-    const { seo, tags, media, variants, ...productData } = input;
+    const { seo, tags, media, variants, categoryIds, ...productData } = input;
 
     // 1. Auto-generate slug if missing
     let finalSlug = productData.slug?.trim();
@@ -392,6 +414,20 @@ export class ProductRepository {
         });
       }
 
+      // Link Multiple Categories
+      const allCatIds = Array.from(
+        new Set([productData.categoryId, ...(categoryIds || [])].filter((c): c is string => Boolean(c) && typeof c === "string"))
+      );
+      if (allCatIds.length > 0) {
+        await tx.productCategory.createMany({
+          data: allCatIds.map((cId) => ({
+            productId,
+            categoryId: cId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
       // Create Media
       if (media && media.length > 0) {
         await tx.productMedia.createMany({
@@ -474,7 +510,7 @@ export class ProductRepository {
    * Updates an existing product.
    */
   static async updateProduct(id: string, input: Partial<CreateProductInput>) {
-    const { seo, tags, media, variants, ...productData } = input;
+    const { seo, tags, media, variants, categoryIds, ...productData } = input;
 
     const primaryMediaUrl = media?.find((m: any) => m.isPrimary)?.url || media?.[0]?.url || undefined;
 
@@ -543,6 +579,28 @@ export class ProductRepository {
             data: tags.map((tagId) => ({
               productId: id,
               tagId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      // 3b. Update Additional / Multiple Categories
+      if (categoryIds !== undefined || productData.categoryId !== undefined) {
+        let primaryId = productData.categoryId;
+        if (!primaryId) {
+          const current = await tx.product.findUnique({ where: { id }, select: { categoryId: true } });
+          primaryId = current?.categoryId || undefined;
+        }
+        const allCatIds = Array.from(
+          new Set([primaryId, ...(categoryIds || [])].filter((c): c is string => Boolean(c) && typeof c === "string"))
+        );
+        await tx.productCategory.deleteMany({ where: { productId: id } });
+        if (allCatIds.length > 0) {
+          await tx.productCategory.createMany({
+            data: allCatIds.map((cId) => ({
+              productId: id,
+              categoryId: cId,
             })),
             skipDuplicates: true,
           });

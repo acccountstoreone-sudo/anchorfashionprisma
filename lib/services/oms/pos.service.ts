@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { prisma } from "@/lib/prisma";
 import { OrderRepository } from "@/lib/repositories/oms/order.repository";
 import { InventoryService, ReservationItem, InventoryError } from "@/services/inventory.service";
 import { CodRiskService } from "@/lib/services/fraud/cod-risk.service";
@@ -110,14 +111,140 @@ export class PosService {
   }
 
   /**
-   * Search for products and variants
+   * Search for products and variants across Neon PostgreSQL / Prisma (by Barcode, SKU, Name)
    */
   async searchProducts(query: string) {
-    const supabase = createAdminClient();
     const q = query.trim();
     if (!q) return [];
 
-    const { data, error } = await supabase
+    try {
+      // 1. Search variants by exact barcode, or SKU match
+      const variants = await prisma.variant.findMany({
+        where: {
+          OR: [
+            { barcode: { equals: q, mode: "insensitive" } },
+            { sku: { contains: q, mode: "insensitive" } },
+          ],
+        },
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              basePrice: true,
+              salePrice: true,
+              imageUrl: true,
+            },
+          },
+          inventoryLevels: true,
+        },
+        take: 10,
+      });
+
+      if (variants.length > 0) {
+        return variants.map((v) => {
+          const totalStock = v.inventoryLevels.reduce((sum, il) => sum + (il.quantityAvailable || 0), 0);
+          const price = Number(v.priceOverride ?? v.product.basePrice ?? 0);
+          const salePrice = v.salePrice ? Number(v.salePrice) : (v.product.salePrice ? Number(v.product.salePrice) : null);
+          return {
+            id: v.id,
+            sku: v.sku,
+            barcode: v.barcode,
+            price,
+            sale_price: salePrice,
+            stock_quantity: totalStock,
+            attributes: v.attributes,
+            product: {
+              id: v.product.id,
+              title: v.product.name,
+              name: v.product.name,
+              slug: v.product.slug,
+              price: Number(v.product.basePrice),
+              sale_price: v.product.salePrice ? Number(v.product.salePrice) : null,
+              main_image_url: v.product.imageUrl,
+            },
+          };
+        });
+      }
+
+      // 2. Search products by Name, SKU, or Barcode
+      const products = await prisma.product.findMany({
+        where: {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { sku: { contains: q, mode: "insensitive" } },
+            { barcode: { equals: q, mode: "insensitive" } },
+          ],
+          deletedAt: null,
+        },
+        include: {
+          variants: {
+            include: {
+              inventoryLevels: true,
+            },
+          },
+        },
+        take: 5,
+      });
+
+      if (products.length > 0) {
+        const results: any[] = [];
+        for (const p of products) {
+          if (p.variants && p.variants.length > 0) {
+            for (const v of p.variants) {
+              const totalStock = v.inventoryLevels.reduce((sum, il) => sum + (il.quantityAvailable || 0), 0);
+              const price = Number(v.priceOverride ?? p.basePrice ?? 0);
+              const salePrice = v.salePrice ? Number(v.salePrice) : (p.salePrice ? Number(p.salePrice) : null);
+              results.push({
+                id: v.id,
+                sku: v.sku,
+                barcode: v.barcode,
+                price,
+                sale_price: salePrice,
+                stock_quantity: totalStock,
+                attributes: v.attributes,
+                product: {
+                  id: p.id,
+                  title: p.name,
+                  name: p.name,
+                  slug: p.slug,
+                  price: Number(p.basePrice),
+                  sale_price: p.salePrice ? Number(p.salePrice) : null,
+                  main_image_url: p.imageUrl,
+                },
+              });
+            }
+          } else {
+            results.push({
+              id: p.id,
+              sku: p.sku || "",
+              barcode: p.barcode || "",
+              price: Number(p.basePrice),
+              sale_price: p.salePrice ? Number(p.salePrice) : null,
+              stock_quantity: 0,
+              title: p.name,
+              name: p.name,
+              product: {
+                id: p.id,
+                title: p.name,
+                name: p.name,
+                slug: p.slug,
+                price: Number(p.basePrice),
+                sale_price: p.salePrice ? Number(p.salePrice) : null,
+                main_image_url: p.imageUrl,
+              },
+            });
+          }
+        }
+        return results;
+      }
+    } catch (e) {
+      console.error("[PosService.searchProducts] Prisma search error, checking fallback:", e);
+    }
+
+    const supabase = createAdminClient();
+    const { data } = await supabase
       .from("variants")
       .select(`
         id, sku, price, sale_price, stock_quantity, attributes,
@@ -125,32 +252,6 @@ export class PosService {
       `)
       .or(`sku.ilike.%${q}%`)
       .limit(10);
-
-    if (!data || data.length === 0) {
-      const { data: pData } = await supabase
-        .from("products")
-        .select(`
-          id, title, slug, price, sale_price, main_image_url,
-          variants (id, sku, price, sale_price, stock_quantity, attributes)
-        `)
-        .ilike("title", `%${q}%`)
-        .limit(5);
-
-      if (pData) {
-        let results: any[] = [];
-        for (const p of pData) {
-          if (p.variants && p.variants.length > 0) {
-            for (const v of p.variants) {
-              results.push({
-                ...v,
-                product: { id: p.id, title: p.title, slug: p.slug, price: p.price, sale_price: p.sale_price, main_image_url: p.main_image_url }
-              });
-            }
-          }
-        }
-        return results;
-      }
-    }
 
     return data || [];
   }

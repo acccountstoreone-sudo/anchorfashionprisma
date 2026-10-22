@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { posSearchCustomersAction, posSearchProductsAction, placePosOrderAction } from "@/app/actions/oms/pos.actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,19 +57,21 @@ export function ManagerPOS({ branchId }: { branchId: string }) {
     }
   };
 
-  const addToCart = (productOrVariant: any) => {
+  const addToCart = useCallback((productOrVariant: any) => {
     setCartItems(prev => {
       const isVariant = !!productOrVariant.sku;
       const vId = isVariant ? productOrVariant.id : null;
-      const pId = isVariant ? productOrVariant.product.id : productOrVariant.id;
+      const pId = isVariant ? (productOrVariant.product?.id || productOrVariant.productId) : productOrVariant.id;
       
       const existing = prev.find(item => item.variantId === vId && item.productId === pId);
       if (existing) {
         return prev.map(item => item.id === existing.id ? { ...item, quantity: item.quantity + 1 } : item);
       }
       
-      const price = productOrVariant.sale_price || productOrVariant.price;
-      const name = isVariant ? `${productOrVariant.product.title} - ${productOrVariant.sku}` : productOrVariant.title;
+      const price = Number(productOrVariant.sale_price ?? productOrVariant.price ?? productOrVariant.product?.price ?? 0);
+      const name = isVariant 
+        ? `${productOrVariant.product ? (productOrVariant.product.name || productOrVariant.product.title) : (productOrVariant.name || productOrVariant.title)} - ${productOrVariant.sku}` 
+        : (productOrVariant.name || productOrVariant.title);
 
       return [...prev, {
         id: Math.random().toString(),
@@ -83,7 +85,39 @@ export function ManagerPOS({ branchId }: { branchId: string }) {
     });
     setProductQuery("");
     setProducts([]);
-  };
+  }, []);
+
+  // Hardware barcode scanner listener (USB / Bluetooth keystroke wedge)
+  useEffect(() => {
+    let scanBuffer = "";
+    let lastKeyTime = Date.now();
+
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      const currentTime = Date.now();
+      if (currentTime - lastKeyTime > 150) {
+        scanBuffer = "";
+      }
+      lastKeyTime = currentTime;
+
+      if (e.key === "Enter") {
+        const barcodeCandidate = scanBuffer.trim();
+        if (barcodeCandidate.length >= 3) {
+          setIsSearchingProduct(true);
+          const res = await posSearchProductsAction(barcodeCandidate);
+          setIsSearchingProduct(false);
+          if (res.success && res.data && res.data.length > 0) {
+            addToCart(res.data[0]);
+          }
+        }
+        scanBuffer = "";
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        scanBuffer += e.key;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [addToCart]);
 
   const updateQuantity = (id: string, delta: number) => {
     setCartItems(prev => prev.map(item => {
@@ -197,10 +231,17 @@ export function ManagerPOS({ branchId }: { branchId: string }) {
         </div>
 
         <div className="bg-white p-4 border rounded-lg shadow-sm flex-1">
-          <h2 className="text-lg font-semibold mb-4">Product Search</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <span>Product Search</span>
+              <span className="text-[11px] font-normal px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                ⚡ Barcode Gun Ready
+              </span>
+            </h2>
+          </div>
           <div className="relative">
             <Input 
-              placeholder="Scan Barcode, enter SKU or Product Name..." 
+              placeholder="Scan Barcode with Gun, enter SKU or Product Name..." 
               value={productQuery}
               onChange={handleProductSearch}
             />
@@ -212,10 +253,12 @@ export function ManagerPOS({ branchId }: { branchId: string }) {
               {products.map(p => (
                 <div key={p.id} className="p-3 flex justify-between items-center hover:bg-gray-50">
                   <div className="flex gap-3 items-center">
-                    {p.product?.main_image_url && <img src={p.product.main_image_url} alt="" className="w-10 h-10 object-cover rounded" />}
+                    {(p.product?.main_image_url || p.product?.imageUrl || p.imageUrl) && (
+                      <img src={p.product?.main_image_url || p.product?.imageUrl || p.imageUrl} alt="" className="w-10 h-10 object-cover rounded" />
+                    )}
                     <div>
-                      <p className="font-medium">{p.product ? p.product.title : p.title}</p>
-                      {p.sku && <p className="text-xs text-gray-500">SKU: {p.sku} | Stock: {p.stock_quantity}</p>}
+                      <p className="font-medium">{p.product ? (p.product.name || p.product.title) : (p.name || p.title)}</p>
+                      {p.sku && <p className="text-xs text-gray-500">SKU: {p.sku} {p.barcode ? `| Barcode: ${p.barcode}` : ""} | Stock: {p.stock_quantity}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

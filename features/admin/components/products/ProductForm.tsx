@@ -106,6 +106,11 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
     form.setValue("name", item.name, { shouldValidate: true });
     form.setValue("slug", item.slug, { shouldValidate: true });
     if (item.categoryId) form.setValue("categoryId", item.categoryId, { shouldValidate: true });
+    if (item.categoryIds && item.categoryIds.length > 0) {
+      form.setValue("categoryIds", item.categoryIds, { shouldValidate: true });
+    } else if (item.categoryId) {
+      form.setValue("categoryIds", [item.categoryId], { shouldValidate: true });
+    }
     form.setValue("basePrice", item.basePrice, { shouldValidate: true });
     if (item.costPrice !== undefined && item.costPrice !== null) {
       form.setValue("costPrice", item.costPrice, { shouldValidate: true });
@@ -164,6 +169,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             name: item.name,
             slug: item.slug,
             categoryId: item.categoryId,
+            categoryIds: (item as any).categoryIds,
             basePrice: item.basePrice,
             costPrice: item.costPrice,
             sku: item.sku,
@@ -394,6 +400,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
     barcode: initialData?.barcode || "",
     status: initialData?.status || "ACTIVE",
     categoryId: initialData?.categoryId || "",
+    categoryIds: (initialData as any)?.categoryIds || (initialData as any)?.additionalCategories?.map((c: any) => c.id) || (initialData?.categoryId ? [initialData.categoryId] : []),
     brandId: initialData?.brandId || "",
     isFeatured: initialData?.isFeatured || false,
     variants: normalizedVariants,
@@ -1390,6 +1397,111 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                           </SelectContent>
                         </Select>
                         <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="categoryIds"
+                  render={({ field }) => {
+                    const selectedIds: string[] = field.value || [];
+                    const primaryId = form.watch("categoryId");
+
+                    const toggleCategory = (catId: string) => {
+                      if (catId === primaryId) return; // Primary is always included
+                      const next = selectedIds.includes(catId)
+                        ? selectedIds.filter((id) => id !== catId)
+                        : [...selectedIds, catId];
+                      field.onChange(next);
+                    };
+
+                    const secondarySelected = selectedIds.filter((id) => id !== primaryId);
+
+                    return (
+                      <FormItem className="space-y-2 pt-1">
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                            <Tag className="w-3.5 h-3.5 text-primary" />
+                            Additional Categories (Multiple)
+                          </FormLabel>
+                          <span className="text-[11px] text-muted-foreground">
+                            {secondarySelected.length} secondary selected
+                          </span>
+                        </div>
+                        <FormDescription className="text-xs">
+                          Tag this product into multiple collections (e.g. Men, Eid Collection, Festive Wear) so it appears across all matching categories.
+                        </FormDescription>
+
+                        {/* Selected Categories Badges */}
+                        <div className="flex flex-wrap gap-1.5 min-h-[38px] p-2 rounded-lg border border-border/60 bg-muted/20 items-center">
+                          {primaryId && (
+                            <Badge variant="default" className="gap-1 bg-primary text-primary-foreground text-xs shadow-xs font-medium">
+                              <span className="text-[10px] uppercase font-bold opacity-75">Primary:</span>
+                              {categories.find((c) => c.id === primaryId)?.name || "Primary Category"}
+                            </Badge>
+                          )}
+                          {secondarySelected.map((catId) => {
+                            const cat = categories.find((c) => c.id === catId);
+                            if (!cat) return null;
+                            return (
+                              <Badge
+                                key={cat.id}
+                                variant="secondary"
+                                className="gap-1 text-xs bg-secondary/80 hover:bg-secondary border border-border/40 pl-2 pr-1 py-0.5 transition-all"
+                              >
+                                <span>{cat.name}</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    toggleCategory(cat.id);
+                                  }}
+                                  className="p-0.5 hover:bg-destructive/10 hover:text-destructive rounded-full transition-colors"
+                                  aria-label={`Remove ${cat.name}`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </Badge>
+                            );
+                          })}
+                          {!primaryId && secondarySelected.length === 0 && (
+                            <span className="text-xs text-muted-foreground/60 italic py-0.5">
+                              Select primary category above, then click additional categories below.
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Quick Add Available Categories */}
+                        <div className="space-y-1 pt-1">
+                          <span className="text-[11px] font-medium text-muted-foreground">Click to add/remove:</span>
+                          <div className="flex flex-wrap gap-1 max-h-36 overflow-y-auto p-1.5 rounded-md border border-border/40 bg-background/50">
+                            {categories
+                              .filter((c) => c.id !== primaryId)
+                              .map((c) => {
+                                const isSelected = selectedIds.includes(c.id);
+                                return (
+                                  <button
+                                    type="button"
+                                    key={c.id}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      toggleCategory(c.id);
+                                    }}
+                                    className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md border transition-all ${
+                                      isSelected
+                                        ? "bg-primary text-primary-foreground border-primary font-medium shadow-xs"
+                                        : "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/70 hover:text-foreground"
+                                    }`}
+                                  >
+                                    <span>{isSelected ? "✓" : "+"}</span>
+                                    <span>{c.name}</span>
+                                  </button>
+                                );
+                              })}
+                          </div>
+                        </div>
                       </FormItem>
                     );
                   }}

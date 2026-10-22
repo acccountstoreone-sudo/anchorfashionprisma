@@ -178,6 +178,8 @@ export const ProductSchema = z.object({
   product_media: z.array(ProductMediaSchema).optional().nullable(),
   seo: ProductSeoSchema.optional().nullable(),
   tags: z.array(TagSchema).optional(),
+  categoryIds: z.array(z.string()).optional(),
+  additionalCategories: z.array(z.object({ id: z.string(), name: z.string(), slug: z.string().optional() })).optional(),
 });
 
 
@@ -207,7 +209,9 @@ export const CreateProductSchema = ProductSchema.omit({
   product_media: true,
   seo: true,
   tags: true,
+  additionalCategories: true,
 }).extend({
+  categoryIds: z.array(z.string()).optional(),
   seo: ProductSeoSchema.omit({ id: true, productId: true })
     .optional()
     .nullable(),

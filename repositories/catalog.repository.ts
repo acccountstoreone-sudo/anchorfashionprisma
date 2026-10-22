@@ -80,6 +80,10 @@ function mapProductToStorefront(p: any, activePromoDiscount?: number | null) {
     brand_id: p.brandId,
     category: p.category ? { id: p.category.id, name: p.category.name, slug: p.category.slug } : null,
     categories: p.category ? { id: p.category.id, name: p.category.name, slug: p.category.slug } : null,
+    category_ids: (p.productCategories || []).map((pc: any) => pc.categoryId).filter(Boolean),
+    additional_categories: (p.productCategories || [])
+      .map((pc: any) => (pc.category ? { id: pc.category.id, name: pc.category.name, slug: pc.category.slug } : null))
+      .filter(Boolean),
     brand: p.brand ? { id: p.brand.id, name: p.brand.name, slug: p.brand.slug } : null,
     brands: p.brand ? { id: p.brand.id, name: p.brand.name, slug: p.brand.slug } : null,
     product_media: mediaList,
@@ -158,6 +162,11 @@ export const CatalogRepository = {
           include: {
             category: { select: { id: true, name: true, slug: true } },
             brand: { select: { id: true, name: true, slug: true } },
+            productCategories: {
+              include: {
+                category: { select: { id: true, name: true, slug: true } },
+              },
+            },
             media: { orderBy: { displayOrder: "asc" } },
             variants: { include: { inventoryLevels: true } },
           },
@@ -191,6 +200,11 @@ export const CatalogRepository = {
           include: {
             category: { select: { id: true, name: true, slug: true } },
             brand: { select: { id: true, name: true, slug: true } },
+            productCategories: {
+              include: {
+                category: { select: { id: true, name: true, slug: true } },
+              },
+            },
             media: { orderBy: { displayOrder: "asc" } },
             variants: { include: { inventoryLevels: true } },
           },
@@ -230,6 +244,8 @@ export const CatalogRepository = {
               { gender: "MALE" },
               { category: { slug: { in: ["men", "mens", "panjabi", "shirt", "polo", "t-shirt"] } } },
               { category: { parent: { slug: { in: ["men", "mens"] } } } },
+              { productCategories: { some: { category: { slug: { in: ["men", "mens", "panjabi", "shirt", "polo", "t-shirt"] } } } } },
+              { productCategories: { some: { category: { parent: { slug: { in: ["men", "mens"] } } } } } },
             ],
           });
         } else if (catSlug === "women" || catSlug === "womens") {
@@ -238,6 +254,8 @@ export const CatalogRepository = {
               { gender: "FEMALE" },
               { category: { slug: { in: ["women", "womens", "saree", "kurti", "salwar", "bottom", "ethnic-wear"] } } },
               { category: { parent: { slug: { in: ["women", "womens"] } } } },
+              { productCategories: { some: { category: { slug: { in: ["women", "womens", "saree", "kurti", "salwar", "bottom", "ethnic-wear"] } } } } },
+              { productCategories: { some: { category: { parent: { slug: { in: ["women", "womens"] } } } } } },
             ],
           });
         } else if (catSlug === "kids") {
@@ -246,6 +264,8 @@ export const CatalogRepository = {
               { gender: "KIDS" },
               { category: { slug: "kids" } },
               { category: { parent: { slug: "kids" } } },
+              { productCategories: { some: { category: { slug: "kids" } } } },
+              { productCategories: { some: { category: { parent: { slug: "kids" } } } } },
             ],
           });
         } else {
@@ -253,6 +273,8 @@ export const CatalogRepository = {
             OR: [
               { category: { slug: catSlug } },
               { category: { parent: { slug: catSlug } } },
+              { productCategories: { some: { category: { slug: catSlug } } } },
+              { productCategories: { some: { category: { parent: { slug: catSlug } } } } },
             ],
           });
         }
@@ -303,6 +325,11 @@ export const CatalogRepository = {
           include: {
             category: { select: { id: true, name: true, slug: true } },
             brand: { select: { id: true, name: true, slug: true } },
+            productCategories: {
+              include: {
+                category: { select: { id: true, name: true, slug: true } },
+              },
+            },
             media: { orderBy: { displayOrder: "asc" } },
             variants: { include: { inventoryLevels: true } },
           },
@@ -343,6 +370,11 @@ export const CatalogRepository = {
           include: {
             category: { select: { id: true, name: true, slug: true } },
             brand: { select: { id: true, name: true, slug: true } },
+            productCategories: {
+              include: {
+                category: { select: { id: true, name: true, slug: true } },
+              },
+            },
             media: { orderBy: { displayOrder: "asc" } },
             variants: {
               include: {
