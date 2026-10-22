@@ -24,6 +24,8 @@ export interface IncidentEntry {
   primary_service_id: string;
 }
 
+import { prisma } from "@/lib/prisma";
+
 export const ObservabilityService = {
   async log(entry: LogEntry) {
     console.log("[Observability Log]", entry);
@@ -43,8 +45,16 @@ export const ObservabilityService = {
   },
 
   async runHealthChecks() {
+    let dbStatus: "UP" | "DOWN" = "DOWN";
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      dbStatus = "UP";
+    } catch (e) {
+      console.error("[ObservabilityService] Database ping failed:", e);
+    }
+
     return {
-      database: "UNKNOWN",
+      database: dbStatus,
       api: "UP",
       timestamp: new Date().toISOString(),
     };
