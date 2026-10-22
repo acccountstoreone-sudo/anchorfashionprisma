@@ -362,9 +362,15 @@ export function InventoryMasterIntakeDialog({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">1. Category</Label>
-                  <Select value={categoryId} onValueChange={setCategoryId}>
+                  <Select
+                    value={categoryId}
+                    onValueChange={setCategoryId}
+                    items={categories.map((c) => ({ value: c.id, label: c.name }))}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder="Select category">
+                        {categories.find((c) => c.id === categoryId)?.name}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent className="max-h-60">
                       {categories.map((c) => (

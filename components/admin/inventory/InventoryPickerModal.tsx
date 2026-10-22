@@ -98,10 +98,18 @@ export function InventoryPickerModal({
             <Select
               value={selectedCategoryId}
               onValueChange={setSelectedCategoryId}
+              items={[
+                { value: "ALL", label: "All Categories" },
+                ...categories.map((c) => ({ value: c.id, label: c.name })),
+              ]}
             >
               <SelectTrigger className="h-9 text-xs bg-background">
                 <Filter className="h-3.5 w-3.5 text-muted-foreground mr-1.5 shrink-0" />
-                <SelectValue placeholder="Filter by Category" />
+                <SelectValue placeholder="Filter by Category">
+                  {selectedCategoryId === "ALL"
+                    ? "All Categories"
+                    : categories.find((c) => c.id === selectedCategoryId)?.name || "All Categories"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Categories</SelectItem>

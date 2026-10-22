@@ -14,13 +14,63 @@ interface SelectProps extends React.ComponentPropsWithoutRef<typeof SelectPrimit
   items?: Array<{ value: any; label: React.ReactNode }>;
 }
 
-function Select({ items: _ignoredItems, ...props }: SelectProps) {
-  return <SelectPrimitive.Root {...props} />;
+interface SelectContextValue {
+  value?: string;
+  items?: Array<{ value: any; label: React.ReactNode }>;
+}
+
+const SelectContext = React.createContext<SelectContextValue | null>(null);
+
+function Select({ items, value, defaultValue, children, ...props }: SelectProps) {
+  const contextValue = React.useMemo(
+    () => ({
+      value: value ?? defaultValue,
+      items,
+    }),
+    [value, defaultValue, items]
+  );
+
+  return (
+    <SelectContext.Provider value={contextValue}>
+      <SelectPrimitive.Root value={value} defaultValue={defaultValue} {...props}>
+        {children}
+      </SelectPrimitive.Root>
+    </SelectContext.Provider>
+  );
 }
 
 const SelectGroup = SelectPrimitive.Group;
 
-const SelectValue = SelectPrimitive.Value;
+const SelectValue = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Value>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Value>
+>(({ children, placeholder, ...props }, ref) => {
+  const ctx = React.useContext(SelectContext);
+
+  if (children !== undefined && children !== null && children !== "") {
+    return (
+      <SelectPrimitive.Value ref={ref} placeholder={placeholder} {...props}>
+        {children}
+      </SelectPrimitive.Value>
+    );
+  }
+
+  // If items were passed to <Select items={[...]}>, resolve label automatically
+  let resolvedLabel: React.ReactNode = undefined;
+  if (ctx?.value !== undefined && ctx?.items) {
+    const match = ctx.items.find((item) => String(item.value) === String(ctx.value));
+    if (match) {
+      resolvedLabel = match.label;
+    }
+  }
+
+  return (
+    <SelectPrimitive.Value ref={ref} placeholder={placeholder} {...props}>
+      {resolvedLabel}
+    </SelectPrimitive.Value>
+  );
+});
+SelectValue.displayName = SelectPrimitive.Value.displayName;
 
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,

@@ -449,9 +449,18 @@ export function InventoryMasterHubClient({
 
             {/* Category Dropdown Filter */}
             <div className="w-full sm:w-48 shrink-0">
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <Select
+                value={categoryFilter}
+                onValueChange={setCategoryFilter}
+                items={[
+                  { value: "ALL", label: "All Categories" },
+                  ...categories.map((c) => ({ value: c.name, label: c.name })),
+                ]}
+              >
                 <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="All Categories" />
+                  <SelectValue placeholder="All Categories">
+                    {categoryFilter === "ALL" ? "All Categories" : categoryFilter}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
                   <SelectItem value="ALL">All Categories</SelectItem>

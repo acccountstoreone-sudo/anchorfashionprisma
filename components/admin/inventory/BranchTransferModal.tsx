@@ -117,9 +117,15 @@ export function BranchTransferModal({
                 <Warehouse className="h-3.5 w-3.5 text-muted-foreground" />
                 Source Warehouse
               </Label>
-              <Select value={sourceWarehouseId} onValueChange={setSourceWarehouseId}>
+              <Select
+                value={sourceWarehouseId}
+                onValueChange={setSourceWarehouseId}
+                items={warehouses.map((w) => ({ value: w.id, label: w.name }))}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select warehouse" />
+                  <SelectValue placeholder="Select warehouse">
+                    {warehouses.find((w) => w.id === sourceWarehouseId)?.name}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {warehouses.map((w) => (
@@ -136,9 +142,18 @@ export function BranchTransferModal({
                 <Building2 className="h-3.5 w-3.5 text-primary" />
                 Target Branch
               </Label>
-              <Select value={destinationBranchId} onValueChange={setDestinationBranchId}>
+              <Select
+                value={destinationBranchId}
+                onValueChange={setDestinationBranchId}
+                items={branches.map((b) => ({ value: b.id, label: `${b.name} ${b.code ? `(${b.code})` : ""}` }))}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select branch" />
+                  <SelectValue placeholder="Select branch">
+                    {(() => {
+                      const b = branches.find((br) => br.id === destinationBranchId);
+                      return b ? `${b.name} ${b.code ? `(${b.code})` : ""}` : undefined;
+                    })()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {branches.map((b) => (
@@ -161,9 +176,22 @@ export function BranchTransferModal({
                 </span>
               )}
             </div>
-            <Select value={selectedVariantId} onValueChange={setSelectedVariantId}>
+            <Select
+              value={selectedVariantId}
+              onValueChange={setSelectedVariantId}
+              items={variants.map((v) => ({
+                value: v.id,
+                label: `${v.productName || v.name || "Item"} - ${v.sku} ${v.color ? `(${v.color} / ${v.size})` : ""}`,
+              }))}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Select variant" />
+                <SelectValue placeholder="Select variant">
+                  {selectedVariant
+                    ? `${selectedVariant.productName || selectedVariant.name || "Item"} - ${selectedVariant.sku} ${
+                        selectedVariant.color ? `(${selectedVariant.color} / ${selectedVariant.size})` : ""
+                      }`
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="max-h-60">
                 {variants.map((v) => (

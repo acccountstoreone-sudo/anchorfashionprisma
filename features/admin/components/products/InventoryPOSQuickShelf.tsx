@@ -213,9 +213,17 @@ export function InventoryPOSQuickShelf({
               <Select
                 value={effectiveCategory || "ALL"}
                 onValueChange={handleCategoryChange}
+                items={[
+                  { value: "ALL", label: "All Categories" },
+                  ...categories.map((c) => ({ value: c.id, label: c.name })),
+                ]}
               >
                 <SelectTrigger className="h-9 bg-background/90 text-xs font-medium border-border/80">
-                  <SelectValue placeholder="Select Category" />
+                  <SelectValue placeholder="Select Category">
+                    {effectiveCategory === "ALL"
+                      ? "All Categories"
+                      : categories.find((c) => c.id === effectiveCategory)?.name || "All Categories"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">All Categories</SelectItem>

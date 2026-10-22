@@ -1371,11 +1371,14 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                               setTimeout(() => handleGenerateCode(), 100);
                             }
                           }}
+                          items={categories.map((c) => ({ value: c.id, label: c.name }))}
                           value={field.value || ""}
                         >
                           <FormControl>
                             <SelectTrigger className="bg-background/90 text-sm">
-                              <SelectValue placeholder="Select a category" />
+                              <SelectValue placeholder="Select a category">
+                                {selectedCategory?.name}
+                              </SelectValue>
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
