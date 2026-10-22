@@ -61,6 +61,7 @@ async function runRound3StressAndEdgeCases() {
 
     // Fetch active warehouse and category
     const warehouse = await prisma.warehouse.findFirst({ where: { isActive: true } });
+    if (!warehouse) throw new Error("No active warehouse found in database.");
     assert(warehouse !== null, "Active central warehouse exists");
 
     let category = await prisma.category.findFirst({ where: { isActive: true } });

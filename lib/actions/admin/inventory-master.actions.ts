@@ -525,59 +525,78 @@ export async function dispatchToBranchAction(input: {
     const unitPrice = level.variant.priceOverride || level.variant.product.basePrice || 0;
     const unitCost = level.variant.costPrice || level.variant.product.costPrice || 0;
 
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Decrement warehouse stock
-      const updatedLevel = await tx.inventoryLevel.update({
-        where: { id: level.id },
-        data: {
-          quantityAvailable: level.quantityAvailable - quantity,
-        },
-      });
-
-      // 2. Create branch transfer record
-      const transfer = await tx.branchTransfer.create({
-        data: {
-          transferNumber,
-          sourceWarehouseId,
-          destinationBranchId,
-          variantId,
-          quantity,
-          status: "DISPATCHED",
-          unitCost,
-          unitPrice,
-          notes: notes || `Dispatched to ${branch.name}`,
-          dispatchedBy,
-        },
-        include: {
-          branch: { select: { id: true, name: true, code: true } },
-          variant: {
-            select: {
-              sku: true,
-              barcode: true,
-              attributes: true,
-              product: { select: { name: true } },
+    const executeTransfer = () =>
+      prisma.$transaction(
+        async (tx) => {
+          // 1. Decrement warehouse stock
+          const updatedLevel = await tx.inventoryLevel.update({
+            where: { id: level.id },
+            data: {
+              quantityAvailable: level.quantityAvailable - quantity,
             },
-          },
-        },
-      });
+          });
 
-      // 3. Log stock movement
-      await tx.stockMovement.create({
-        data: {
-          variantId,
-          warehouseId: sourceWarehouseId,
-          movementType: "OUT",
-          quantity: -quantity,
-          previousQuantity: level.quantityAvailable,
-          newQuantity: level.quantityAvailable - quantity,
-          referenceType: "BRANCH_TRANSFER",
-          referenceId: transfer.id,
-          notes: `Sent ${quantity} units to branch: ${branch.name} (${transferNumber})`,
-        },
-      });
+          // 2. Create branch transfer record
+          const transfer = await tx.branchTransfer.create({
+            data: {
+              transferNumber,
+              sourceWarehouseId,
+              destinationBranchId,
+              variantId,
+              quantity,
+              status: "DISPATCHED",
+              unitCost,
+              unitPrice,
+              notes: notes || `Dispatched to ${branch.name}`,
+              dispatchedBy,
+            },
+            include: {
+              branch: { select: { id: true, name: true, code: true } },
+              variant: {
+                select: {
+                  sku: true,
+                  barcode: true,
+                  attributes: true,
+                  product: { select: { name: true } },
+                },
+              },
+            },
+          });
 
-      return transfer;
-    });
+          // 3. Log stock movement
+          await tx.stockMovement.create({
+            data: {
+              variantId,
+              warehouseId: sourceWarehouseId,
+              movementType: "OUT",
+              quantity: -quantity,
+              previousQuantity: level.quantityAvailable,
+              newQuantity: level.quantityAvailable - quantity,
+              referenceType: "BRANCH_TRANSFER",
+              referenceId: transfer.id,
+              notes: `Sent ${quantity} units to branch: ${branch.name} (${transferNumber})`,
+            },
+          });
+
+          return transfer;
+        },
+        {
+          maxWait: 15000,
+          timeout: 30000,
+        }
+      );
+
+    let result;
+    try {
+      result = await executeTransfer();
+    } catch (txErr: any) {
+      if (txErr?.code === "P2028" || txErr?.message?.includes("Transaction not found")) {
+        console.warn("[dispatchToBranchAction] Pooler transaction timed out, retrying once...");
+        result = await executeTransfer();
+      } else {
+        throw txErr;
+      }
+    }
 
     try {
       revalidatePath("/admin/inventory");

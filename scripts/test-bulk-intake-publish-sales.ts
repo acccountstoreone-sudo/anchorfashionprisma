@@ -395,14 +395,14 @@ async function runBulkIntakePublishSalesTest() {
         { soldCount: (repoProduct as any).soldCount, totalSold: (repoProduct as any).totalSold }
       );
 
-      const repoWhite40 = repoProduct.variants.find((v: any) => v.id === white40Variant.id);
+      const repoWhite40 = repoProduct.variants?.find((v: any) => v.id === white40Variant.id);
       assert(
         (repoWhite40 as any)?.soldQuantity === 5,
         `Variant White-40 reports exactly 5 sold units`,
         { soldQuantity: (repoWhite40 as any)?.soldQuantity }
       );
 
-      const repoBlack42 = repoProduct.variants.find((v: any) => v.id === black42Variant.id);
+      const repoBlack42 = repoProduct.variants?.find((v: any) => v.id === black42Variant.id);
       assert(
         (repoBlack42 as any)?.soldQuantity === 3,
         `Variant Black-42 reports exactly 3 sold units`,
