@@ -63,24 +63,6 @@ export function ProductActions({
       return;
     }
 
-    let currentUser = user;
-    if (!currentUser) {
-      const res = await authClient.getSession();
-      currentUser = res?.data?.user ?? null;
-    }
-
-    if (!currentUser) {
-      toast.info("Please log in to add items to your cart.", {
-        action: {
-          label: "Login",
-          onClick: () =>
-            router.push(`/auth/login?next=${encodeURIComponent(pathname)}`),
-        },
-      });
-      router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
-      return;
-    }
-
     if (validationError) {
       toast.error(validationError);
       return;
@@ -106,24 +88,6 @@ export function ProductActions({
     const role = user?.user_metadata?.role || user?.app_metadata?.role || "CUSTOMER";
     if (ADMIN_ROLES.includes(role)) {
       toast.error("Admin accounts cannot place customer orders. Please use the Admin Panel.");
-      return;
-    }
-
-    let currentUser = user;
-    if (!currentUser) {
-      const res = await authClient.getSession();
-      currentUser = res?.data?.user ?? null;
-    }
-
-    if (!currentUser) {
-      toast.info("Please log in to proceed with Buy Now.", {
-        action: {
-          label: "Login",
-          onClick: () =>
-            router.push(`/auth/login?next=${encodeURIComponent(pathname)}`),
-        },
-      });
-      router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
       return;
     }
 

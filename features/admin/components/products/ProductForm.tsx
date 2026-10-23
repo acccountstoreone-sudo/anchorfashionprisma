@@ -6,14 +6,41 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Plus, Trash2, Upload, ImagePlus, X, Loader2, Sparkles, Tag, Boxes, CheckCircle2 } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Upload,
+  ImagePlus,
+  X,
+  Loader2,
+  Sparkles,
+  Tag,
+  Boxes,
+  CheckCircle2,
+  Printer,
+  Wand2,
+  Layers,
+  Percent,
+  TrendingUp,
+  Barcode as BarcodeIcon,
+  Calculator,
+  ArrowRight,
+  ArrowUpRight,
+  SlidersHorizontal,
+  RefreshCw,
+  Check,
+} from "lucide-react";
 import Image from "next/image";
 import { InventoryPickerModal } from "@/components/admin/inventory/InventoryPickerModal";
 import { InventoryMasterIntakeDialog } from "@/components/admin/inventory/InventoryMasterIntakeDialog";
 import { StorefrontLivePreview } from "@/features/admin/components/products/StorefrontLivePreview";
 import { InventoryPOSQuickShelf } from "@/features/admin/components/products/InventoryPOSQuickShelf";
+import { PrintBarcodeModal, BarcodeLabelData } from "@/components/admin/inventory/PrintBarcodeModal";
 import { generateProductCodeAction } from "@/lib/actions/admin/inventory-master.actions";
-import { formatVariantSku } from "@/lib/utils/product-code";
+import { formatVariantSku, APPAREL_SIZE_SYSTEMS, detectApparelSystemForCategory } from "@/lib/utils/product-code";
+import { generateEAN13Sync } from "@/lib/utils/barcode";
+import { getWarehouses } from "@/app/actions/admin/procurement.actions";
+import { useAdminBreadcrumbStore } from "@/stores/useAdminBreadcrumbStore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -80,6 +107,14 @@ interface ProductFormProps {
 
 export function ProductForm({ initialData, returnPath = "/admin/products" }: ProductFormProps) {
   const router = useRouter();
+  const setDynamicSegmentName = useAdminBreadcrumbStore((state) => state.setDynamicSegmentName);
+
+  useEffect(() => {
+    if (initialData?.id && initialData?.name) {
+      setDynamicSegmentName(initialData.id, initialData.name);
+    }
+  }, [initialData, setDynamicSegmentName]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
@@ -98,6 +133,38 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
 
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
   const [isSlugCustomized, setIsSlugCustomized] = useState(Boolean(initialData?.slug));
+
+  // Single vs Variable Product mode
+  const [productType, setProductType] = useState<"SINGLE" | "VARIABLE">(() => {
+    return (initialData?.variants && initialData.variants.length > 1) ? "VARIABLE" : "SINGLE";
+  });
+
+  // Profit Margin % for pricing calculator
+  const [marginPercent, setMarginPercent] = useState<number | string>(() => {
+    const sell = Number(initialData?.basePrice) || 0;
+    const cost = Number(initialData?.costPrice) || 0;
+    if (sell > 0 && cost > 0) {
+      return Math.round(((sell - cost) / cost) * 100);
+    }
+    return 35;
+  });
+
+  // Warehouses & Stock Allocation
+  const [warehouses, setWarehouses] = useState<Array<{ id: string; name: string; code?: string }>>([]);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("");
+  const [alertQuantity, setAlertQuantity] = useState<number>(5);
+
+  // Barcode Label Print Modal
+  const [printModalOpen, setPrintModalOpen] = useState(false);
+
+  // Quick Variant Matrix Generator state (Variable Product Mode)
+  const [matrixColors, setMatrixColors] = useState<string[]>(["Black", "Navy Blue", "White"]);
+  const [matrixSizes, setMatrixSizes] = useState<string[]>(["M", "L", "XL"]);
+  const [customColorInput, setCustomColorInput] = useState("");
+  const [customSizeInput, setCustomSizeInput] = useState("");
+  const [bulkSellPrice, setBulkSellPrice] = useState<string>("");
+  const [bulkCostPrice, setBulkCostPrice] = useState<string>("");
+  const [bulkStock, setBulkStock] = useState<string>("");
 
   const handleSelectInventoryProduct = (item: any) => {
     setActiveInventoryItem(item);
@@ -243,14 +310,19 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
 
   useEffect(() => {
     async function loadData() {
-      const [catsRes, brandsRes, tagsRes] = await Promise.all([
+      const [catsRes, brandsRes, tagsRes, whRes] = await Promise.all([
         getCategoriesAction({}),
         getBrandsAction({}),
         getTagsAction({}),
+        getWarehouses(),
       ]);
       if (catsRes.success && catsRes.data) setCategories(catsRes.data);
       if (brandsRes.success && brandsRes.data) setBrands(brandsRes.data);
       if (tagsRes.success && tagsRes.data) setTags(tagsRes.data);
+      if (whRes.success && whRes.data && whRes.data.length > 0) {
+        setWarehouses(whRes.data);
+        setSelectedWarehouseId(whRes.data[0].id);
+      }
     }
     loadData();
   }, []);
@@ -431,6 +503,131 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
     name: "media",
   });
 
+  // Barcode Label items for PrintBarcodeModal
+  const barcodePrintItems: BarcodeLabelData[] = useMemo(() => {
+    const name = form.watch("name") || "Product";
+    const baseSku = form.watch("sku") || "SKU";
+    const baseBarcode = form.watch("barcode") || "";
+    const basePrice = Number(form.watch("basePrice")) || 0;
+    const variants = form.watch("variants") || [];
+
+    if (productType === "VARIABLE" && variants.length > 0) {
+      return variants.map((v) => {
+        const color = (v.attributes as any)?.Color || "";
+        const size = (v.attributes as any)?.Size || "";
+        const attrStr = [color, size].filter(Boolean).join(" - ");
+        return {
+          productName: attrStr ? `${name} (${attrStr})` : name,
+          sku: v.sku || baseSku,
+          barcode: v.barcode || baseBarcode || v.sku || baseSku,
+          price: Number(v.priceOverride ?? basePrice),
+          quantity: Math.max(1, Number(v.stockQuantity) || 1),
+        };
+      });
+    }
+
+    return [
+      {
+        productName: name,
+        sku: baseSku,
+        barcode: baseBarcode || baseSku,
+        price: basePrice,
+        quantity: Math.max(1, Number(form.watch("stockQuantity")) || 1),
+      },
+    ];
+  }, [
+    form.watch("name"),
+    form.watch("sku"),
+    form.watch("barcode"),
+    form.watch("basePrice"),
+    form.watch("variants"),
+    form.watch("stockQuantity"),
+    productType,
+  ]);
+
+  // Quick Matrix Generator helper
+  const handleGenerateVariantMatrix = () => {
+    if (matrixColors.length === 0 && matrixSizes.length === 0) {
+      toast.error("Please select at least one Color or Size to generate variations.");
+      return;
+    }
+
+    const currentSku = form.getValues("sku")?.trim() || form.getValues("name")?.trim() || "AFPRD";
+    const cleanPrefix = currentSku.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+    const baseCost = form.getValues("costPrice") ?? undefined;
+    const basePrice = form.getValues("basePrice") ?? undefined;
+
+    const colors = matrixColors.length > 0 ? matrixColors : ["Standard"];
+    const sizes = matrixSizes.length > 0 ? matrixSizes : ["One Size"];
+
+    const newVariants: any[] = [];
+
+    for (const c of colors) {
+      for (const s of sizes) {
+        const colorAttr = c === "Standard" ? undefined : c;
+        const sizeAttr = s === "One Size" ? undefined : s;
+        const attributes: Record<string, string> = {};
+        if (colorAttr) attributes.Color = colorAttr;
+        if (sizeAttr) attributes.Size = sizeAttr;
+
+        const varSku = formatVariantSku(cleanPrefix, colorAttr || "", sizeAttr || "") || `${cleanPrefix}-${c.slice(0, 3)}-${s}`.toUpperCase();
+        const varBarcode = generateEAN13Sync();
+
+        newVariants.push({
+          sku: varSku,
+          barcode: varBarcode,
+          priceOverride: basePrice,
+          costPrice: baseCost,
+          stockQuantity: 0,
+          attributes,
+          isActive: true,
+        });
+      }
+    }
+
+    form.setValue("variants", newVariants, { shouldValidate: true });
+    toast.success(`Generated ${newVariants.length} variations with unique SKUs and EAN-13 barcodes!`);
+  };
+
+  const handleGenerateAllVariantBarcodes = () => {
+    const current = form.getValues("variants") || [];
+    if (current.length === 0) {
+      toast.error("No variants to generate barcodes for.");
+      return;
+    }
+    const updated = current.map((v) => ({
+      ...v,
+      barcode: generateEAN13Sync(),
+    }));
+    form.setValue("variants", updated, { shouldValidate: true });
+    toast.success(`Generated standard EAN-13 barcodes for all ${updated.length} variants!`);
+  };
+
+  const handleBulkApplyToVariants = (type: "price" | "cost" | "stock") => {
+    const current = form.getValues("variants") || [];
+    if (current.length === 0) {
+      toast.error("No variants to apply to.");
+      return;
+    }
+
+    if (type === "price") {
+      const val = parseFloat(bulkSellPrice);
+      if (isNaN(val)) return toast.error("Enter a valid sell price.");
+      form.setValue("variants", current.map(v => ({ ...v, priceOverride: val })), { shouldValidate: true });
+      toast.success(`Applied ৳${val} sell price to all ${current.length} variants.`);
+    } else if (type === "cost") {
+      const val = parseFloat(bulkCostPrice);
+      if (isNaN(val)) return toast.error("Enter a valid buy price.");
+      form.setValue("variants", current.map(v => ({ ...v, costPrice: val })), { shouldValidate: true });
+      toast.success(`Applied ৳${val} buy price to all ${current.length} variants.`);
+    } else if (type === "stock") {
+      const val = parseInt(bulkStock, 10);
+      if (isNaN(val)) return toast.error("Enter a valid stock quantity.");
+      form.setValue("variants", current.map(v => ({ ...v, stockQuantity: val })), { shouldValidate: true });
+      toast.success(`Applied ${val} opening stock to all ${current.length} variants.`);
+    }
+  };
+
   const submitWithStatus = async (statusOverride?: "DRAFT" | "ACTIVE" | "ARCHIVED") => {
     // If slug is empty, auto-generate from name
     const currentName = form.getValues("name")?.trim();
@@ -459,14 +656,19 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
     const status = statusOverride || (rawValues.status as "DRAFT" | "ACTIVE" | "ARCHIVED") || "ACTIVE";
     const data = {
       ...rawValues,
-      stockQuantity: Number(rawValues.stockQuantity ?? 0),
       status,
       brandId: rawValues.brandId && rawValues.brandId !== "" && rawValues.brandId !== "none" ? rawValues.brandId : null,
       categoryId: rawValues.categoryId,
       barcode: rawValues.barcode && rawValues.barcode.trim() !== "" ? rawValues.barcode.trim() : null,
       sku: rawValues.sku && rawValues.sku.trim() !== "" ? rawValues.sku.trim() : null,
+      warehouseId: selectedWarehouseId || (rawValues as any).warehouseId || null,
+      alertQuantity: Number(alertQuantity || (rawValues as any).alertQuantity || 5),
+      stockQuantity:
+        productType === "VARIABLE" && (rawValues.variants || []).length > 0
+          ? rawValues.variants.reduce((acc, v) => acc + (Number(v.stockQuantity) || 0), 0)
+          : Number(rawValues.stockQuantity ?? 0),
       variants:
-        (rawValues.variants || []).length > 0
+        productType === "VARIABLE" && (rawValues.variants || []).length > 0
           ? rawValues.variants?.map((v, idx) => {
               const currentSlug = form.getValues("slug")?.trim() || form.getValues("name")?.trim() || "PROD";
               const cleanPrefix = currentSlug.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
@@ -555,6 +757,15 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             <Button
               type="button"
               variant="outline"
+              onClick={() => setPrintModalOpen(true)}
+              className="cursor-pointer gap-1.5 text-xs text-slate-700 hover:text-primary hover:bg-primary/5"
+            >
+              <Printer className="h-3.5 w-3.5 text-primary" />
+              Print Barcodes
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => submitWithStatus("DRAFT")}
               disabled={isLoading || isPublishing}
               className="cursor-pointer"
@@ -590,6 +801,79 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
           }}
           refreshTrigger={intakeRefreshTrigger}
         />
+
+        {/* Product Type Architecture Selector (Single Product vs Variable Product Matrix) */}
+        <Card className="border-border/70 shadow-sm bg-gradient-to-r from-card via-muted/15 to-card overflow-hidden">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
+                    <Layers className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm sm:text-base font-bold tracking-tight text-foreground">Product Architecture</h2>
+                      <Badge
+                        variant="outline"
+                        className={`text-[11px] font-semibold px-2 py-0.5 ${
+                          productType === "SINGLE"
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : "bg-purple-50 text-purple-700 border-purple-200"
+                        }`}
+                      >
+                        {productType === "SINGLE" ? "Single Product Mode" : "Variable Product Matrix Mode"}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {productType === "SINGLE"
+                        ? "Standard product with 1 SKU, 1 Barcode, and simple stock (e.g. Belts, Perfume, Bags, One-size Shawls)."
+                        : "Fashion garment with Colors × Sizes matrix, unique variant barcodes, and individual stock levels."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setProductType("SINGLE")}
+                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                    productType === "SINGLE"
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm ring-2 ring-primary/25"
+                      : "bg-background text-muted-foreground border-border/80 hover:bg-muted/40 hover:text-foreground"
+                  }`}
+                >
+                  <Boxes className="h-4 w-4" />
+                  <div className="text-left">
+                    <div>Single Product</div>
+                    <div className={`text-[10px] font-normal ${productType === "SINGLE" ? "opacity-85" : "text-muted-foreground"}`}>
+                      1 SKU / Standard
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setProductType("VARIABLE")}
+                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                    productType === "VARIABLE"
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm ring-2 ring-primary/25"
+                      : "bg-background text-muted-foreground border-border/80 hover:bg-muted/40 hover:text-foreground"
+                  }`}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <div className="text-left">
+                    <div>Variable Product</div>
+                    <div className={`text-[10px] font-normal ${productType === "VARIABLE" ? "opacity-85" : "text-muted-foreground"}`}>
+                      Multi-Size &amp; Color
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-6 md:grid-cols-3 pb-8">
           {/* Main Info Column */}
@@ -709,6 +993,55 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                     )}
                   />
                 </div>
+
+                {/* EAN-13 Barcode / Product Scanner Tag */}
+                <FormField
+                  control={form.control}
+                  name="barcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <FormLabel className="text-xs font-semibold">Barcode / EAN-13</FormLabel>
+                          {field.value && (
+                            <Badge variant="outline" className="text-[10px] bg-sky-50 text-sky-800 border-sky-300 font-mono py-0 px-1.5">
+                              {field.value.length === 13 ? "✓ Valid EAN-13" : "Custom Barcode"}
+                            </Badge>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-[11px] px-2 text-sky-600 hover:text-sky-700 hover:bg-sky-50 cursor-pointer gap-1 font-semibold"
+                          onClick={() => {
+                            const ean = generateEAN13Sync();
+                            field.onChange(ean);
+                            toast.success(`Generated standard EAN-13 barcode: ${ean}`);
+                          }}
+                        >
+                          <BarcodeIcon className="h-3 w-3" />
+                          Auto-Generate (EAN-13)
+                        </Button>
+                      </div>
+                      <FormControl>
+                        <div className="relative">
+                          <BarcodeIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            placeholder="e.g. 8942001004523 or scan with barcode gun"
+                            {...field}
+                            value={field.value || ""}
+                            className="pl-8 font-mono tracking-wider text-sm bg-background border-border/80"
+                          />
+                        </div>
+                      </FormControl>
+                      <FormDescription className="text-xs text-muted-foreground">
+                        Standard 13-digit EAN barcode for POS checkout scanning, label sticker printing, and warehouse intake.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
@@ -908,179 +1241,574 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
               </CardContent>
             </Card>
 
-            <Card className="border-border/60 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">Product Variants</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">Add sizes, colors, or other variants.</p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const currentSlug = form.getValues("slug")?.trim() || form.getValues("name")?.trim() || "PROD";
-                    const cleanPrefix = currentSlug.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
-                    appendVariant({
-                      sku: `${cleanPrefix}-V${variantFields.length + 1}`,
-                      isActive: true,
-                      attributes: {},
-                      stockQuantity: 0,
-                      soldQuantity: 0,
-                    });
-                  }}
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Add Variant
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {variantFields.map((field, index) => (
-                  <div key={field.id} className="rounded-lg border bg-slate-50/50 p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-slate-700">Variant {index + 1}</span>
+            {/* Product Variants Matrix Card */}
+            {productType === "SINGLE" ? (
+              <Card className="border-border/60 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between pb-3">
+                  <div>
+                    <CardTitle className="text-lg">Product Variants &amp; Architecture</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-0.5">Single product mode enabled (1 SKU / Standard)</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setProductType("VARIABLE")}
+                    className="gap-1.5 text-xs text-primary border-primary/30 hover:bg-primary/5 cursor-pointer font-semibold"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    Enable Variable Mode
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-lg border border-dashed border-border/80 bg-muted/20 p-6 text-center space-y-2.5">
+                    <div className="mx-auto w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <Boxes className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-foreground">Single Product (Standard Style)</h3>
+                    <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                      This item uses standard stock, cost, and selling price. If this garment has sizes (S, M, L, XL) or color choices, switch to Variable Product Mode to generate a variation matrix.
+                    </p>
+                    <div className="pt-2">
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="secondary"
                         size="sm"
-                        onClick={() => removeVariant(index)}
-                        className="h-7 px-2 text-red-400 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => setProductType("VARIABLE")}
+                        className="cursor-pointer gap-1.5 text-xs font-semibold"
                       >
-                        <Trash2 className="mr-1 h-3 w-3" /> Remove
+                        <Plus className="h-3.5 w-3.5" /> Enable Multi-Size &amp; Color Variations
                       </Button>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
-                      {/* Name/Color — stored as attributes */}
-                      <FormField
-                        control={form.control}
-                        name={`variants.${index}.attributes`}
-                        render={({ field }) => (
-                          <FormItem className="col-span-2 md:col-span-1">
-                            <FormLabel className="text-xs">Color / Size</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="e.g. Black / XL"
-                                value={
-                                  field.value
-                                    ? Object.entries(field.value as Record<string, string>)
-                                        .map(([_, v]) => `${v}`)
-                                        .join(" / ") || ""
-                                    : ""
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-border/60 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-3 pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">Product Variations Matrix</CardTitle>
+                      <Badge variant="outline" className="text-xs font-mono bg-purple-50 text-purple-700 border-purple-200">
+                        {variantFields.length} {variantFields.length === 1 ? "Variant" : "Variants"}
+                      </Badge>
+                      {variantFields.length > 0 && (
+                        <Badge variant="outline" className="text-xs font-mono bg-emerald-50 text-emerald-700 border-emerald-200">
+                          Total Stock: {variantFields.reduce((sum, _, i) => sum + (Number(form.watch(`variants.${i}.stockQuantity`)) || 0), 0)} pcs
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Generate multi-variant matrix with unique SKUs, barcodes, and opening stock levels.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {variantFields.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGenerateAllVariantBarcodes}
+                        className="h-8 text-xs gap-1 cursor-pointer text-sky-700 border-sky-300 hover:bg-sky-50"
+                        title="Generate EAN-13 barcodes for all variants"
+                      >
+                        <BarcodeIcon className="h-3.5 w-3.5" /> Auto-Gen Barcodes
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const currentSlug = form.getValues("slug")?.trim() || form.getValues("name")?.trim() || "PROD";
+                        const cleanPrefix = currentSlug.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+                        appendVariant({
+                          sku: `${cleanPrefix}-V${variantFields.length + 1}`,
+                          barcode: generateEAN13Sync(),
+                          priceOverride: form.getValues("basePrice") || undefined,
+                          costPrice: form.getValues("costPrice") || undefined,
+                          isActive: true,
+                          attributes: {},
+                          stockQuantity: 0,
+                          soldQuantity: 0,
+                        });
+                      }}
+                      className="h-8 text-xs gap-1 cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add Single Variant
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {/* Quick Variant Matrix Generator Studio */}
+                  <div className="rounded-lg border border-purple-200/80 bg-purple-50/30 p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Wand2 className="h-4 w-4 text-purple-600" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-purple-900">
+                          ⚡ Apparel Variation Matrix Generator
+                        </h4>
+                      </div>
+                      <span className="text-[11px] text-purple-700">
+                        {matrixColors.length} Colors × {matrixSizes.length} Sizes ={" "}
+                        <strong className="font-bold">{matrixColors.length * matrixSizes.length} Combinations</strong>
+                      </span>
+                    </div>
+
+                    {/* Colors Selector */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-700">1. Select Colors:</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="+ Custom Color"
+                            value={customColorInput}
+                            onChange={(e) => setCustomColorInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && customColorInput.trim()) {
+                                e.preventDefault();
+                                if (!matrixColors.includes(customColorInput.trim())) {
+                                  setMatrixColors([...matrixColors, customColorInput.trim()]);
                                 }
-                                onChange={(e) => field.onChange({ Color: e.target.value })}
-                                className="h-8 text-sm"
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`variants.${index}.sku`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Variant SKU</FormLabel>
-                            <FormControl>
-                              <Input placeholder="AFPTS1-BLK-M" {...field} className="h-8 text-sm font-mono" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`variants.${index}.barcode`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Barcode (EAN-13)</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="89420..."
-                                {...field}
-                                value={field.value || ""}
-                                className="h-8 text-sm font-mono"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`variants.${index}.costPrice`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Buy Price ({CURRENCY_SYMBOL})</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) =>
-                                  field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
+                                setCustomColorInput("");
+                              }
+                            }}
+                            className="h-6 w-28 text-[11px] px-2 rounded border border-border bg-background"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 px-1.5 text-xs text-purple-700"
+                            onClick={() => {
+                              if (customColorInput.trim()) {
+                                if (!matrixColors.includes(customColorInput.trim())) {
+                                  setMatrixColors([...matrixColors, customColorInput.trim()]);
                                 }
-                                className="h-8 text-sm"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`variants.${index}.priceOverride`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Sell Price ({CURRENCY_SYMBOL})</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                {...field}
-                                value={field.value ?? ""}
-                                onChange={(e) =>
-                                  field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
+                                setCustomColorInput("");
+                              }
+                            }}
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          "Black",
+                          "White",
+                          "Navy Blue",
+                          "Olive Green",
+                          "Charcoal Grey",
+                          "Heather Grey",
+                          "Maroon",
+                          "Beige",
+                          "Brown",
+                          "Sky Blue",
+                          "Burgundy",
+                          "Royal Blue",
+                        ].map((c) => {
+                          const isSel = matrixColors.includes(c);
+                          return (
+                            <button
+                              type="button"
+                              key={c}
+                              onClick={() => {
+                                setMatrixColors(isSel ? matrixColors.filter((x) => x !== c) : [...matrixColors, c]);
+                              }}
+                              className={`text-xs px-2.5 py-1 rounded-md border font-medium transition-all cursor-pointer ${
+                                isSel
+                                  ? "bg-purple-600 text-white border-purple-600 shadow-xs"
+                                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                              }`}
+                            >
+                              {isSel ? "✓ " : ""}
+                              {c}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Sizes Selector with Category Presets */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-700">2. Select Sizes:</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="+ Custom Size"
+                            value={customSizeInput}
+                            onChange={(e) => setCustomSizeInput(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && customSizeInput.trim()) {
+                                e.preventDefault();
+                                if (!matrixSizes.includes(customSizeInput.trim())) {
+                                  setMatrixSizes([...matrixSizes, customSizeInput.trim()]);
                                 }
-                                className="h-8 text-sm"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
+                                setCustomSizeInput("");
+                              }
+                            }}
+                            className="h-6 w-28 text-[11px] px-2 rounded border border-border bg-background"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 px-1.5 text-xs text-purple-700"
+                            onClick={() => {
+                              if (customSizeInput.trim()) {
+                                if (!matrixSizes.includes(customSizeInput.trim())) {
+                                  setMatrixSizes([...matrixSizes, customSizeInput.trim()]);
+                                }
+                                setCustomSizeInput("");
+                              }
+                            }}
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Quick Sizing System Presets */}
+                      <div className="flex flex-wrap items-center gap-1.5 py-1 bg-purple-50/60 p-2 rounded-md border border-purple-100">
+                        <span className="text-[10px] uppercase font-bold text-purple-800 tracking-wider mr-1">Presets:</span>
+                        {APPAREL_SIZE_SYSTEMS.map((sys) => (
+                          <button
+                            key={sys.id}
+                            type="button"
+                            onClick={() => setMatrixSizes(sys.sizes)}
+                            className="text-[11px] px-2 py-0.5 rounded bg-white border border-purple-200 text-purple-900 hover:bg-purple-100 font-semibold transition-all cursor-pointer shadow-2xs"
+                          >
+                            {sys.label}
+                          </button>
+                        ))}
+                        {matrixSizes.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setMatrixSizes([])}
+                            className="text-[10px] px-1.5 py-0.5 text-red-500 hover:text-red-700 font-medium cursor-pointer ml-auto"
+                          >
+                            Clear
+                          </button>
                         )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`variants.${index}.stockQuantity`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Stock (Qty)</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="0"
-                                placeholder="0"
-                                {...field}
-                                value={field.value ?? 0}
-                                onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
-                                className="h-8 text-sm font-semibold"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      </div>
+
+                      {/* Individual Size Pills */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {["XS", "S", "M", "L", "XL", "XXL", "3XL", "28", "30", "32", "34", "36", "38", "Free Size"].map((s) => {
+                          const isSel = matrixSizes.includes(s);
+                          return (
+                            <button
+                              type="button"
+                              key={s}
+                              onClick={() => {
+                                setMatrixSizes(isSel ? matrixSizes.filter((x) => x !== s) : [...matrixSizes, s]);
+                              }}
+                              className={`text-xs px-2.5 py-1 rounded-md border font-mono font-medium transition-all cursor-pointer ${
+                                isSel
+                                  ? "bg-purple-600 text-white border-purple-600 shadow-xs"
+                                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                              }`}
+                            >
+                              {isSel ? "✓ " : ""}
+                              {s}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Generator Trigger Button */}
+                    <div className="flex items-center justify-between pt-1">
+                      <Button
+                        type="button"
+                        onClick={handleGenerateVariantMatrix}
+                        className="bg-purple-700 hover:bg-purple-600 text-white cursor-pointer gap-2 text-xs font-semibold h-9"
+                      >
+                        <Wand2 className="h-4 w-4" />
+                        Generate Matrix ({matrixColors.length * matrixSizes.length} Variants with SKUs &amp; Barcodes)
+                      </Button>
+                      {variantFields.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => form.setValue("variants", [], { shouldValidate: true })}
+                          className="h-8 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 cursor-pointer"
+                        >
+                          Clear All Variations
+                        </Button>
+                      )}
                     </div>
                   </div>
-                ))}
-                {variantFields.length === 0 && (
-                  <p className="py-6 text-center text-sm text-muted-foreground">
-                    No variants yet. Click &quot;Add Variant&quot; to add sizes, colors, etc.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+
+                  {/* Bulk Applicator Bar (when variants exist) */}
+                  {variantFields.length > 0 && (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 flex flex-wrap items-center gap-3 text-xs">
+                      <span className="font-bold text-slate-700 uppercase text-[10px] tracking-wider">
+                        ⚡ Bulk Edit:
+                      </span>
+
+                      {/* Bulk Sell Price */}
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Sell Price"
+                          value={bulkSellPrice}
+                          onChange={(e) => setBulkSellPrice(e.target.value)}
+                          className="h-7 w-24 text-xs bg-white"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleBulkApplyToVariants("price")}
+                          className="h-7 px-2 text-[11px] cursor-pointer"
+                        >
+                          Apply Sell
+                        </Button>
+                      </div>
+
+                      {/* Bulk Buy Cost */}
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Buy Cost"
+                          value={bulkCostPrice}
+                          onChange={(e) => setBulkCostPrice(e.target.value)}
+                          className="h-7 w-24 text-xs bg-white"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleBulkApplyToVariants("cost")}
+                          className="h-7 px-2 text-[11px] cursor-pointer"
+                        >
+                          Apply Cost
+                        </Button>
+                      </div>
+
+                      {/* Bulk Stock */}
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          placeholder="Qty"
+                          value={bulkStock}
+                          onChange={(e) => setBulkStock(e.target.value)}
+                          className="h-7 w-20 text-xs bg-white"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleBulkApplyToVariants("stock")}
+                          className="h-7 px-2 text-[11px] cursor-pointer"
+                        >
+                          Apply Stock
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Variants List / Table */}
+                  <div className="space-y-3">
+                    {variantFields.map((field, index) => {
+                      const currentAttrs = (form.watch(`variants.${index}.attributes`) as Record<string, string>) || {};
+                      const attrDisplay = Object.values(currentAttrs).filter(Boolean).join(" / ") || `Variant ${index + 1}`;
+
+                      return (
+                        <div
+                          key={field.id}
+                          className="rounded-lg border border-border/80 bg-slate-50/50 p-3.5 space-y-2.5 transition-all hover:bg-slate-50"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="font-bold text-xs bg-slate-200/80 text-slate-800">
+                                #{index + 1}
+                              </Badge>
+                              <Badge variant="outline" className="font-semibold text-xs bg-purple-50 text-purple-800 border-purple-200">
+                                {attrDisplay}
+                              </Badge>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeVariant(index)}
+                              className="h-7 px-2 text-red-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                            >
+                              <Trash2 className="mr-1 h-3 w-3" /> Remove
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-6">
+                            {/* Color/Size Edit */}
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.attributes`}
+                              render={({ field }) => (
+                                <FormItem className="col-span-2 md:col-span-1">
+                                  <FormLabel className="text-xs">Color / Size</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      placeholder="Black / L"
+                                      value={
+                                        field.value
+                                          ? Object.entries(field.value as Record<string, string>)
+                                              .map(([_, v]) => `${v}`)
+                                              .join(" / ") || ""
+                                          : ""
+                                      }
+                                      onChange={(e) => {
+                                        const parts = e.target.value.split("/").map((s) => s.trim());
+                                        const newAttrs: Record<string, string> = {};
+                                        if (parts[0]) newAttrs.Color = parts[0];
+                                        if (parts[1]) newAttrs.Size = parts[1];
+                                        field.onChange(newAttrs);
+                                      }}
+                                      className="h-8 text-xs bg-background"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+
+                            {/* SKU */}
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.sku`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Variant SKU</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="AFPTS1-BLK-M" {...field} className="h-8 text-xs font-mono font-bold bg-background" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            {/* Barcode (EAN-13) with 1-click Regen */}
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.barcode`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <div className="flex items-center justify-between">
+                                    <FormLabel className="text-xs">Barcode</FormLabel>
+                                    <button
+                                      type="button"
+                                      onClick={() => field.onChange(generateEAN13Sync())}
+                                      className="text-[10px] text-sky-600 hover:text-sky-800 font-semibold cursor-pointer"
+                                      title="Auto-generate EAN-13 barcode"
+                                    >
+                                      Regen
+                                    </button>
+                                  </div>
+                                  <FormControl>
+                                    <Input
+                                      placeholder="89420..."
+                                      {...field}
+                                      value={field.value || ""}
+                                      className="h-8 text-xs font-mono bg-background"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            {/* Cost / Buy Price */}
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.costPrice`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Buy Price ({CURRENCY_SYMBOL})</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      placeholder="0.00"
+                                      {...field}
+                                      value={field.value ?? ""}
+                                      onChange={(e) =>
+                                        field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
+                                      }
+                                      className="h-8 text-xs bg-background"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            {/* Sell Price */}
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.priceOverride`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs">Sell Price ({CURRENCY_SYMBOL})</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      placeholder="0.00"
+                                      {...field}
+                                      value={field.value ?? ""}
+                                      onChange={(e) =>
+                                        field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
+                                      }
+                                      className="h-8 text-xs font-semibold bg-background"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            {/* Opening Stock Quantity */}
+                            <FormField
+                              control={form.control}
+                              name={`variants.${index}.stockQuantity`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs font-bold text-emerald-800">Stock (Opening)</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      placeholder="0"
+                                      {...field}
+                                      value={field.value ?? 0}
+                                      onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                                      className="h-8 text-xs font-bold text-emerald-900 bg-emerald-50/50 border-emerald-300"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {variantFields.length === 0 && (
+                      <p className="py-8 text-center text-sm text-muted-foreground border border-dashed rounded-lg">
+                        No variations generated yet. Choose colors and sizes above, then click &quot;Generate Matrix&quot;.
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="border-border/60 shadow-sm">
               <CardHeader>
@@ -1143,87 +1871,164 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
               status={form.watch("status") || "DRAFT"}
             />
 
+            {/* Pricing & Profit Margin Engine */}
             <Card className="border-border/60 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg">Pricing</CardTitle>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="h-4 w-4 text-emerald-600" />
+                    <CardTitle className="text-base font-bold">Pricing &amp; Profit Engine</CardTitle>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border-emerald-200">
+                    Retail Calculator
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Sell Price */}
-                <FormField
-                  control={form.control}
-                  name="basePrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sell Price ({CURRENCY_SYMBOL}) <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium">{CURRENCY_SYMBOL}</span>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0.00"
-                            className="pl-8"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseFloat(e.target.value) || 0)
-                            }
-                          />
-                        </div>
-                      </FormControl>
-                      <FormDescription>The price customers pay</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Buy / Cost Price */}
+                {/* 1. Buy / Cost Price */}
                 <FormField
                   control={form.control}
                   name="costPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Buy Price / Cost ({CURRENCY_SYMBOL})</FormLabel>
+                      <FormLabel className="text-xs font-semibold">1. Purchase Cost / Buy Price ({CURRENCY_SYMBOL})</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium">{CURRENCY_SYMBOL}</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-medium">{CURRENCY_SYMBOL}</span>
                           <Input
                             type="number"
                             step="0.01"
                             min="0"
                             placeholder="0.00"
-                            className="pl-8"
+                            className="pl-7 h-9 text-sm"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(e.target.value ? parseFloat(e.target.value) : null)
-                            }
+                            onChange={(e) => {
+                              const val = e.target.value ? parseFloat(e.target.value) : null;
+                              field.onChange(val);
+                              if (val && Number(marginPercent) > 0) {
+                                const newSell = Math.round(val * (1 + Number(marginPercent) / 100));
+                                form.setValue("basePrice", newSell, { shouldValidate: true });
+                              }
+                            }}
                           />
                         </div>
                       </FormControl>
-                      <FormDescription>Your purchase cost (not shown to customers)</FormDescription>
+                      <FormDescription className="text-[11px]">Factory / Supplier wholesale cost</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Live Profit Margin Intelligence Indicator */}
+                {/* 2. Profit Margin % Selector & Presets */}
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                      <Percent className="h-3 w-3 text-emerald-600" />
+                      2. Profit Margin % (Markup)
+                    </label>
+                    <span className="text-[11px] font-mono font-bold text-emerald-700">
+                      +{marginPercent}%
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      type="number"
+                      min="0"
+                      max="1000"
+                      placeholder="e.g. 40"
+                      value={marginPercent}
+                      onChange={(e) => {
+                        const m = e.target.value;
+                        setMarginPercent(m);
+                        const numM = parseFloat(m);
+                        const cost = Number(form.getValues("costPrice")) || 0;
+                        if (!isNaN(numM) && cost > 0) {
+                          const newSell = Math.round(cost * (1 + numM / 100));
+                          form.setValue("basePrice", newSell, { shouldValidate: true });
+                        }
+                      }}
+                      className="h-8 text-xs font-mono font-bold w-20"
+                    />
+                    <div className="flex flex-wrap gap-1 flex-1">
+                      {[20, 30, 40, 50, 60, 100].map((pct) => (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => {
+                            setMarginPercent(pct);
+                            const cost = Number(form.getValues("costPrice")) || 0;
+                            if (cost > 0) {
+                              const newSell = Math.round(cost * (1 + pct / 100));
+                              form.setValue("basePrice", newSell, { shouldValidate: true });
+                            }
+                          }}
+                          className={`text-[11px] px-2 py-1 rounded font-mono font-semibold transition-all cursor-pointer ${
+                            Number(marginPercent) === pct
+                              ? "bg-emerald-600 text-white shadow-xs"
+                              : "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+                          }`}
+                        >
+                          +{pct}%
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Sell Price */}
+                <FormField
+                  control={form.control}
+                  name="basePrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs font-semibold">3. Retail Selling Price ({CURRENCY_SYMBOL}) <span className="text-red-500">*</span></FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">{CURRENCY_SYMBOL}</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            className="pl-7 h-9 text-sm font-bold text-slate-900"
+                            {...field}
+                            onChange={(e) => {
+                              const sellVal = parseFloat(e.target.value) || 0;
+                              field.onChange(sellVal);
+                              const cost = Number(form.getValues("costPrice")) || 0;
+                              if (cost > 0 && sellVal > cost) {
+                                const calculatedMargin = Math.round(((sellVal - cost) / cost) * 100);
+                                setMarginPercent(calculatedMargin);
+                              }
+                            }}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormDescription className="text-[11px]">Customer-facing selling price</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Dynamic Profit Margin Badge */}
                 {(() => {
                   const base = Number(form.watch("basePrice")) || 0;
                   const cost = Number(form.watch("costPrice")) || 0;
                   const profit = base - cost;
-                  const margin = base > 0 ? Math.round((profit / base) * 100) : 0;
+                  const margin = cost > 0 ? Math.round((profit / cost) * 100) : 0;
                   if (base > 0 && cost > 0) {
                     return (
-                      <div className="rounded-lg bg-emerald-50/80 border border-emerald-200/80 p-3 text-xs text-emerald-950 flex items-center justify-between shadow-xs">
+                      <div className="rounded-lg bg-emerald-50/90 border border-emerald-300 p-3 text-xs text-emerald-950 flex items-center justify-between shadow-xs">
                         <div>
-                          <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Unit Gross Profit</p>
-                          <p className="font-bold text-sm text-emerald-900">+৳{profit.toLocaleString()}</p>
+                          <p className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider">Unit Gross Profit</p>
+                          <p className="font-bold text-sm text-emerald-900">+৳{profit.toLocaleString()} <span className="text-[11px] font-normal text-emerald-700">/ pc</span></p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Margin</p>
-                          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-xs">
-                            {margin}%
+                          <p className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider">Markup Margin</p>
+                          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-700 text-white shadow-xs">
+                            +{margin}%
                           </span>
                         </div>
                       </div>
@@ -1232,70 +2037,188 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                   return null;
                 })()}
 
-                {/* Sale / Discount Price */}
+                {/* 4. Sale / Promotional Price */}
                 <FormField
                   control={form.control}
                   name="salePrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sale / Discount Price ({CURRENCY_SYMBOL})</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-medium">{CURRENCY_SYMBOL}</span>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0.00 (optional)"
-                            className="pl-8"
-                            {...field}
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(e.target.value ? parseFloat(e.target.value) : null)
-                            }
-                          />
-                        </div>
-                      </FormControl>
-                      <FormDescription>Discounted price shown to customers (optional)</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const basePrice = Number(form.watch("basePrice")) || 0;
+                    const salePrice = Number(field.value) || 0;
+                    const hasSale = salePrice > 0;
+                    const isValidDiscount = hasSale && basePrice > 0 && salePrice < basePrice;
+                    const isInvalidDiscount = hasSale && basePrice > 0 && salePrice >= basePrice;
+                    const discountPct = isValidDiscount ? Math.round(((basePrice - salePrice) / basePrice) * 100) : 0;
+                    const savings = isValidDiscount ? basePrice - salePrice : 0;
+
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Sale / Offer Price ({CURRENCY_SYMBOL}) <span className="text-muted-foreground font-normal">(Optional)</span></FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-medium">{CURRENCY_SYMBOL}</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00 (optional discount)"
+                              className="pl-7 h-9 text-sm"
+                              {...field}
+                              value={field.value ?? ""}
+                              onChange={(e) =>
+                                field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                              }
+                            />
+                          </div>
+                        </FormControl>
+                        {isValidDiscount && (
+                          <div className="mt-1 flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
+                            <span className="font-bold">✓ {discountPct}% OFF</span>
+                            <span className="text-emerald-800 font-medium">
+                              (Customer saves ৳{savings.toLocaleString()})
+                            </span>
+                          </div>
+                        )}
+                        {isInvalidDiscount && (
+                          <div className="mt-1 flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 px-2.5 py-1 rounded border border-amber-300">
+                            <span>⚠️ Sale price should be less than regular price (৳{basePrice}) to provide a discount.</span>
+                          </div>
+                        )}
+                        <FormDescription className="text-[11px]">Shows strikethrough regular price on storefront if set</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </CardContent>
             </Card>
 
+            {/* Inventory & Opening Stock Intake Card */}
             <Card className="border-border/60 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg">Inventory & Stock</CardTitle>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Boxes className="h-4 w-4 text-blue-600" />
+                    <CardTitle className="text-base font-bold">Inventory &amp; Opening Stock</CardTitle>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPrintModalOpen(true)}
+                    className="h-6 text-[11px] px-2 text-sky-700 hover:text-sky-900 hover:bg-sky-50 cursor-pointer gap-1 font-semibold"
+                  >
+                    <Printer className="h-3 w-3" />
+                    Print Stickers
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="stockQuantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Base Stock Quantity</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          {...field}
-                          value={field.value ?? 0}
-                          onChange={(e) =>
-                            field.onChange(parseInt(e.target.value, 10) || 0)
-                          }
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {variantFields.length > 0
-                          ? "Default stock level. When variants are defined, each variant's stock is controlled individually in the variants section."
-                          : "Available stock quantity. Set to 0 to mark as Out of Stock."}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Destination Warehouse */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700">Destination Warehouse / Store</label>
+                  <Select
+                    value={selectedWarehouseId}
+                    onValueChange={(val) => {
+                      setSelectedWarehouseId(val);
+                      form.setValue("warehouseId" as any, val);
+                    }}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Select Warehouse Location">
+                        {warehouses.find((w) => w.id === selectedWarehouseId)?.name || "Main Central Warehouse (WH-MAIN-01)"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {warehouses.map((w) => (
+                        <SelectItem key={w.id} value={w.id} className="text-xs">
+                          {w.name} {w.code ? `(${w.code})` : ""}
+                        </SelectItem>
+                      ))}
+                      {warehouses.length === 0 && (
+                        <SelectItem value="default" className="text-xs">
+                          Main Central Warehouse (WH-MAIN-01)
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground">
+                    Initial intake stock movements will be assigned to this facility.
+                  </p>
+                </div>
+
+                {/* Opening Stock Quantity */}
+                {productType === "SINGLE" ? (
+                  <FormField
+                    control={form.control}
+                    name="stockQuantity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center justify-between">
+                          <FormLabel className="text-xs font-semibold">Opening Stock Quantity</FormLabel>
+                          {Number(field.value) > 0 && (
+                            <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-800 border-emerald-300 font-mono py-0 px-1.5">
+                              ✓ Auto-Intake
+                            </Badge>
+                          )}
+                        </div>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            className="h-9 font-semibold text-sm"
+                            {...field}
+                            value={field.value ?? 0}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value, 10) || 0)
+                            }
+                          />
+                        </FormControl>
+                        <FormDescription className="text-[11px]">
+                          Available physical units. Opening stock automatically creates an audit entry in Stock Movements ledger.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-3 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-purple-900">Multi-Variant Aggregated Stock:</span>
+                      <span className="font-bold text-sm text-purple-900 font-mono">
+                        {variantFields.reduce((sum, _, i) => sum + (Number(form.watch(`variants.${i}.stockQuantity`)) || 0), 0)} pcs
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-purple-700">
+                      Stock is managed per variant in the Variations Matrix. The overall product stock is automatically maintained as the sum of all variant opening stocks.
+                    </p>
+                  </div>
+                )}
+
+                {/* Low Stock Alert Quantity (Reorder Point) */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700">Alert Quantity (Reorder Point)</label>
+                    <span className="text-[11px] text-muted-foreground font-mono font-semibold">
+                      {alertQuantity} pcs
+                    </span>
+                  </div>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="5"
+                    value={alertQuantity}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value, 10) || 0;
+                      setAlertQuantity(v);
+                      form.setValue("alertQuantity" as any, v);
+                    }}
+                    className="h-9 text-xs font-mono"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Triggers low stock alert badges on POS inventory shelf when available units drop below this threshold.
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
@@ -1607,6 +2530,13 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             handleSelectInventoryProduct(mappedItem);
           }
         }}
+      />
+
+      {/* Barcode Sticker Sheet / Label Generator Modal */}
+      <PrintBarcodeModal
+        isOpen={printModalOpen}
+        onClose={() => setPrintModalOpen(false)}
+        items={barcodePrintItems}
       />
     </Form>
   );

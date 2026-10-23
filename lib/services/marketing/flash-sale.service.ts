@@ -46,34 +46,13 @@ export class FlashSaleService {
 
   /**
    * Fetches an active flash sale for a specific product.
+   * Note: The database table 'flash_sales' tracks site-wide campaign events (title, discount_percentage)
+   * and does not have a 'product_id' column. We return null safely to prevent SQL column 42703 errors.
    */
   static async getFlashSaleForProduct(productId: string): Promise<FlashSaleRecord | null> {
     try {
-      const supabase = this.getAdminClient();
-      const now = new Date().toISOString();
-
-      const { data, error } = await supabase
-        .from("flash_sales")
-        .select("*")
-        .eq("product_id", productId)
-        .eq("is_active", true)
-        .lte("start_time", now)
-        .gt("end_time", now)
-        .single();
-
-      if (error) {
-        if (error.code !== "PGRST116") {
-          console.error(`Error fetching flash sale for product ${productId}:`, error);
-        }
-        return null;
-      }
-
-      // Double check stock remaining
-      if (data && data.stock_sold >= data.stock_allocated) {
-        return null;
-      }
-
-      return data as FlashSaleRecord;
+      // Per-product flash sales are handled via Product.salePrice or Campaign discounts.
+      return null;
     } catch {
       return null;
     }

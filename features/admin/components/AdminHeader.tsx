@@ -413,11 +413,14 @@ export const AdminHeader = ({ user, role, className }: AdminHeaderProps) => {
 
         <div className="hidden flex-col md:flex">
           <h2 className="text-[20px] font-bold tracking-tight text-slate-800 dark:text-slate-100 capitalize">
-            {paths.length === 1 && paths[0].toLowerCase() === "admin"
-              ? "Dashboard"
-              : paths.length > 0
-                ? dynamicSegmentNames[paths[paths.length - 1]] || paths[paths.length - 1].replace(/-/g, " ")
-                : "Dashboard"}
+            {(() => {
+              if (paths.length === 1 && paths[0].toLowerCase() === "admin") return "Dashboard";
+              if (paths.length === 0) return "Dashboard";
+              const lastSegment = paths[paths.length - 1];
+              const isRaw = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastSegment) ||
+                (lastSegment.length >= 16 && !lastSegment.includes(" ") && /[0-9]/.test(lastSegment) && /[a-zA-Z]/.test(lastSegment));
+              return dynamicSegmentNames[lastSegment] || (isRaw ? "Details" : lastSegment.replace(/-/g, " "));
+            })()}
           </h2>
           <nav className="flex items-center text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 gap-1.5">
             <Link href="/admin" className="hover:text-primary transition-colors flex items-center">
@@ -426,10 +429,12 @@ export const AdminHeader = ({ user, role, className }: AdminHeaderProps) => {
             {paths.map((path, index) => {
               const href = "/" + paths.slice(0, index + 1).join("/");
               const isLast = index === paths.length - 1;
-              const isUUID = path.length > 30 && path.includes('-');
+              const isRawId =
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(path) ||
+                (path.length >= 16 && !path.includes(" ") && /[0-9]/.test(path) && /[a-zA-Z]/.test(path));
               const baseName = path === "admin" ? "Dashboard" : path.replace(/-/g, " ");
               
-              const formattedName = dynamicSegmentNames[path] || (isUUID ? "Details" : baseName);
+              const formattedName = dynamicSegmentNames[path] || (isRawId ? "Details" : baseName);
               
               return (
                 <span key={`${path}-${index}`} className="flex items-center gap-1.5">

@@ -58,8 +58,8 @@ export async function addToCartAction(
 ) {
   try {
     const { userId, sessionId } = await getSessionIdentifiers();
-    if (!userId) {
-      return { success: false, error: "Please log in to add items to your cart." };
+    if (!userId && !sessionId) {
+      return { success: false, error: "Unable to initialize shopping bag session." };
     }
     await CartService.addItem(
       userId,

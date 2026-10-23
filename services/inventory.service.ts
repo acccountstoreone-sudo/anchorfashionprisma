@@ -434,13 +434,33 @@ export class InventoryService {
             where: { variantId: item.variantId },
           });
           if (level) {
+            const prevAvail = level.quantityAvailable;
+            const newAvail = level.quantityAvailable + item.quantity;
             await prisma.inventoryLevel.update({
               where: { id: level.id },
               data: {
-                quantityAvailable: level.quantityAvailable + item.quantity,
+                quantityAvailable: newAvail,
                 quantityReserved: Math.max(0, level.quantityReserved - item.quantity),
               },
             });
+
+            try {
+              await prisma.stockMovement.create({
+                data: {
+                  variantId: item.variantId,
+                  warehouseId: level.warehouseId,
+                  movementType: "IN",
+                  quantity: item.quantity,
+                  previousQuantity: prevAvail,
+                  newQuantity: newAvail,
+                  referenceType: "ORDER_CANCELLED",
+                  referenceId: orderId,
+                  notes: `Stock restored to available inventory from cancelled order ${order.orderNumber || orderId}`,
+                },
+              });
+            } catch (movementErr) {
+              console.warn("Stock movement logging on cancellation non-fatal warning:", movementErr);
+            }
           }
         }
       }

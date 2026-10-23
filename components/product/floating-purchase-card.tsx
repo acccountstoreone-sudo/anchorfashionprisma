@@ -57,24 +57,6 @@ export function FloatingPurchaseCard({
   }, []);
 
   const handleAddToCart = async () => {
-    let currentUser = user;
-    if (!currentUser) {
-      const res = await authClient.getSession();
-      currentUser = res?.data?.user ?? null;
-    }
-
-    if (!currentUser) {
-      toast.info("Please log in to add items to your cart.", {
-        action: {
-          label: "Login",
-          onClick: () =>
-            router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname)}`),
-        },
-      });
-      router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
-
     if (validationError) {
       toast.error(validationError);
       return;
@@ -95,24 +77,6 @@ export function FloatingPurchaseCard({
   };
 
   const handleBuyNow = async () => {
-    let currentUser = user;
-    if (!currentUser) {
-      const res = await authClient.getSession();
-      currentUser = res?.data?.user ?? null;
-    }
-
-    if (!currentUser) {
-      toast.info("Please log in to proceed with Buy Now.", {
-        action: {
-          label: "Login",
-          onClick: () =>
-            router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname)}`),
-        },
-      });
-      router.push(`/auth/login?next=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
-
     if (validationError) {
       toast.error(validationError);
       return;

@@ -18,10 +18,16 @@ import {
   LayoutGrid,
   List,
   Tag,
+  Printer,
+  SlidersHorizontal,
+  Warehouse,
+  Boxes,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import Image from "next/image";
+import { PrintBarcodeModal, BarcodeLabelData } from "@/components/admin/inventory/PrintBarcodeModal";
+import { generateEAN13Sync } from "@/lib/utils/barcode";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,6 +98,42 @@ export function ProductsTable({
     onConfirm: () => Promise<void>;
     isLoading?: boolean;
   }>({ open: false, title: "", description: "", onConfirm: async () => {} });
+
+  // Barcode Printing State
+  const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
+  const [barcodeLabels, setBarcodeLabels] = useState<BarcodeLabelData[]>([]);
+
+  const handleOpenBarcodePrint = (product: Product) => {
+    const prodName = product.name;
+    const prodSku = product.sku || "AFPRD1";
+    const prodBarcode = product.barcode || generateEAN13Sync();
+    const prodPrice = Number(product.basePrice || 0);
+    const vars = (product as any).variants || [];
+
+    let labels: BarcodeLabelData[] = [];
+    if (vars.length > 0) {
+      labels = vars.map((v: any) => ({
+        productName: prodName,
+        sku: v.sku || prodSku,
+        barcode: v.barcode || prodBarcode,
+        color: (v.attributes as any)?.Color || "",
+        size: (v.attributes as any)?.Size || "",
+        price: Number(v.priceOverride || prodPrice),
+      }));
+    } else {
+      labels = [
+        {
+          productName: prodName,
+          sku: prodSku,
+          barcode: prodBarcode,
+          price: prodPrice,
+        },
+      ];
+    }
+
+    setBarcodeLabels(labels);
+    setBarcodeModalOpen(true);
+  };
 
   const allSelected =
     products.length > 0 && selectedIds.length === products.length;
@@ -339,11 +381,23 @@ export function ProductsTable({
               </DropdownMenu>
             </>
           ) : (
-            <Link href="/admin/products/new">
-              <Button className="bg-slate-900 text-white hover:bg-slate-800">
-                <Plus className="mr-2 h-4 w-4" /> Add Product
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/admin/inventory">
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs border-emerald-300 text-emerald-800 bg-emerald-50/50 hover:bg-emerald-100 hover:text-emerald-900">
+                  <Warehouse className="h-3.5 w-3.5 text-emerald-600" /> POS Inventory Hub
+                </Button>
+              </Link>
+              <Link href="/admin/inventory/stock">
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs border-blue-300 text-blue-800 bg-blue-50/50 hover:bg-blue-100 hover:text-blue-900">
+                  <SlidersHorizontal className="h-3.5 w-3.5 text-blue-600" /> Stock Control
+                </Button>
+              </Link>
+              <Link href="/admin/products/new">
+                <Button className="bg-slate-900 text-white hover:bg-slate-800 gap-1.5">
+                  <Plus className="h-4 w-4" /> Add Product
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
       </div>
@@ -580,6 +634,20 @@ export function ProductsTable({
                           >
                             <Eye className="mr-2 h-4 w-4" /> View in Store
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleOpenBarcodePrint(product)}>
+                            <Printer className="mr-2 h-4 w-4 text-emerald-600" /> Print Barcodes
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push(
+                                `/admin/inventory/stock?search=${encodeURIComponent(
+                                  product.sku || product.name
+                                )}`
+                              )
+                            }
+                          >
+                            <SlidersHorizontal className="mr-2 h-4 w-4 text-blue-600" /> Adjust Stock
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDuplicate(product.id)}
                             disabled={isDuplicating === product.id}
@@ -685,6 +753,13 @@ export function ProductsTable({
         isLoading={confirmState.isLoading}
         onConfirm={confirmState.onConfirm}
         onCancel={() => setConfirmState((s) => ({ ...s, open: false }))}
+      />
+
+      {/* Barcode Print Modal */}
+      <PrintBarcodeModal
+        open={barcodeModalOpen}
+        onOpenChange={setBarcodeModalOpen}
+        labels={barcodeLabels}
       />
     </div>
   );

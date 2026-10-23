@@ -350,7 +350,8 @@ export class ProductRepository {
       }
     }
 
-    const defaultWarehouseId = await ProductRepository.getDefaultWarehouseId();
+    const defaultWarehouseId = (productData as any).warehouseId || (await ProductRepository.getDefaultWarehouseId());
+    const reorderPoint = Number((productData as any).alertQuantity ?? (productData as any).reorderPoint ?? 10);
 
     // Primary image from media
     const primaryMediaUrl = media?.find((m: any) => m.isPrimary)?.url || media?.[0]?.url || null;
@@ -468,9 +469,25 @@ export class ProductRepository {
                 warehouseId: defaultWarehouseId,
                 quantityAvailable: Number(v.stockQuantity ?? 0),
                 quantityReserved: 0,
-                reorderPoint: 10,
+                reorderPoint,
               },
             });
+
+            if (Number(v.stockQuantity ?? 0) > 0) {
+              await tx.stockMovement.create({
+                data: {
+                  variantId: createdVariant.id,
+                  warehouseId: defaultWarehouseId,
+                  movementType: "IN",
+                  quantity: Number(v.stockQuantity),
+                  previousQuantity: 0,
+                  newQuantity: Number(v.stockQuantity),
+                  referenceType: "INITIAL_STOCK",
+                  referenceId: productId,
+                  notes: `Initial opening stock intake for ${createdProduct.name} (${sku})`,
+                },
+              });
+            }
           }
         }
       } else {
@@ -496,12 +513,28 @@ export class ProductRepository {
               warehouseId: defaultWarehouseId,
               quantityAvailable: Number(productData.stockQuantity ?? 0),
               quantityReserved: 0,
-              reorderPoint: 10,
+              reorderPoint,
             },
           });
+
+          if (Number(productData.stockQuantity ?? 0) > 0) {
+            await tx.stockMovement.create({
+              data: {
+                variantId: createdVariant.id,
+                warehouseId: defaultWarehouseId,
+                movementType: "IN",
+                quantity: Number(productData.stockQuantity),
+                previousQuantity: 0,
+                newQuantity: Number(productData.stockQuantity),
+                referenceType: "INITIAL_STOCK",
+                referenceId: productId,
+                notes: `Initial opening stock intake for ${createdProduct.name}`,
+              },
+            });
+          }
         }
       }
-    });
+    }, { maxWait: 20000, timeout: 60000 });
 
     return this.getProductById(productId);
   }
@@ -682,6 +715,18 @@ export class ProductRepository {
             }
 
             if (defaultWarehouseId && v.stockQuantity !== undefined) {
+              const currentLevel = await tx.inventoryLevel.findUnique({
+                where: {
+                  variantId_warehouseId: {
+                    variantId: targetVariantId,
+                    warehouseId: defaultWarehouseId,
+                  },
+                },
+              });
+
+              const prevQty = currentLevel?.quantityAvailable || 0;
+              const newQty = Number(v.stockQuantity ?? 0);
+
               await tx.inventoryLevel.upsert({
                 where: {
                   variantId_warehouseId: {
@@ -690,16 +735,33 @@ export class ProductRepository {
                   },
                 },
                 update: {
-                  quantityAvailable: Number(v.stockQuantity ?? 0),
+                  quantityAvailable: newQty,
                 },
                 create: {
                   variantId: targetVariantId,
                   warehouseId: defaultWarehouseId,
-                  quantityAvailable: Number(v.stockQuantity ?? 0),
+                  quantityAvailable: newQty,
                   quantityReserved: 0,
                   reorderPoint: 10,
                 },
               });
+
+              if (newQty !== prevQty) {
+                const diff = newQty - prevQty;
+                await tx.stockMovement.create({
+                  data: {
+                    variantId: targetVariantId,
+                    warehouseId: defaultWarehouseId,
+                    movementType: diff > 0 ? "IN" : "OUT",
+                    quantity: diff,
+                    previousQuantity: prevQty,
+                    newQuantity: newQty,
+                    referenceType: "STOCK_ADJUSTMENT",
+                    referenceId: id,
+                    notes: `Stock updated via product editor: ${diff > 0 ? `+${diff}` : diff} units`,
+                  },
+                });
+              }
             }
           }
 
@@ -752,7 +814,7 @@ export class ProductRepository {
           }
         }
       }
-    });
+    }, { maxWait: 20000, timeout: 60000 });
 
     return this.getProductById(id);
   }

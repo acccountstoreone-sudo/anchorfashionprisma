@@ -227,6 +227,8 @@ export const CreateProductSchema = ProductSchema.omit({
       })
     )
     .optional(),
+  warehouseId: z.string().uuid().optional().nullable().or(z.literal("").transform(() => null)),
+  alertQuantity: z.coerce.number().int().min(0).optional().default(5),
 });
 
 export type CreateProductInput = z.infer<typeof CreateProductSchema>;

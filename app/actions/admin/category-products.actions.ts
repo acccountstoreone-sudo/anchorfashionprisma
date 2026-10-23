@@ -64,6 +64,49 @@ export const removeProductFromCategoryAction = createAdminAction(
   }
 );
 
+// Internal domain function for price synchronization
+export async function syncProductPrices(
+  productId: string,
+  basePrice: number,
+  salePrice?: number | null,
+  costPrice?: number | null
+) {
+  await prisma.$transaction(async (tx) => {
+    await tx.product.update({
+      where: { id: productId },
+      data: {
+        basePrice,
+        salePrice,
+        costPrice,
+      },
+    });
+
+    // Synchronize price update to single/default variants so customer checkout reflects the price change
+    const variants = await tx.variant.findMany({
+      where: { productId },
+    });
+
+    if (variants.length === 1) {
+      await tx.variant.update({
+        where: { id: variants[0].id },
+        data: {
+          priceOverride: basePrice,
+          salePrice: salePrice ?? null,
+          costPrice: costPrice ?? null,
+        },
+      });
+    }
+  });
+
+  try {
+    revalidatePath("/admin/catalog/categories/[id]", "page");
+    revalidatePath("/admin/catalog/products");
+    revalidatePath("/admin/products");
+  } catch {
+    // Revalidation not applicable in standalone test contexts
+  }
+}
+
 // Update product prices (Inline edit)
 export const updateProductPricesAction = createAdminAction(
   z.object({
@@ -73,17 +116,7 @@ export const updateProductPricesAction = createAdminAction(
     costPrice: z.number().nullable().optional(),
   }),
   async ({ productId, basePrice, salePrice, costPrice }) => {
-    await prisma.product.update({
-      where: { id: productId },
-      data: {
-        basePrice,
-        salePrice,
-        costPrice
-      }
-    });
-
-    revalidatePath("/admin/catalog/categories/[id]", "page");
-    revalidatePath("/admin/catalog/products");
+    await syncProductPrices(productId, basePrice, salePrice, costPrice);
     return { success: true };
   }
 );

@@ -7,27 +7,121 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Root Select component.
- * Supports standard Radix UI Select props and safely ignores legacy `items` prop if passed.
+ * Detects if a string is a raw system identifier (UUID, CUID, NanoID, or opaque hash)
+ * rather than a human-readable display name.
  */
-interface SelectProps extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> {
+export function isRawIdentifier(val: unknown): boolean {
+  if (typeof val !== "string") return false;
+  const trimmed = val.trim();
+  if (!trimmed) return false;
+
+  // Standard UUID format (e.g. 714df504-c808-48b7-b127-0e63d64e2bf9)
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) {
+    return true;
+  }
+
+  // CUID, NanoID, or long alphanumeric hash without spaces (length >= 16, e.g. hdjasdfjhdavJHM4386e7ygef)
+  if (
+    trimmed.length >= 16 &&
+    !trimmed.includes(" ") &&
+    /^[a-zA-Z0-9_-]+$/.test(trimmed) &&
+    /[0-9]/.test(trimmed) &&
+    /[a-zA-Z]/.test(trimmed)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Recursively extracts value -> label mappings from React element children.
+ */
+function extractItemsFromChildren(children: React.ReactNode): Array<{ value: string; label: React.ReactNode }> {
+  const items: Array<{ value: string; label: React.ReactNode }> = [];
+
+  function traverse(node: React.ReactNode) {
+    if (!node) return;
+    if (React.isValidElement(node)) {
+      const props = node.props as any;
+      if (props) {
+        if (props.value !== undefined && (props.children !== undefined || props.label !== undefined)) {
+          items.push({
+            value: String(props.value),
+            label: props.label ?? props.children,
+          });
+        }
+        if (props.children) {
+          React.Children.forEach(props.children, traverse);
+        }
+      }
+    } else if (Array.isArray(node)) {
+      node.forEach(traverse);
+    }
+  }
+
+  traverse(children);
+  return items;
+}
+
+/**
+ * Root Select component.
+ * Supports standard Radix UI Select props and automatic label resolution.
+ */
+export interface SelectProps extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> {
   items?: Array<{ value: any; label: React.ReactNode }>;
 }
 
-interface SelectContextValue {
+export interface SelectContextValue {
   value?: string;
   items?: Array<{ value: any; label: React.ReactNode }>;
+  itemMap: Map<string, React.ReactNode>;
+  registerItem: (value: string, label: React.ReactNode) => void;
 }
 
 const SelectContext = React.createContext<SelectContextValue | null>(null);
 
 function Select({ items, value, defaultValue, children, ...props }: SelectProps) {
+  const [registeredItems, setRegisteredItems] = React.useState<Map<string, React.ReactNode>>(
+    () => new Map()
+  );
+
+  const registerItem = React.useCallback((val: string, label: React.ReactNode) => {
+    setRegisteredItems((prev) => {
+      if (prev.get(val) === label) return prev;
+      const next = new Map(prev);
+      next.set(val, label);
+      return next;
+    });
+  }, []);
+
+  // Pre-scan static children for SelectItem elements even if Content is unmounted
+  const extractedItems = React.useMemo(() => extractItemsFromChildren(children), [children]);
+
+  const itemMap = React.useMemo(() => {
+    const map = new Map<string, React.ReactNode>();
+    for (const item of extractedItems) {
+      map.set(String(item.value), item.label);
+    }
+    registeredItems.forEach((label, val) => {
+      map.set(val, label);
+    });
+    if (items) {
+      for (const item of items) {
+        map.set(String(item.value), item.label);
+      }
+    }
+    return map;
+  }, [extractedItems, registeredItems, items]);
+
   const contextValue = React.useMemo(
     () => ({
       value: value ?? defaultValue,
       items,
+      itemMap,
+      registerItem,
     }),
-    [value, defaultValue, items]
+    [value, defaultValue, items, itemMap, registerItem]
   );
 
   return (
@@ -44,24 +138,36 @@ const SelectGroup = SelectPrimitive.Group;
 const SelectValue = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Value>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Value>
->(({ children, placeholder, ...props }, ref) => {
+>(({ children, placeholder = "Select...", ...props }, ref) => {
   const ctx = React.useContext(SelectContext);
 
+  let resolvedLabel: React.ReactNode = undefined;
+
+  // 1. If explicit children were provided and not an ugly raw ID/hash
   if (children !== undefined && children !== null && children !== "") {
-    return (
-      <SelectPrimitive.Value ref={ref} placeholder={placeholder} {...props}>
-        {children}
-      </SelectPrimitive.Value>
-    );
+    if (!isRawIdentifier(children)) {
+      resolvedLabel = children;
+    }
   }
 
-  // If items were passed to <Select items={[...]}>, resolve label automatically
-  let resolvedLabel: React.ReactNode = undefined;
-  if (ctx?.value !== undefined && ctx?.items) {
-    const match = ctx.items.find((item) => String(item.value) === String(ctx.value));
-    if (match) {
-      resolvedLabel = match.label;
+  // 2. If no valid label from children, resolve from itemMap or items array
+  if (!resolvedLabel && ctx?.value !== undefined && ctx.value !== "") {
+    const valKey = String(ctx.value);
+    const mapped = ctx.itemMap?.get(valKey);
+    if (mapped && !isRawIdentifier(mapped)) {
+      resolvedLabel = mapped;
+    } else if (ctx.items) {
+      const match = ctx.items.find((item) => String(item.value) === valKey);
+      if (match && match.label && !isRawIdentifier(match.label)) {
+        resolvedLabel = match.label;
+      }
     }
+  }
+
+  // 3. Fallback: if value is empty/none/default or unresolved raw ID
+  if (!resolvedLabel || isRawIdentifier(resolvedLabel)) {
+    // Prevent Radix UI from leaking raw UUIDs/hashes when label is unresolved
+    resolvedLabel = <span className="text-muted-foreground">{placeholder}</span>;
   }
 
   return (
@@ -182,23 +288,34 @@ SelectLabel.displayName = SelectPrimitive.Label.displayName;
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> & { label?: React.ReactNode }
->(({ className, children, label: _ignoredLabel, ...props }, ref) => (
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex w-full cursor-pointer select-none items-center rounded-lg py-1.5 pl-2.5 pr-8 text-sm outline-hidden transition-colors hover:bg-accent/80 hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className
-    )}
-    {...props}
-  >
-    <span className="absolute right-2.5 flex h-3.5 w-3.5 items-center justify-center text-primary">
-      <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4" />
-      </SelectPrimitive.ItemIndicator>
-    </span>
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-  </SelectPrimitive.Item>
-));
+>(({ className, children, label, value, ...props }, ref) => {
+  const ctx = React.useContext(SelectContext);
+
+  React.useEffect(() => {
+    if (ctx?.registerItem && value !== undefined) {
+      ctx.registerItem(String(value), label ?? children);
+    }
+  }, [ctx, value, label, children]);
+
+  return (
+    <SelectPrimitive.Item
+      ref={ref}
+      value={value}
+      className={cn(
+        "relative flex w-full cursor-pointer select-none items-center rounded-lg py-1.5 pl-2.5 pr-8 text-sm outline-hidden transition-colors hover:bg-accent/80 hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        className
+      )}
+      {...props}
+    >
+      <span className="absolute right-2.5 flex h-3.5 w-3.5 items-center justify-center text-primary">
+        <SelectPrimitive.ItemIndicator>
+          <Check className="h-4 w-4" />
+        </SelectPrimitive.ItemIndicator>
+      </span>
+      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    </SelectPrimitive.Item>
+  );
+});
 SelectItem.displayName = SelectPrimitive.Item.displayName;
 
 const SelectSeparator = React.forwardRef<

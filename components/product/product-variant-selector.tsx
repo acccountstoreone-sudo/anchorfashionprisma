@@ -204,6 +204,53 @@ function getFashionColorHex(colorName: string): string {
   return stripped;
 }
 
+const APPAREL_SIZE_RANK: Record<string, number> = {
+  XXS: 10,
+  XS: 20,
+  S: 30,
+  M: 40,
+  L: 50,
+  XL: 60,
+  XXL: 70,
+  "2XL": 70,
+  XXXL: 80,
+  "3XL": 80,
+  XXXXL: 90,
+  "4XL": 90,
+  "5XL": 100,
+  "FREE SIZE": 110,
+  "ONE SIZE": 110,
+  STANDARD: 110,
+};
+
+function sortApparelAttributeValues(dimName: string, values: string[]): string[] {
+  const isSizeAttr = /^(size|sizes|waist|chest|length)$/i.test(dimName.trim());
+  if (!isSizeAttr) return values;
+
+  return [...values].sort((a, b) => {
+    const aTrim = a.trim().toUpperCase();
+    const bTrim = b.trim().toUpperCase();
+
+    // Check numeric values first (e.g. 28, 30, 32 or 38, 40, 42)
+    const aNum = parseFloat(aTrim);
+    const bNum = parseFloat(bTrim);
+    if (!isNaN(aNum) && !isNaN(bNum)) {
+      return aNum - bNum;
+    }
+
+    // Check apparel size ranks
+    const aRank = APPAREL_SIZE_RANK[aTrim];
+    const bRank = APPAREL_SIZE_RANK[bTrim];
+    if (aRank !== undefined && bRank !== undefined) {
+      return aRank - bRank;
+    }
+    if (aRank !== undefined) return -1;
+    if (bRank !== undefined) return 1;
+
+    return a.localeCompare(b);
+  });
+}
+
 export function ProductVariantSelector({
   productId,
   baseStockQuantity = 0,
@@ -243,7 +290,7 @@ export function ProductVariantSelector({
 
     return Array.from(dimensionMap.entries()).map(([name, valuesSet]) => ({
       name,
-      values: Array.from(valuesSet),
+      values: sortApparelAttributeValues(name, Array.from(valuesSet)),
     }));
   }, [processedVariants]);
 
@@ -374,13 +421,27 @@ export function ProductVariantSelector({
     }
 
     const variantMedia = productMedia.filter(
-      (m) => m.variant_id === matchedVariant.id
+      (m) => (m.variant_id || (m as any).variantId) === matchedVariant.id
     );
 
     if (variantMedia.length > 0) {
       return variantMedia
-        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+        .sort((a, b) => (a.display_order ?? (a as any).displayOrder ?? 0) - (b.display_order ?? (b as any).displayOrder ?? 0))
         .map((m) => m.url);
+    }
+
+    // Fallback: If no direct variantId link, check if altText matches the variant's Color attribute
+    const selectedColor = (matchedVariant.attributes as any)?.Color || (matchedVariant.attributes as any)?.color;
+    if (selectedColor && typeof selectedColor === "string") {
+      const colorMedia = productMedia.filter((m) => {
+        const alt = (m as any).altText || (m as any).alt_text || "";
+        return alt.toLowerCase().includes(selectedColor.toLowerCase());
+      });
+      if (colorMedia.length > 0) {
+        return colorMedia
+          .sort((a, b) => (a.display_order ?? (a as any).displayOrder ?? 0) - (b.display_order ?? (b as any).displayOrder ?? 0))
+          .map((m) => m.url);
+      }
     }
 
     return productImages;
@@ -551,7 +612,7 @@ export function ProductVariantSelector({
                 </span>
               </span>
               
-              {dimension.name.toLowerCase() === "size" && sizeCharts.length > 0 && (
+              {dimension.name.toLowerCase() === "size" && (
                 <SizeGuideModal
                   sizeCharts={sizeCharts}
                   availableSizes={dimension.values}
