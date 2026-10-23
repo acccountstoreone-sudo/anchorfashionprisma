@@ -71,8 +71,8 @@ model RolePermission {
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@unique([roleId, permissionId])
   @@unique([roleId, permissionId], map: "idx_role_permissions_role_perm_unique")
+  @@index([permissionId], map: "idx_role_permissions_permission_id")
   @@map("role_permissions")
 }
 
@@ -226,7 +226,6 @@ model ProductCategory {
   product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([productId, categoryId])
-  @@index([productId])
   @@index([categoryId])
   @@map("product_categories")
 }
@@ -278,6 +277,7 @@ model ProductTag {
   tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@unique([productId, tagId])
+  @@index([tagId], map: "idx_product_tags_tag_id")
   @@map("product_tags")
 }
 
@@ -306,7 +306,6 @@ model Variant {
   product         Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
-  @@index([sku], map: "idx_variants_sku")
   @@map("variants")
 }
 
@@ -486,11 +485,10 @@ model Order {
 
   @@index([customerId])
   @@index([profileId])
-  @@index([status])
-  @@index([orderNumber])
   @@index([createdAt(sort: Desc)], map: "idx_orders_created_at_desc")
   @@index([paymentStatus], map: "idx_orders_payment_status")
   @@index([status, createdAt(sort: Desc)], map: "idx_orders_status_created_at")
+  @@index([reservationExpiresAt], map: "idx_orders_reservation_expiry")
   @@map("orders")
 }
 
@@ -572,6 +570,8 @@ model CartItem {
 
   @@unique([cartId, productId, variantId])
   @@unique([cartId, variantId], map: "idx_cart_items_cart_variant_unique")
+  @@index([productId], map: "idx_cart_items_product_id")
+  @@index([variantId], map: "idx_cart_items_variant_id")
   @@map("cart_items")
 }
 
@@ -615,6 +615,7 @@ model WishlistItem {
   wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
 
   @@unique([wishlistId, productId])
+  @@index([productId], map: "idx_wishlist_items_product_id")
   @@map("wishlist_items")
 }
 
