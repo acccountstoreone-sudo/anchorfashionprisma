@@ -722,7 +722,13 @@ export function StoreHeader({
   const navLinks: NavLinkItem[] = useMemo(() => {
     // Filter root categories that are active, ordered by display_order set in Admin
     const topLevelCategories = categories
-      .filter((c) => !c.parent_id && c.is_active !== false)
+      .filter(
+        (c) =>
+          !c.parent_id &&
+          c.is_active !== false &&
+          !c.slug.toLowerCase().includes("qa") &&
+          !c.name.toLowerCase().startsWith("qa")
+      )
       .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
 
     // Fallback if no categories are configured yet
@@ -954,6 +960,18 @@ export function StoreHeader({
               <Select
                 value={searchCategory || "all"}
                 onValueChange={(val) => setSearchCategory(val === "all" ? "" : (val || ""))}
+                items={[
+                  { value: "all", label: "All Categories" },
+                  ...categories
+                    .filter(
+                      (c) =>
+                        !c.parent_id &&
+                        c.is_active !== false &&
+                        !c.slug.toLowerCase().includes("qa") &&
+                        !c.name.toLowerCase().startsWith("qa")
+                    )
+                    .map((c) => ({ value: c.slug, label: c.name })),
+                ]}
               >
                 <SelectTrigger className="w-[140px] border-0 bg-transparent shadow-none focus:ring-0 focus:ring-offset-0 text-sm font-medium text-gray-600 hover:text-gray-900 p-0 h-auto justify-between gap-1">
                   <SelectValue placeholder="Categories" />
@@ -962,8 +980,14 @@ export function StoreHeader({
                   <SelectItem value="all" className="cursor-pointer font-medium text-gray-600 focus:bg-gray-50 focus:text-gray-900">
                     All Categories
                   </SelectItem>
-                  {dbCategories
-                    .filter((c) => !c.parent_id && c.is_active !== false)
+                  {categories
+                    .filter(
+                      (c) =>
+                        !c.parent_id &&
+                        c.is_active !== false &&
+                        !c.slug.toLowerCase().includes("qa") &&
+                        !c.name.toLowerCase().startsWith("qa")
+                    )
                     .map((c) => (
                       <SelectItem key={c.id} value={c.slug} className="cursor-pointer text-gray-600 focus:bg-gray-50 focus:text-gray-900">
                         {c.name}

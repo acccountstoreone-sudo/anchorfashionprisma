@@ -71,18 +71,20 @@ export default async function CategoryPage({
     rating: "Top Rated",
   };
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.anchorfashion.com.bd";
+
   const categoryJsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: `${displayName} Collection | Anchor Fashion`,
     description: `Explore the ${displayName} collection at Anchor Fashion.`,
-    url: `https://anchorfashion.com/categories/${slug}`,
+    url: `${siteUrl}/categories/${slug}`,
     mainEntity: {
       "@type": "ItemList",
       itemListElement: products.slice(0, 10).map((p: any, idx: number) => ({
         "@type": "ListItem",
         position: idx + 1,
-        url: `https://anchorfashion.com/products/${p.slug}`,
+        url: `${siteUrl}/products/${p.slug}`,
         name: p.name,
       })),
     },
@@ -96,19 +98,19 @@ export default async function CategoryPage({
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: "https://anchorfashion.com",
+        item: siteUrl,
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "Categories",
-        item: "https://anchorfashion.com/categories",
+        item: `${siteUrl}/categories`,
       },
       {
         "@type": "ListItem",
         position: 3,
         name: displayName,
-        item: `https://anchorfashion.com/categories/${slug}`,
+        item: `${siteUrl}/categories/${slug}`,
       },
     ],
   };

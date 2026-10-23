@@ -10,18 +10,23 @@ export type { HeroSlide };
 const DEFAULT_SLIDES: HeroSlide[] = [
   {
     id: 1,
+    title: "Signature Festive Elegance",
+    subtitle: "New Season Hand-Crafted Collection",
     ctaHref: "/products?sort=newest",
-    image: "https://videos.pexels.com/video-files/5192138/5192138-uhd_2160_4096_25fps.mp4",
-    isVideo: true,
+    image: "/images/home/hero-banner.png",
   },
   {
     id: 2,
-    ctaHref: "/categories/ethnic",
+    title: "Royal Heritage Panjabi",
+    subtitle: "Pure Silk & Handcrafted Embroidery",
+    ctaHref: "/categories/panjabi",
     image: "/images/home/hero-slide-2.png",
   },
   {
     id: 3,
-    ctaHref: "/categories/summer",
+    title: "Executive Luxury Polos & Knits",
+    subtitle: "Modern Tailoring & Premium Fabrics",
+    ctaHref: "/categories/polo",
     image: "/images/home/hero-slide-3.png",
   },
 ];
@@ -38,13 +43,17 @@ function HeroSlideMedia({
   const initialUrl =
     slide.image_url ?? slide.media_url ?? slide.image ?? "/images/home/hero-banner.png";
   const [src, setSrc] = useState(initialUrl);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   useEffect(() => {
     setSrc(initialUrl);
+    setVideoFailed(false);
   }, [initialUrl]);
 
   const headline = slide.title ?? slide.headline;
-  const isVideo = slide.isVideo || src.endsWith(".mp4") || src.includes("/video-files/");
+  const isVideo =
+    !videoFailed &&
+    (slide.isVideo || src.endsWith(".mp4") || src.includes("/video-files/"));
 
   return (
     <div className="absolute inset-0 h-full w-full overflow-hidden bg-[#111]">
@@ -60,10 +69,11 @@ function HeroSlideMedia({
             isActive ? "scale-100 md:scale-105" : "scale-100"
           }`}
           poster="/images/home/hero-banner.png"
+          onError={() => setVideoFailed(true)}
         />
       ) : (
         <Image
-          src={src}
+          src={videoFailed ? "/images/home/hero-banner.png" : src}
           alt={headline ?? `Banner ${index + 1}`}
           fill
           sizes="100vw"

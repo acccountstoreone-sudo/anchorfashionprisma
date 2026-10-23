@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { prisma } from "@/lib/prisma";
 import {
   CustomReportConfig,
   ReportDimension,
@@ -215,26 +216,42 @@ export class ReportRepository {
     } else {
       // If bi_sales_mart has no records, fetch live catalog categories and brands
       // to generate consistent enterprise data points for previewing
-      const [catRes, brandRes, ordersRes] = await Promise.all([
-        supabase.from("categories").select("name").limit(10),
-        supabase.from("brands").select("name").limit(10),
-        supabase
-          .from("orders")
-          .select("id, created_at, total_amount, status")
-          .gte("created_at", fromDate.toISOString())
-          .lte("created_at", toDate.toISOString())
-          .limit(100),
-      ]);
+      let categories: string[] = [];
+      let brands: string[] = [];
 
-      const categories =
-        catRes.data && catRes.data.length > 0
-          ? catRes.data.map((c: any) => c.name)
-          : ["Ethnic Wear", "Western Wear", "Footwear", "Accessories", "Winter Collection"];
+      try {
+        const [dbCats, dbBrands] = await Promise.all([
+          prisma.category.findMany({
+            where: { isActive: true },
+            select: { name: true },
+            take: 10,
+            orderBy: { displayOrder: "asc" },
+          }),
+          prisma.brand.findMany({
+            select: { name: true },
+            take: 10,
+          }),
+        ]);
 
-      const brands =
-        brandRes.data && brandRes.data.length > 0
-          ? brandRes.data.map((b: any) => b.name)
-          : ["Anchor Signature", "Urban Canvas", "Loom & Craft", "Velvet Stitch"];
+        if (dbCats.length > 0) categories = dbCats.map((c) => c.name);
+        if (dbBrands.length > 0) brands = dbBrands.map((b) => b.name);
+      } catch (dbErr) {
+        console.warn("[ReportRepository] Prisma fetch warning:", dbErr);
+      }
+
+      if (categories.length === 0) {
+        const { data: catData } = await supabase.from("categories").select("name").limit(10);
+        categories = catData && catData.length > 0
+          ? catData.map((c: any) => c.name)
+          : ["Panjabi", "Shirts", "Polos", "Trousers & Chinos", "Jackets & Blazers"];
+      }
+
+      if (brands.length === 0) {
+        const { data: brandData } = await supabase.from("brands").select("name").limit(10);
+        brands = brandData && brandData.length > 0
+          ? brandData.map((b: any) => b.name)
+          : ["Anchor Signature", "Anchor Formal", "Anchor Casual", "Anchor Heritage"];
+      }
 
       const regions = ["Dhaka Metro", "Chittagong", "Sylhet", "Rajshahi", "Khulna"];
       const devices = ["Mobile", "Desktop", "Tablet", "iOS App", "Android App"];

@@ -20,7 +20,7 @@ import {
   StoreInfo,
   SocialLinks,
 } from "@/lib/actions/settings.actions";
-import { Save, Store, Share2, Megaphone } from "lucide-react";
+import { Save, Store, Share2, Megaphone, Loader2 } from "lucide-react";
 
 export function GeneralSettingsForm({
   initialStoreInfo,
@@ -29,12 +29,29 @@ export function GeneralSettingsForm({
   initialStoreInfo: StoreInfo;
   initialSocialLinks: SocialLinks;
 }) {
-  const [storeInfo, setStoreInfo] = useState(initialStoreInfo);
-  const [socialLinks, setSocialLinks] = useState(initialSocialLinks);
-  const [isPending, startTransition] = useTransition();
+  const [storeInfo, setStoreInfo] = useState<StoreInfo>({
+    store_name: initialStoreInfo?.store_name ?? "",
+    phone: initialStoreInfo?.phone ?? "",
+    email: initialStoreInfo?.email ?? "",
+    address: initialStoreInfo?.address ?? "",
+    store_description: initialStoreInfo?.store_description ?? "",
+    announcement_bar: initialStoreInfo?.announcement_bar ?? "",
+    free_shipping_threshold: initialStoreInfo?.free_shipping_threshold ?? "999",
+  });
+
+  const [socialLinks, setSocialLinks] = useState<SocialLinks>({
+    facebook: initialSocialLinks?.facebook ?? "",
+    instagram: initialSocialLinks?.instagram ?? "",
+    twitter: initialSocialLinks?.twitter ?? "",
+    youtube: initialSocialLinks?.youtube ?? "",
+    tiktok: initialSocialLinks?.tiktok ?? "",
+  });
+
+  const [isPendingStore, startStoreTransition] = useTransition();
+  const [isPendingSocial, startSocialTransition] = useTransition();
 
   const handleSaveStoreInfo = () => {
-    startTransition(async () => {
+    startStoreTransition(async () => {
       const result = await updateStoreInfo(storeInfo);
       if (result.success) {
         toast.success("Store information saved successfully!");
@@ -45,7 +62,7 @@ export function GeneralSettingsForm({
   };
 
   const handleSaveSocialLinks = () => {
-    startTransition(async () => {
+    startSocialTransition(async () => {
       const result = await updateSocialLinks(socialLinks);
       if (result.success) {
         toast.success("Social links saved successfully!");
@@ -174,9 +191,13 @@ export function GeneralSettingsForm({
             />
           </div>
           <div className="flex justify-end">
-            <Button onClick={handleSaveStoreInfo} disabled={isPending}>
-              <Save className="mr-2 h-4 w-4" />
-              {isPending ? "Saving..." : "Save Store Info"}
+            <Button onClick={handleSaveStoreInfo} disabled={isPendingStore} className="cursor-pointer">
+              {isPendingStore ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              {isPendingStore ? "Saving..." : "Save Store Info"}
             </Button>
           </div>
         </CardContent>
@@ -256,9 +277,13 @@ export function GeneralSettingsForm({
             </div>
           </div>
           <div className="flex justify-end">
-            <Button onClick={handleSaveSocialLinks} disabled={isPending}>
-              <Save className="mr-2 h-4 w-4" />
-              {isPending ? "Saving..." : "Save Social Links"}
+            <Button onClick={handleSaveSocialLinks} disabled={isPendingSocial} className="cursor-pointer">
+              {isPendingSocial ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              {isPendingSocial ? "Saving..." : "Save Social Links"}
             </Button>
           </div>
         </CardContent>
