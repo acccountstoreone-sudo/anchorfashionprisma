@@ -38,6 +38,47 @@ export async function generateMetadata({
   };
 }
 
+function renderInlineFormatting(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  const regex = /(\[.*?\]\(.*?\)|\*\*.*?\*\*)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const token = match[0];
+    if (token.startsWith("[") && token.includes("](")) {
+      const closingBracket = token.indexOf("](");
+      const label = token.slice(1, closingBracket);
+      const url = token.slice(closingBracket + 2, -1);
+      parts.push(
+        <Link
+          key={match.index}
+          href={url}
+          className="text-[#C9A86A] font-semibold underline decoration-[#C9A86A]/40 hover:text-[#9A7B3E] transition-colors"
+        >
+          {label}
+        </Link>
+      );
+    } else if (token.startsWith("**") && token.endsWith("**")) {
+      parts.push(
+        <strong key={match.index} className="font-bold text-foreground">
+          {token.slice(2, -2)}
+        </strong>
+      );
+    }
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
 export default async function BlogPostDetailPage({
   params,
   searchParams,
@@ -153,46 +194,146 @@ export default async function BlogPostDetailPage({
         </div>
       )}
 
+      {/* JSON-LD Article Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            headline: post.title,
+            description: post.excerpt || "",
+            image: img ? [img] : [],
+            datePublished: post.published_at || post.created_at,
+            dateModified: post.updated_at || post.created_at,
+            author: {
+              "@type": "Person",
+              name: "Anchor Editorial Team",
+            },
+            publisher: {
+              "@type": "Organization",
+              name: "Anchor Fashion",
+              logo: {
+                "@type": "ImageObject",
+                url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.anchorfashion.com.bd"}/images/home/hero-banner.png`,
+              },
+            },
+            mainEntityOfPage: {
+              "@type": "WebPage",
+              "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.anchorfashion.com.bd"}/blog/${post.slug}`,
+            },
+          }),
+        }}
+      />
+
       {/* Article Content */}
       <div className="container mx-auto px-4 max-w-3xl pb-16">
         <div className="prose prose-slate dark:prose-invert max-w-none text-foreground/90 leading-relaxed text-base sm:text-lg">
           {post.content ? (
             post.content.split("\n\n").map((paragraph, idx) => {
               const trimmed = paragraph.trim();
+
+              if (trimmed === "---") {
+                return <hr key={idx} className="my-8 border-border" />;
+              }
+
               if (trimmed.startsWith("### ")) {
                 return (
                   <h3 key={idx} className="text-xl font-bold mt-8 mb-3 text-foreground">
-                    {trimmed.replace("### ", "")}
+                    {renderInlineFormatting(trimmed.replace("### ", ""))}
                   </h3>
                 );
               }
               if (trimmed.startsWith("## ")) {
                 return (
                   <h2 key={idx} className="text-2xl font-bold mt-10 mb-4 text-foreground border-b pb-2">
-                    {trimmed.replace("## ", "")}
+                    {renderInlineFormatting(trimmed.replace("## ", ""))}
                   </h2>
                 );
               }
               if (trimmed.startsWith("# ")) {
                 return (
                   <h2 key={idx} className="text-3xl font-extrabold mt-12 mb-4 text-foreground">
-                    {trimmed.replace("# ", "")}
+                    {renderInlineFormatting(trimmed.replace("# ", ""))}
                   </h2>
                 );
               }
+
+              if (trimmed.startsWith("> ")) {
+                return (
+                  <blockquote
+                    key={idx}
+                    className="my-6 border-l-4 border-[#C9A86A] pl-5 italic text-muted-foreground bg-muted/20 py-3 rounded-r-lg"
+                  >
+                    {renderInlineFormatting(trimmed.replace(/^>\s*/, ""))}
+                  </blockquote>
+                );
+              }
+
+              // Markdown Table Support
+              if (trimmed.startsWith("|") && trimmed.includes("\n|")) {
+                const rows = trimmed.split("\n").filter((r) => r.trim().startsWith("|"));
+                const headerRow = rows[0];
+                const bodyRows = rows.slice(2);
+                const headers = headerRow
+                  .split("|")
+                  .map((c) => c.trim())
+                  .filter(Boolean);
+
+                return (
+                  <div key={idx} className="my-8 overflow-x-auto rounded-xl border border-border bg-card shadow-xs">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-muted/60 text-xs uppercase tracking-wider font-semibold text-muted-foreground border-b border-border">
+                        <tr>
+                          {headers.map((h, hIdx) => (
+                            <th key={hIdx} className="px-4 py-3">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {bodyRows.map((r, rIdx) => {
+                          const cells = r.split("|").map((c) => c.trim()).filter(Boolean);
+                          return (
+                            <tr key={rIdx} className="hover:bg-muted/30 transition-colors">
+                              {cells.map((c, cIdx) => (
+                                <td key={cIdx} className="px-4 py-3 text-foreground/90">
+                                  {renderInlineFormatting(c)}
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              }
+
               if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
                 const items = trimmed.split("\n");
                 return (
-                  <ul key={idx} className="list-disc pl-6 my-4 space-y-1">
+                  <ul key={idx} className="list-disc pl-6 my-4 space-y-1.5">
                     {items.map((it, i) => (
-                      <li key={i}>{it.replace(/^[-*]\s+/, "")}</li>
+                      <li key={i}>{renderInlineFormatting(it.replace(/^[-*]\s+/, ""))}</li>
                     ))}
                   </ul>
                 );
               }
+
+              if (/^\d+\.\s/.test(trimmed)) {
+                const items = trimmed.split("\n").filter(Boolean);
+                return (
+                  <ol key={idx} className="list-decimal pl-6 my-4 space-y-1.5">
+                    {items.map((it, i) => (
+                      <li key={i}>{renderInlineFormatting(it.replace(/^\d+\.\s+/, ""))}</li>
+                    ))}
+                  </ol>
+                );
+              }
+
               return (
-                <p key={idx} className="mb-6 whitespace-pre-line">
-                  {trimmed}
+                <p key={idx} className="mb-6 whitespace-pre-line leading-relaxed">
+                  {renderInlineFormatting(trimmed)}
                 </p>
               );
             })
@@ -213,9 +354,11 @@ export default async function BlogPostDetailPage({
               variant="secondary"
               size="sm"
               className="gap-2"
-              onClick={undefined}
+              asChild
             >
-              <Share2 className="h-4 w-4" /> Share Article
+              <Link href="/products">
+                Shop Curated Collection &rarr;
+              </Link>
             </Button>
           </div>
         </div>
