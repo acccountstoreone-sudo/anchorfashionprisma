@@ -27,8 +27,12 @@ export class CMSService {
   }
 
   // Navigation
-  async getNavigation(): Promise<CMSNavigation[]> {
-    return this.repository.getNavigation();
+  async getNavigation(location?: string): Promise<CMSNavigation | null> {
+    return this.repository.getNavigation(location);
+  }
+
+  async getAllNavigations(): Promise<CMSNavigation[]> {
+    return this.repository.getAllNavigations();
   }
 
   // Blog Posts

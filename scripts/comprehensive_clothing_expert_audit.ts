@@ -116,6 +116,7 @@ async function runAudit() {
         stockQuantity: 25,
         attributes: { Color: "Black", Size: "M" },
         isActive: true,
+        soldQuantity: 0,
       },
       {
         sku: `${testSku}-BLK-L`,
@@ -125,6 +126,7 @@ async function runAudit() {
         stockQuantity: 30,
         attributes: { Color: "Black", Size: "L" },
         isActive: true,
+        soldQuantity: 0,
       },
     ],
   });
@@ -157,6 +159,8 @@ async function runAudit() {
           sku: firstVariant.sku,
           stockQuantity: 35, // +10 adjustment
           attributes: firstVariant.attributes,
+          isActive: true,
+          soldQuantity: 0,
         },
       ],
     });

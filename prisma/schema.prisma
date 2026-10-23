@@ -467,10 +467,15 @@ model Order {
   notes           String?
   shippingAddress Json                 @map("shipping_address")
   billingAddress  Json?                @map("billing_address")
-  trackingNumber  String?              @map("tracking_number")
-  courier         String?
-  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  trackingNumber        String?              @map("tracking_number")
+  courier               String?
+  paidAt                DateTime?            @map("paid_at") @db.Timestamptz(6)
+  cancelledAt           DateTime?            @map("cancelled_at") @db.Timestamptz(6)
+  shippedAt             DateTime?            @map("shipped_at") @db.Timestamptz(6)
+  deliveredAt           DateTime?            @map("delivered_at") @db.Timestamptz(6)
+  reservationExpiresAt  DateTime?            @map("reservation_expires_at") @db.Timestamptz(6)
+  createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   items           OrderItem[]
   statusHistory   OrderStatusHistory[]
   customer        Customer?            @relation(fields: [customerId], references: [id])

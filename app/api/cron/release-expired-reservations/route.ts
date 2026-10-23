@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     const { data: expiredOrders, error: fetchError } = await supabase
       .from("orders")
       .select("id, order_number")
-      .eq("status", "pending_payment") // lowercase matches OMS enum
+      .in("status", ["pending_payment", "PENDING_PAYMENT", "pending", "PENDING"])
       .lt("reservation_expires_at", new Date().toISOString())
       .not("reservation_expires_at", "is", null);
 
@@ -61,9 +61,12 @@ export async function GET(req: Request) {
         // Cancel the order. Use service_role client so RLS doesn't block.
         const { error: cancelError } = await supabase
           .from("orders")
-          .update({ status: "cancelled" })
+          .update({ 
+            status: "cancelled",
+            cancelled_at: new Date().toISOString()
+          })
           .eq("id", order.id)
-          .eq("status", "pending_payment"); // guard: only cancel if still pending
+          .in("status", ["pending_payment", "PENDING_PAYMENT", "pending", "PENDING"]); // guard: only cancel if still pending
 
         if (cancelError) {
           // Non-fatal: inventory was released, but status update failed.

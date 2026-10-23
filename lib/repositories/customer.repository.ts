@@ -103,7 +103,7 @@ export class CustomerRepository {
   async getAddresses(userId: string): Promise<CustomerAddress[]> {
     const addresses = await prisma.customerAddress.findMany({
       where: { customerId: userId },
-      orderBy: { isDefaultShipping: "desc" },
+      orderBy: { isDefault: "desc" },
     });
     return addresses as unknown as CustomerAddress[];
   }
@@ -139,7 +139,7 @@ export class CustomerRepository {
     return notifications.map(n => ({
       ...n,
       customer_id: n.userId,
-      is_read: n.isRead,
+      is_read: !!n.readAt,
       created_at: n.createdAt.toISOString()
     })) as unknown as CustomerNotification[];
   }
@@ -147,7 +147,7 @@ export class CustomerRepository {
   async markNotificationAsRead(id: string, userId: string): Promise<void> {
     await prisma.notification.update({
       where: { id },
-      data: { isRead: true },
+      data: { readAt: new Date() },
     });
   }
 
@@ -230,5 +230,34 @@ export class CustomerRepository {
   async getBrowsingHistory(userId: string) {
     // Browsing history typically stored in Redis or similar, returning empty for Prisma fallback
     return [];
+  }
+
+  async getTicketDetails(ticketId: string, userId: string) {
+    return await prisma.supportTicket.findFirst({
+      where: { id: ticketId, customerId: userId },
+      include: { messages: { orderBy: { createdAt: "asc" } } },
+    });
+  }
+
+  async replyTicket(ticketId: string, userId: string, message: string) {
+    return await prisma.ticketMessage.create({
+      data: {
+        ticketId,
+        senderId: userId,
+        body: message,
+      },
+    });
+  }
+
+  async getLoginHistory(userId: string) {
+    return [];
+  }
+
+  async getActiveSessions(userId: string) {
+    return [];
+  }
+
+  async getWishlists(userId: string) {
+    return this.getWishlist(userId);
   }
 }

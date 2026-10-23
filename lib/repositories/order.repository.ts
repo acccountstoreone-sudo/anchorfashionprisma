@@ -20,6 +20,9 @@ function mapPrismaOrderToCheckoutOrder(record: any): Order {
     currency: "BDT",
     payment_method: record.paymentMethod || "COD",
     payment_status: record.paymentStatus || "UNPAID",
+    reservation_expires_at: record.reservationExpiresAt ? new Date(record.reservationExpiresAt).toISOString() : null,
+    paid_at: record.paidAt ? new Date(record.paidAt).toISOString() : null,
+    cancelled_at: record.cancelledAt ? new Date(record.cancelledAt).toISOString() : null,
     notes: record.notes,
     risk_level: "LOW",
     created_at: record.createdAt ? new Date(record.createdAt).toISOString() : new Date().toISOString(),
@@ -152,12 +155,17 @@ export class OrderRepository {
         orderNumber,
         profileId: validProfileId,
         status: (orderData.status || "confirmed").toUpperCase(),
-        paymentStatus: orderData.payment_method === "COD" ? "UNPAID" : "PAID",
+        paymentStatus: orderData.payment_status
+          ? orderData.payment_status.toUpperCase()
+          : "UNPAID",
         paymentMethod: orderData.payment_method || "COD",
         subtotal: orderData.subtotal ?? 0,
         discount: orderData.discount_amount ?? 0,
         shippingFee: orderData.shipping_fee ?? 0,
         totalAmount: orderData.total_amount ?? 0,
+        reservationExpiresAt: orderData.reservation_expires_at
+          ? new Date(orderData.reservation_expires_at)
+          : null,
         notes: customerNote || null,
         shippingAddress: shippingAddress as any,
         billingAddress: billingAddress ? (billingAddress as any) : undefined,

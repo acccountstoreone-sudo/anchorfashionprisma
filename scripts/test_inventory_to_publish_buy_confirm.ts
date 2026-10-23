@@ -140,12 +140,12 @@ async function runInventoryToPublishBuyConfirm() {
 
   const cart = await CartService.getOrCreateCart(null, guestSessionId);
   console.log(`  ✓ Customer Bag Created! Cart ID: ${cart.id}`);
-  console.log(`  ✓ Total Items in Bag: ${cart.items.length}`);
-  const cartItem = cart.items.find((i: any) => i.variant_id === testVariant.id || i.product_id === createdProduct.id);
-  
+  const cartItem = cart.items?.find((i: any) => i.variant_id === testVariant.id || i.product_id === createdProduct.id);
   if (cartItem) {
+    const unitPrice = cartItem.variant?.sale_price || cartItem.variant?.price || cartItem.product?.sale_price || cartItem.product?.price || 0;
+    const lineTotal = unitPrice * cartItem.quantity;
     console.log(`    - Added: ${cartItem.quantity}x "${cartItem.product?.title || createdProduct.name}"`);
-    console.log(`    - Unit Price: ৳${cartItem.unit_price} | Line Total: ৳${cartItem.total_price}`);
+    console.log(`    - Unit Price: ৳${unitPrice} | Line Total: ৳${lineTotal}`);
   } else {
     console.error("  ❌ Item not found in cart!");
     allPassed = false;

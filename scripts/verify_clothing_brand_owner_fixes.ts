@@ -40,10 +40,10 @@ async function runBrandOwnerVerification() {
 
     const guestCart = await CartService.getOrCreateCart(null, guestSessionId);
     console.log(`  ✓ Guest cart created successfully! Cart ID: ${guestCart.id}`);
-    console.log(`  ✓ Cart items count: ${guestCart.items.length}`);
-    const foundItem = guestCart.items.find((i: any) => i.product_id === activeProduct.id);
+    console.log(`  ✓ Cart items count: ${guestCart.items?.length || 0}`);
+    const foundItem = guestCart.items?.find((i: any) => i.product_id === activeProduct.id);
     if (foundItem) {
-      console.log(`  ✓ Found product in guest cart: ${foundItem.product?.name} (Qty: ${foundItem.quantity})`);
+      console.log(`  ✓ Found product in guest cart: ${(foundItem.product as any)?.title || (foundItem.product as any)?.name} (Qty: ${foundItem.quantity})`);
     } else {
       console.error("  ❌ Added item not found in guest cart!");
       passed = false;

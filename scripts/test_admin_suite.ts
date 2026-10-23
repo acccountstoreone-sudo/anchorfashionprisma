@@ -162,7 +162,7 @@ export async function runAdminComprehensiveSuite() {
   try {
     const catalogData = await CatalogRepository.getProducts({ limit: 5 });
     const hasProducts = Array.isArray(catalogData.data) && catalogData.data.length > 0;
-    record("Catalog Service", "CatalogRepository returns product listings", hasProducts, `Retrieved ${catalogData.data?.length} products (Total: ${catalogData.total})`);
+    record("Catalog Service", "CatalogRepository returns product listings", hasProducts, `Retrieved ${catalogData.data?.length} products (Total: ${catalogData.count})`);
   } catch (err: any) {
     record("Catalog Service", "CatalogRepository returns product listings", false, undefined, err.message);
   }
@@ -186,7 +186,7 @@ export async function runAdminComprehensiveSuite() {
         discountType: "PERCENTAGE",
         discountValue: 20,
         minOrderAmount: 500,
-        maxDiscountAmount: 200,
+        maxDiscount: 200,
         usageLimit: 10,
         usedCount: 0,
         startDate: new Date(),

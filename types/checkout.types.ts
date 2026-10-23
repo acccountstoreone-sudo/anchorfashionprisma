@@ -133,6 +133,9 @@ export interface Order {
   payment_status?: string | null;
   payment_intent_id?: string | null;
   paid_at?: string | null;
+  cancelled_at?: string | null;
+  shipped_at?: string | null;
+  delivered_at?: string | null;
   reservation_expires_at?: string | null;
   notes?: string | null;
 

@@ -30,6 +30,22 @@ function formatCol(col: string): string {
     trimmed = "code";
   } else if (trimmed.endsWith(".warehouse_code")) {
     trimmed = trimmed.replace(".warehouse_code", ".code");
+  } else if (trimmed === "payment_intent_id") {
+    trimmed = "payment_txn_id";
+  } else if (trimmed.endsWith(".payment_intent_id")) {
+    trimmed = trimmed.replace(".payment_intent_id", ".payment_txn_id");
+  } else if (trimmed === "user_id") {
+    trimmed = "profile_id";
+  } else if (trimmed.endsWith(".user_id")) {
+    trimmed = trimmed.replace(".user_id", ".profile_id");
+  } else if (trimmed === "grand_total") {
+    trimmed = "total_amount";
+  } else if (trimmed.endsWith(".grand_total")) {
+    trimmed = trimmed.replace(".grand_total", ".total_amount");
+  } else if (trimmed === "discount_amount") {
+    trimmed = "discount";
+  } else if (trimmed.endsWith(".discount_amount")) {
+    trimmed = trimmed.replace(".discount_amount", ".discount");
   }
 
   // Handle PostgreSQL JSON text accessor: metadata->>key
@@ -601,6 +617,36 @@ class QueryBuilder implements PromiseLike<any> {
           }
         }
 
+        if (this.tableName === "orders") {
+          for (const item of dataArray) {
+            if (item.payment_intent_id && !item.payment_txn_id) {
+              item.payment_txn_id = item.payment_intent_id;
+            }
+            if (item.user_id && !item.profile_id) {
+              item.profile_id = item.user_id;
+            }
+            if (item.grand_total !== undefined && item.total_amount === undefined) {
+              item.total_amount = item.grand_total;
+            }
+            if (item.discount_amount !== undefined && item.discount === undefined) {
+              item.discount = item.discount_amount;
+            }
+            delete item.payment_intent_id;
+            delete item.user_id;
+            delete item.grand_total;
+            delete item.discount_amount;
+            delete item.risk_level;
+            delete item.risk_score;
+            delete item.risk_reasons;
+            delete item.verification_status;
+            delete item.verification_verified_at;
+            delete item.session_id;
+            delete item.idempotency_key;
+            delete item.currency;
+            delete item.coupon_id;
+          }
+        }
+
         if (this.tableName === "stock_movements") {
           for (const item of dataArray) {
             if (item.quantity_change !== undefined && item.quantity === undefined) {
@@ -708,6 +754,34 @@ class QueryBuilder implements PromiseLike<any> {
           delete this.payload.quantity_damaged;
           delete this.payload.quantity_returned;
           delete this.payload.safety_stock;
+        }
+
+        if (this.tableName === "orders" && this.payload) {
+          if (this.payload.payment_intent_id && !this.payload.payment_txn_id) {
+            this.payload.payment_txn_id = this.payload.payment_intent_id;
+          }
+          if (this.payload.user_id && !this.payload.profile_id) {
+            this.payload.profile_id = this.payload.user_id;
+          }
+          if (this.payload.grand_total !== undefined && this.payload.total_amount === undefined) {
+            this.payload.total_amount = this.payload.grand_total;
+          }
+          if (this.payload.discount_amount !== undefined && this.payload.discount === undefined) {
+            this.payload.discount = this.payload.discount_amount;
+          }
+          delete this.payload.payment_intent_id;
+          delete this.payload.user_id;
+          delete this.payload.grand_total;
+          delete this.payload.discount_amount;
+          delete this.payload.risk_level;
+          delete this.payload.risk_score;
+          delete this.payload.risk_reasons;
+          delete this.payload.verification_status;
+          delete this.payload.verification_verified_at;
+          delete this.payload.session_id;
+          delete this.payload.idempotency_key;
+          delete this.payload.currency;
+          delete this.payload.coupon_id;
         }
 
         const keys = Object.keys(this.payload);
@@ -1178,6 +1252,7 @@ export function createClient() {
               return {
                 data: {
                   user: {
+                    ...u,
                     id: u.id,
                     email: u.email,
                     user_metadata: {
@@ -1189,7 +1264,6 @@ export function createClient() {
                     app_metadata: {
                       role: (u as any).role || "CUSTOMER",
                     },
-                    ...u,
                   },
                 },
                 error: null,
@@ -1223,6 +1297,7 @@ export function createClient() {
               return {
                 data: {
                   user: {
+                    ...u,
                     id: u.id,
                     email: u.email,
                     user_metadata: {
@@ -1234,7 +1309,6 @@ export function createClient() {
                     app_metadata: {
                       role: finalRole,
                     },
-                    ...u,
                   },
                 },
                 error: null,

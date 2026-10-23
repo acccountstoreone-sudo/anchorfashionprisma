@@ -35,8 +35,8 @@ export class AnalyticsRepository {
         .gte("date", previousFromStr)
         .lte("date", currentToStr);
 
-    const rollups = allRollups?.filter(r => r.date >= currentFromStr) || [];
-    const previousRollups = allRollups?.filter(r => r.date >= previousFromStr && r.date < currentFromStr) || [];
+    const rollups = allRollups?.filter((r: any) => r.date >= currentFromStr) || [];
+    const previousRollups = allRollups?.filter((r: any) => r.date >= previousFromStr && r.date < currentFromStr) || [];
 
     // Customers
     const { data: allCustomers } = await supabase
@@ -45,8 +45,8 @@ export class AnalyticsRepository {
       .gte("created_at", previousFrom.toISOString())
       .lte("created_at", currentTo.toISOString());
 
-    const customers = allCustomers?.filter(c => new Date(c.created_at) >= currentFrom) || [];
-    const previousCustomers = allCustomers?.filter(c => new Date(c.created_at) >= previousFrom && new Date(c.created_at) < currentFrom) || [];
+    const customers = allCustomers?.filter((c: any) => new Date(c.created_at) >= currentFrom) || [];
+    const previousCustomers = allCustomers?.filter((c: any) => new Date(c.created_at) >= previousFrom && new Date(c.created_at) < currentFrom) || [];
 
     // Products
     const { count: productsCount } = await supabase
@@ -86,7 +86,7 @@ export class AnalyticsRepository {
     let monthlyRevenue = 0;
     let yearlyRevenue = 0;
 
-    rollups?.forEach((r) => {
+    rollups?.forEach((r: any) => {
       totalRevenue += r.total_revenue || 0;
       totalOrders += r.total_orders || 0;
       totalProfit += r.total_profit || 0;
@@ -97,7 +97,7 @@ export class AnalyticsRepository {
       if (r.date >= yearAgoStr) yearlyRevenue += r.total_revenue || 0;
     });
 
-    previousRollups?.forEach((r) => {
+    previousRollups?.forEach((r: any) => {
       prevTotalRevenue += r.total_revenue || 0;
       prevTotalOrders += r.total_orders || 0;
     });
@@ -108,7 +108,7 @@ export class AnalyticsRepository {
         .from("orders")
         .select("grand_total, status, created_at");
       if (orders) {
-        orders.forEach((o) => {
+        orders.forEach((o: any) => {
           const s = (o.status || "").toLowerCase();
           if (s !== "cancelled" && s !== "returned") {
             const isCurrent = new Date(o.created_at) >= currentFrom;
@@ -141,11 +141,11 @@ export class AnalyticsRepository {
       .select("customer_id")
       .gte("created_at", currentFrom.toISOString());
       
-    const activeCustomers = new Set(recentOrders?.map(o => o.customer_id).filter(Boolean)).size || 0;
+    const activeCustomers = new Set(recentOrders?.map((o: any) => o.customer_id).filter(Boolean)).size || 0;
 
     const totalInventoryValue =
       (inventory?.reduce(
-        (sum, item) => sum + (item.quantity_available || 0),
+        (sum: number, item: any) => sum + (item.quantity_available || 0),
         0
       ) || 0) * 50; // Approximating $50 per item if we don't map to product
 
@@ -178,7 +178,7 @@ export class AnalyticsRepository {
       opcTrend: calcTrend(ordersPerCustomerVal, prevOrdersPerCustomer),
       inventoryValue: totalInventoryValue,
       revenueHistory:
-        rollups?.map((r) => ({ name: r.date, total: r.total_revenue })) || [],
+        rollups?.map((r: any) => ({ name: r.date, total: r.total_revenue })) || [],
     };
   }
 
@@ -220,16 +220,16 @@ export class AnalyticsRepository {
     const orders = rawOrders || [];
 
     // Filter valid non-cancelled orders for sales calculation
-    const validOrders = orders.filter((o) => {
+    const validOrders = orders.filter((o: any) => {
       const s = (o.status || "").toLowerCase();
       return s !== "cancelled" && s !== "returned";
     });
 
-    const validOrderIds = new Set(validOrders.map((o) => o.id));
+    const validOrderIds = new Set(validOrders.map((o: any) => o.id));
 
     // Daily sales trend
     const salesByDate: Record<string, { revenue: number; ordersCount: number }> = {};
-    validOrders.forEach((order) => {
+    validOrders.forEach((order: any) => {
       const date = new Date(order.created_at).toISOString().split("T")[0];
       if (!salesByDate[date]) {
         salesByDate[date] = { revenue: 0, ordersCount: 0 };
@@ -248,7 +248,7 @@ export class AnalyticsRepository {
 
     // Payment methods breakdown
     const paymentMethods: Record<string, number> = {};
-    validOrders.forEach((order) => {
+    validOrders.forEach((order: any) => {
       let pm = (order.payment_method || "Other").toUpperCase();
       if (pm === "COD") pm = "Cash on Delivery";
       else if (pm === "BKASH") pm = "bKash";
@@ -261,7 +261,7 @@ export class AnalyticsRepository {
 
     // Shipping methods breakdown
     const shippingMethods: Record<string, number> = {};
-    validOrders.forEach((order) => {
+    validOrders.forEach((order: any) => {
       const st = Number(order.shipping_total) || 0;
       let sm = "Standard Delivery";
       if (st === 0) sm = "Free Shipping";
@@ -287,13 +287,13 @@ export class AnalyticsRepository {
         .select("order_id, first_name, last_name, city, address_type"),
     ]);
 
-    const productMap = new Map((productsRes.data || []).map((p: any) => [p.id, p]));
+    const productMap = new Map<string, any>((productsRes.data || []).map((p: any) => [p.id, p]));
     const categoryTotals: Record<string, number> = {};
     const productSalesMap: Record<string, { name: string; quantity: number; revenue: number }> = {};
 
     (itemsRes.data || []).forEach((item: any) => {
       if (item.order_id && validOrderIds.has(item.order_id)) {
-        const prod = productMap.get(item.product_id);
+        const prod: any = productMap.get(item.product_id);
         const catName = prod?.categories?.name || "Apparel";
         const lineTotal = Number(item.line_total) || 0;
         const qty = Number(item.quantity) || 1;
@@ -336,7 +336,7 @@ export class AnalyticsRepository {
       }
     });
 
-    const recentOrders = validOrders.slice(-8).reverse().map((order) => {
+    const recentOrders = validOrders.slice(-8).reverse().map((order: any) => {
       const customerName =
         addressMap.get(order.id) || "Valued Customer";
 
@@ -355,7 +355,7 @@ export class AnalyticsRepository {
     const totalSales =
       Math.round(
         validOrders.reduce(
-          (sum, o) => sum + (Number(o.grand_total) || 0),
+          (sum: number, o: any) => sum + (Number(o.grand_total) || 0),
           0
         ) * 100
       ) / 100;
@@ -416,7 +416,7 @@ export class AnalyticsRepository {
     let totalRefunds = 0;
     let refundedOrdersCount = 0;
 
-    orders?.forEach((order) => {
+    orders?.forEach((order: any) => {
       const normalizedStatus = order.status?.toLowerCase() || "pending";
       if (statusCounts[normalizedStatus] !== undefined) {
         statusCounts[normalizedStatus]++;
@@ -468,7 +468,7 @@ export class AnalyticsRepository {
       .select("customer_id, grand_total");
 
     const customerGrowthByDate: Record<string, number> = {};
-    customers?.forEach((c) => {
+    customers?.forEach((c: any) => {
       const date = new Date(c.created_at).toISOString().split("T")[0];
       customerGrowthByDate[date] = (customerGrowthByDate[date] || 0) + 1;
     });
@@ -484,7 +484,7 @@ export class AnalyticsRepository {
     const customerSpend: Record<string, number> = {};
     const orderCount: Record<string, number> = {};
 
-    orders?.forEach((o) => {
+    orders?.forEach((o: any) => {
       if (o.customer_id) {
         customerSpend[o.customer_id] =
           (customerSpend[o.customer_id] || 0) + (Number(o.grand_total) || 0);
@@ -550,7 +550,7 @@ export class AnalyticsRepository {
     let lowStock = 0;
     let inStock = 0;
 
-    inventory.forEach((item) => {
+    inventory.forEach((item: any) => {
       if ((item.quantity_available || 0) <= 0) outOfStock++;
       else if ((item.quantity_available || 0) <= (item.reorder_point || 5)) lowStock++;
       else inStock++;
@@ -559,14 +559,14 @@ export class AnalyticsRepository {
     // Valid non-cancelled orders filter
     const validOrderIds = new Set(
       orders
-        .filter((o) => {
+        .filter((o: any) => {
           const s = (o.status || "").toLowerCase();
           return s !== "cancelled" && s !== "returned";
         })
-        .map((o) => o.id)
+        .map((o: any) => o.id)
     );
 
-    const productMap = new Map(products.map((prod) => [prod.id, prod.name]));
+    const productMap = new Map(products.map((prod: any) => [prod.id, prod.name]));
 
     // Aggregate Best Sellers & Sales by Product
     const productSales: Record<
@@ -574,7 +574,7 @@ export class AnalyticsRepository {
       { id: string; name: string; quantitySold: number; revenue: number }
     > = {};
 
-    orderItems.forEach((item) => {
+    orderItems.forEach((item: any) => {
       // If order_id exists, only include non-cancelled orders
       if (item.order_id && !validOrderIds.has(item.order_id)) return;
 
@@ -613,7 +613,7 @@ export class AnalyticsRepository {
     // Most active products (or newly added products as traffic proxy)
     const mostViewed = products
       .slice(0, 10)
-      .map((p) => ({
+      .map((p: any) => ({
         id: p.id,
         name: p.name,
         views: 0,
@@ -655,10 +655,10 @@ export class AnalyticsRepository {
       .select("accepts_marketing");
 
     const totalDiscountGiven =
-      coupons?.reduce((acc, c) => acc + (c.discount_applied || 0), 0) || 0;
+      coupons?.reduce((acc: number, c: any) => acc + (c.discount_applied || 0), 0) || 0;
 
     const newsletterSubscribers =
-      customers?.filter((c) => c.accepts_marketing).length || 0;
+      customers?.filter((c: any) => c.accepts_marketing).length || 0;
 
     const couponUsageStats: Record<string, number> = {};
     coupons?.forEach((c: any) => {

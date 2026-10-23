@@ -24,14 +24,13 @@ export class SupportRepository {
     const data = await prisma.supportTicket.create({
       data: {
         id: ticket.id,
-        ticketNumber: ticket.ticket_number || `TKT-${Date.now()}`,
-        customerId: ticket.customer_id,
+        ticketNumber: String(ticket.ticket_number || `TKT-${Date.now()}`),
+        customerId: (ticket as any).customer_id,
         subject: ticket.subject || "No subject",
         description: ticket.description || "",
         status: ticket.status || "OPEN",
         priority: ticket.priority || "MEDIUM",
         assignedAgentId: ticket.assigned_agent_id,
-        channel: ticket.channel || "WEB",
         category: ticket.category || "GENERAL",
       },
     });
@@ -48,7 +47,6 @@ export class SupportRepository {
         status: updates.status,
         priority: updates.priority,
         assignedAgentId: updates.assigned_agent_id,
-        resolvedAt: updates.resolved_at ? new Date(updates.resolved_at) : undefined,
       },
     });
     return mapPrismaTicket(data) as SupportTicket;
@@ -69,8 +67,8 @@ export class SupportRepository {
         ticketId: message.ticket_id!,
         senderId: message.sender_id!,
         senderType: message.sender_type || "CUSTOMER",
-        message: message.message || "",
-        isInternal: message.is_internal || false,
+        body: (message as any).body || (message as any).message || "",
+        isInternal: (message as any).is_internal ?? (message as any).isInternal ?? false,
       },
     });
     return mapPrismaMessage(data) as TicketMessage;

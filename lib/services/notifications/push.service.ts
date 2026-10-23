@@ -77,7 +77,7 @@ export class PushService {
       data: { url: payload.url || "/" }
     });
 
-    const sendPromises = subscriptions.map(async (sub) => {
+    const sendPromises = subscriptions.map(async (sub: any) => {
       const pushSubscription = {
         endpoint: sub.endpoint,
         keys: {

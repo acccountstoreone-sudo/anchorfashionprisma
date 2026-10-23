@@ -91,10 +91,11 @@ export class PosService {
     });
 
     if (authError) {
-      if (authError.message.includes("already registered")) {
+      const errMsg = (authError as any)?.message || String(authError);
+      if (errMsg.includes("already registered")) {
         throw new Error("User already registered in authentication system. Please search again.");
       }
-      throw new Error(`Failed to create customer: ${authError.message}`);
+      throw new Error(`Failed to create customer: ${errMsg}`);
     }
 
     const userId = authData.user.id;
