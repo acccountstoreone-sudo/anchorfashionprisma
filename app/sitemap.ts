@@ -1,25 +1,31 @@
 import { MetadataRoute } from "next";
 import { CatalogRepository } from "@/repositories/catalog.repository";
+import { getPosts } from "@/actions/blog.actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://anchorfashion.com";
+    process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")
+      ? process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")
+      : "https://www.anchorfashion.com.bd";
 
   let products: any[] = [];
   let categories: any[] = [];
+  let blogPosts: any[] = [];
 
   try {
-    const [productsResponse, fetchedCategories] = await Promise.race([
+    const [productsResponse, fetchedCategories, fetchedBlogs] = await Promise.race([
       Promise.all([
-        CatalogRepository.getProducts({ limit: 100 }).catch(() => ({ data: [] })),
+        CatalogRepository.getProducts({ limit: 200 }).catch(() => ({ data: [] })),
         CatalogRepository.getCategories().catch(() => []),
+        getPosts("published").catch(() => []),
       ]),
-      new Promise<[any, any]>((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
+      new Promise<[any, any, any]>((_, reject) => setTimeout(() => reject(new Error("timeout")), 3500)),
     ]);
     products = productsResponse?.data || [];
     categories = fetchedCategories || [];
+    blogPosts = fetchedBlogs || [];
   } catch {
     // Fallback gracefully during build step
   }
@@ -40,6 +46,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ),
     changeFrequency: "weekly" as const,
     priority: 0.9,
+  }));
+
+  const blogUrls = blogPosts.map((post: any) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: new Date(
+      post.updated_at || post.published_at || new Date()
+    ),
+    changeFrequency: "weekly" as const,
+    priority: 0.85,
   }));
 
   const staticUrls = [
@@ -74,6 +89,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     },
     {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: "daily" as const,
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/about`,
       lastModified: new Date(),
       changeFrequency: "monthly" as const,
@@ -105,5 +126,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  return [...staticUrls, ...categoryUrls, ...productUrls];
+  return [...staticUrls, ...categoryUrls, ...productUrls, ...blogUrls];
 }
