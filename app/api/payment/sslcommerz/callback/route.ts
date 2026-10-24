@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin-client";
 import { SSLCommerzService } from "@/lib/services/payment/sslcommerz.service";
 import { CartService } from "@/lib/services/cart.service";
 import { CouponService } from "@/services/coupon.service";
+import { InventoryService } from "@/services/inventory.service";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,7 @@ async function handleSSLCommerzCallback(req: NextRequest) {
   const action = actionParam || (status === "VALID" || status === "VALIDATED" ? "success" : status === "CANCELLED" ? "cancel" : "fail");
 
   const supabase = createAdminClient();
+  const inventoryService = new InventoryService();
 
   // 1. Locate Order and Payment Session
   let order: any = null;
@@ -148,8 +150,9 @@ async function handleSSLCommerzCallback(req: NextRequest) {
     console.warn(`[SSLCommerz Callback] Payment ${isCancel ? "cancelled" : "failed"} for order ${order.order_number}`);
 
     try {
-      // Release reserved inventory atomically via RPC
-      await supabase.rpc("release_order_inventory", { p_order_id: order.id });
+      // Release reserved inventory authoritatively in Neon DB & RPC
+      await inventoryService.releaseOrderInventory(order.id);
+      await supabase.rpc("release_order_inventory", { p_order_id: order.id }).catch(() => {});
       // Release coupon usage if applied
       await CouponService.releaseCoupon(order.id);
     } catch (releaseErr) {
@@ -219,7 +222,8 @@ async function handleSSLCommerzCallback(req: NextRequest) {
           valRes.error
         );
 
-        await supabase.rpc("release_order_inventory", { p_order_id: order.id });
+        await inventoryService.releaseOrderInventory(order.id);
+        await supabase.rpc("release_order_inventory", { p_order_id: order.id }).catch(() => {});
         await CouponService.releaseCoupon(order.id);
 
         await supabase
@@ -241,7 +245,8 @@ async function handleSSLCommerzCallback(req: NextRequest) {
           `[SSLCommerz Callback] Security Alert: Amount mismatch! Gateway: ${valRes.amount}, Order: ${orderAmount}`
         );
 
-        await supabase.rpc("release_order_inventory", { p_order_id: order.id });
+        await inventoryService.releaseOrderInventory(order.id);
+        await supabase.rpc("release_order_inventory", { p_order_id: order.id }).catch(() => {});
         await CouponService.releaseCoupon(order.id);
 
         await supabase

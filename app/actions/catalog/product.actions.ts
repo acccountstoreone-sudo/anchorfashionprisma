@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { CreateProductInput, CreateProductSchema } from "@/types/catalog.types";
 import { ProductRepository } from "@/lib/repositories/catalog/product.repository";
 import { invalidateProductCache } from "@/lib/cache/invalidate-catalog";
+import { verifyStaffOrManager } from "@/lib/security/roles";
 
 export async function createProductAction(input: CreateProductInput) {
   try {
+    await verifyStaffOrManager();
     const validated = CreateProductSchema.parse(input);
     const product = await ProductRepository.createProduct(validated);
 
@@ -28,6 +30,7 @@ export async function updateProductAction(
   input: Partial<CreateProductInput>
 ) {
   try {
+    await verifyStaffOrManager();
     const product = await ProductRepository.updateProduct(id, input);
 
     revalidatePath("/admin/products");
@@ -47,6 +50,7 @@ export async function updateProductAction(
 
 export async function deleteProductAction(id: string) {
   try {
+    await verifyStaffOrManager();
     await ProductRepository.deleteProduct(id);
 
     revalidatePath("/admin/products");
@@ -61,3 +65,4 @@ export async function deleteProductAction(id: string) {
     };
   }
 }
+

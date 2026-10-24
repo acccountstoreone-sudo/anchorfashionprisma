@@ -286,9 +286,10 @@ export const AdminSidebar = ({
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
         <div className="space-y-6 py-4">
           {navigation.map((category) => {
+            const normalizedRole = (role || "").toUpperCase().trim();
             const filteredItems = category.items.filter((item) => {
               if (!item.allowedRoles) return true;
-              return item.allowedRoles.includes(role);
+              return item.allowedRoles.some((r) => r.toUpperCase() === normalizedRole);
             });
 
             if (filteredItems.length === 0) return null;

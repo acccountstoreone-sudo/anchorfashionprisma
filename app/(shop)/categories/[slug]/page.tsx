@@ -47,15 +47,23 @@ export default async function CategoryPage({
   const { slug } = await params;
   const sParams = await searchParams;
   const sortBy = typeof sParams?.sort === "string" ? sParams.sort : "featured";
+  const brand = typeof sParams?.brand === "string" ? sParams.brand : undefined;
+  const minPrice = sParams?.minPrice ? Number(sParams.minPrice) : undefined;
+  const maxPrice = sParams?.maxPrice ? Number(sParams.maxPrice) : undefined;
+  const search = typeof sParams?.q === "string" ? sParams.q : undefined;
 
   const category = await getCategoryBySlug(slug);
   const displayName = category?.name || slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
-  // Fetch data in parallel
+  // Fetch data in parallel with comprehensive filter parameters
   const [products, categories, brands] = await Promise.all([
     getProducts({
       categoryId: category?.id,
       categorySlug: slug,
+      brand,
+      minPrice,
+      maxPrice,
+      search,
       sortBy: sortBy,
       limit: 24,
     }),
@@ -186,7 +194,11 @@ export default async function CategoryPage({
                 side="left"
                 className="w-[300px] overflow-y-auto pt-10 sm:w-[380px]"
               >
-                <ProductFilters categories={categories} brands={brands} />
+                <ProductFilters
+                  categories={categories}
+                  brands={brands}
+                  basePath={`/categories/${slug}`}
+                />
               </SheetContent>
             </Sheet>
 
@@ -245,7 +257,11 @@ export default async function CategoryPage({
                 </div>
               }
             >
-              <ProductFilters categories={categories} brands={brands} />
+              <ProductFilters
+                categories={categories}
+                brands={brands}
+                basePath={`/categories/${slug}`}
+              />
             </Suspense>
           </aside>
 

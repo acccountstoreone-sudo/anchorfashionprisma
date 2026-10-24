@@ -116,3 +116,32 @@ export async function verifyStaff() {
   return user;
 }
 
+export async function verifyStaffOrManager() {
+  const { user } = await getServerSession();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const role = await getRoleForUser(user);
+  const normalizedRole = role.replace(/[\s_-]+/g, "").toUpperCase();
+
+  const allowedRoles = [
+    "SUPERADMIN",
+    "SUPER_ADMIN",
+    "ADMIN",
+    "MANAGER",
+    "WAREHOUSE_MANAGER",
+    "MARKETING_MANAGER",
+    "FINANCE_MANAGER",
+    "STAFF",
+    "SUPPORT",
+  ];
+
+  if (!allowedRoles.includes(normalizedRole)) {
+    throw new Error("Forbidden: Management or staff access required");
+  }
+
+  return user;
+}
+

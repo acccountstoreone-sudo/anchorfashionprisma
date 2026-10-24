@@ -379,31 +379,52 @@ export class InventoryService {
       });
     }
 
-    // Step B: Apply Neon reservations atomically
-    for (const res of prismaReservations) {
-      await prisma.inventoryLevel.update({
-        where: { id: res.levelId },
-        data: {
-          quantityAvailable: res.newAvailable,
-          quantityReserved: res.newReserved,
-        },
-      });
+    // Step B: Apply Neon reservations atomically via PostgreSQL routine
+    try {
+      await prisma.$executeRaw`
+        SELECT reserve_order_inventory(
+          ${orderId}::uuid,
+          ${JSON.stringify(items)}::jsonb
+        );
+      `;
 
-      try {
-        await prisma.stockMovement.create({
-          data: {
-            variantId: res.variantId,
-            warehouseId: res.warehouseId,
-            movementType: "OUT",
-            quantity: -res.quantity,
-            previousQuantity: res.previousAvailable,
-            newQuantity: res.newAvailable,
-            referenceType: "ORDER",
-            referenceId: orderId,
-            notes: `Order reservation for order ${orderId}`,
-          },
-        });
-      } catch (_) {}
+      // Record stock movements for observability
+      for (const res of prismaReservations) {
+        try {
+          await prisma.stockMovement.create({
+            data: {
+              variantId: res.variantId,
+              warehouseId: res.warehouseId,
+              movementType: "OUT",
+              quantity: -res.quantity,
+              previousQuantity: res.previousAvailable,
+              newQuantity: Math.max(0, res.previousAvailable - res.quantity),
+              referenceType: "ORDER",
+              referenceId: orderId,
+              notes: `Order reservation for order ${orderId}`,
+            },
+          });
+        } catch (_) {}
+      }
+    } catch (procErr: any) {
+      // Fallback: atomic transactional update with row lock & condition
+      await prisma.$transaction(async (tx) => {
+        for (const res of prismaReservations) {
+          const updated = await tx.$executeRaw`
+            UPDATE inventory_levels
+            SET quantity_available = quantity_available - ${res.quantity},
+                quantity_reserved = quantity_reserved + ${res.quantity},
+                updated_at = NOW()
+            WHERE id = ${res.levelId}::uuid AND quantity_available >= ${res.quantity};
+          `;
+          if (updated === 0) {
+            throw new InventoryError(
+              "INSUFFICIENT_STOCK",
+              "Stock became unavailable during checkout reservation."
+            );
+          }
+        }
+      });
     }
 
     // Step C: Best-effort sync to legacy Supabase tables (non-fatal)

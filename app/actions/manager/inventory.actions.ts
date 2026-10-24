@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { InventoryRepository } from "@/repositories/inventory.repository";
+import { verifyStaffOrManager } from "@/lib/security/roles";
 
 const inventoryRepo = new InventoryRepository();
 
@@ -22,6 +23,7 @@ export async function adjustStockAction(
   reason: string
 ) {
   try {
+    await verifyStaffOrManager();
     await inventoryRepo.adjustStock(
       inventoryId,
       newAvailable,

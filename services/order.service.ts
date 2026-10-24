@@ -181,8 +181,14 @@ export class OrderService {
       couponId = validation.coupon?.id || null;
     }
 
-    const taxAmount = subtotal * 0.15;
-    const totalAmount = Math.max(0, subtotal + shippingFee + taxAmount - discountAmount);
+    const roundedSubtotal = Math.round(subtotal * 100) / 100;
+    const roundedShipping = Math.round(shippingFee * 100) / 100;
+    const roundedDiscount = Math.round(discountAmount * 100) / 100;
+    const roundedTax = Math.round(roundedSubtotal * 0.15 * 100) / 100;
+    const totalAmount = Math.max(
+      0,
+      Math.round((roundedSubtotal + roundedShipping + roundedTax - roundedDiscount) * 100) / 100
+    );
 
     const orderNumber = this.generateOrderNumber();
     const idempotencyKey = `order-${sessionId}`;
@@ -197,9 +203,9 @@ export class OrderService {
       order_number: orderNumber,
       status: "PENDING_PAYMENT",
       idempotency_key: idempotencyKey,
-      subtotal,
-      shipping_fee: shippingFee,
-      discount_amount: discountAmount,
+      subtotal: roundedSubtotal,
+      shipping_fee: roundedShipping,
+      discount_amount: roundedDiscount,
       total_amount: totalAmount,
       coupon_id: couponId,
       payment_method: session.payment_method,

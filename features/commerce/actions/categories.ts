@@ -53,6 +53,10 @@ export const getCategories = async (): Promise<Category[]> => {
 export const getProducts = async (params?: {
   categoryId?: string;
   categorySlug?: string;
+  brand?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  search?: string;
   sortBy?: string;
   limit?: number;
   offset?: number;
@@ -70,6 +74,10 @@ export const getProducts = async (params?: {
 
   const { data } = await CatalogRepository.getProducts({
     category: slug,
+    brand: params?.brand,
+    minPrice: params?.minPrice,
+    maxPrice: params?.maxPrice,
+    search: params?.search,
     sortBy,
     limit: params?.limit || 24,
     offset: params?.offset || 0,

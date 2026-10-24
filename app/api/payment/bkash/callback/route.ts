@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin-client";
 import { BKashService } from "@/lib/services/payment/bkash.service";
 import { CartService } from "@/lib/services/cart.service";
 import { CouponService } from "@/services/coupon.service";
+import { InventoryService } from "@/services/inventory.service";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,7 @@ async function handleCallback(req: NextRequest) {
   }
 
   const supabase = createAdminClient();
+  const inventoryService = new InventoryService();
 
   // 1. Locate the Order and Payment Session
   let order: any = null;
@@ -94,8 +96,9 @@ async function handleCallback(req: NextRequest) {
     console.warn(`[bKash Callback] Payment was ${status} by customer for order ${order.order_number}`);
 
     try {
-      // Release reserved inventory atomically via RPC
-      await supabase.rpc("release_order_inventory", { p_order_id: order.id });
+      // Release reserved inventory authoritatively in Neon DB & RPC
+      await inventoryService.releaseOrderInventory(order.id);
+      await supabase.rpc("release_order_inventory", { p_order_id: order.id }).catch(() => {});
       // Release coupon usage if applied
       await CouponService.releaseCoupon(order.id);
     } catch (releaseErr) {
@@ -154,7 +157,8 @@ async function handleCallback(req: NextRequest) {
         );
 
         // Release inventory on unconfirmed execution
-        await supabase.rpc("release_order_inventory", { p_order_id: order.id });
+        await inventoryService.releaseOrderInventory(order.id);
+        await supabase.rpc("release_order_inventory", { p_order_id: order.id }).catch(() => {});
         await CouponService.releaseCoupon(order.id);
 
         const failPayload: Record<string, any> = { status: "cancelled" };
@@ -179,7 +183,8 @@ async function handleCallback(req: NextRequest) {
           `[bKash Callback] Amount mismatch! Gateway: ${gatewayAmount}, Order: ${orderAmount}`
         );
 
-        await supabase.rpc("release_order_inventory", { p_order_id: order.id });
+        await inventoryService.releaseOrderInventory(order.id);
+        await supabase.rpc("release_order_inventory", { p_order_id: order.id }).catch(() => {});
         await CouponService.releaseCoupon(order.id);
 
         const mismatchPayload: Record<string, any> = { status: "cancelled" };

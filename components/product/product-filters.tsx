@@ -26,6 +26,7 @@ interface Brand {
 interface ProductFiltersProps {
   categories: Category[];
   brands: Brand[];
+  basePath?: string;
   onClose?: () => void;
   productCount?: number;
 }
@@ -40,6 +41,7 @@ const PRICE_PRESETS = [
 export function ProductFilters({
   categories,
   brands,
+  basePath,
   onClose,
   productCount,
 }: ProductFiltersProps) {
@@ -68,9 +70,10 @@ export function ProductFilters({
         }
       });
       p.delete("page"); // Reset to page 1 on filter change
-      startTransition(() => router.push(`/products?${p.toString()}`));
+      const targetPath = basePath || "/products";
+      startTransition(() => router.push(`${targetPath}?${p.toString()}`));
     },
-    [router, searchParams]
+    [router, searchParams, basePath]
   );
 
   const toggleCategory = (slug: string) => {

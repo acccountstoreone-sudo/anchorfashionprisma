@@ -102,14 +102,14 @@ export function HomeHero({ slides: propSlides }: { slides?: HeroSlide[] }) {
 
   const goTo = useCallback(
     (index: number) => {
-      if (animating) return;
+      if (animating || index === current) return;
+      setCurrent(index);
       setAnimating(true);
       setTimeout(() => {
-        setCurrent(index);
         setAnimating(false);
-      }, 700); // Slower, more elegant crossfade
+      }, 1000); // Matches transition-transform duration-1000
     },
-    [animating]
+    [animating, current]
   );
 
   const next = useCallback(
