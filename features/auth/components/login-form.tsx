@@ -52,37 +52,45 @@ export function LoginForm() {
     const email = values.email.trim().toLowerCase();
     const password = values.password.trim();
 
-    // Fast sign-in: avoids redundant remote signOut roundtrip before login
-    const { data, error } = await authClient.signIn.email({
-      email,
-      password,
-    });
-
-    if (error) {
-      toast.error(error.message || "Invalid login credentials.");
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      if (rememberMe) {
-        localStorage.setItem("anchor_saved_email", email);
-      } else {
-        localStorage.removeItem("anchor_saved_email");
+      // Fast sign-in: avoids redundant remote signOut roundtrip before login
+      const { data, error } = await authClient.signIn.email({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast.error(error.message || "Invalid email or password.");
+        setIsLoading(false);
+        setIsRedirecting(false);
+        return;
       }
-    } catch {}
 
-    toast.success("Successfully logged in!");
-    setIsRedirecting(true);
+      try {
+        if (rememberMe) {
+          localStorage.setItem("anchor_saved_email", email);
+        } else {
+          localStorage.removeItem("anchor_saved_email");
+        }
+      } catch {}
 
-    const params = new URLSearchParams(window.location.search);
-    const next = params.get("next");
+      toast.success("Successfully logged in!");
+      setIsRedirecting(true);
 
-    try {
-      const { redirectUrl } = await getPostLoginRedirectAction(next, data?.user);
-      window.location.replace(redirectUrl);
-    } catch {
-      window.location.replace(next || "/account/profile");
+      const params = new URLSearchParams(window.location.search);
+      const next = params.get("next");
+
+      try {
+        const { redirectUrl } = await getPostLoginRedirectAction(next, data?.user);
+        window.location.replace(redirectUrl);
+      } catch {
+        window.location.replace(next || "/account/profile");
+      }
+    } catch (err: any) {
+      console.error("[LoginForm] Error during sign-in:", err);
+      toast.error(err?.message || "Failed to sign in. Please verify your internet or credentials.");
+      setIsLoading(false);
+      setIsRedirecting(false);
     }
   }
 
