@@ -4,8 +4,6 @@ import * as React from "react";
 import { useState, useMemo, useRef, useEffect } from "react";
 import {
   Folder,
-  FolderOpen,
-  Tag,
   Search,
   Plus,
   Star,
@@ -75,7 +73,7 @@ export function CategoryHierarchySelector({
 }: CategoryHierarchySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  // Start with collapsed nodes so the UI remains compact and never renders an overwhelming long list!
+  // Start with collapsed nodes so the UI remains compact and never renders an overwhelming list
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(() => new Set());
   const [showAddNew, setShowAddNew] = useState(false);
 
@@ -303,9 +301,10 @@ export function CategoryHierarchySelector({
       <div key={node.category.id} className="relative select-none">
         <div
           className={cn(
-            "group flex items-center justify-between gap-1.5 py-1 px-2 rounded-md transition-colors text-xs cursor-pointer",
-            isChecked ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/60 text-foreground",
-            isPrimary && "ring-1 ring-primary/40 bg-primary/15"
+            "group flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg transition-all text-xs cursor-pointer",
+            isChecked
+              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-2xs"
+              : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
           )}
           style={{ paddingLeft: `${Math.max(6, node.level * 18 + 6)}px` }}
           onClick={() => handleToggleCategory(node.category.id)}
@@ -316,16 +315,19 @@ export function CategoryHierarchySelector({
               <button
                 type="button"
                 onClick={(e) => toggleExpand(node.category.id, e)}
-                className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
+                className={cn(
+                  "p-0.5 rounded-md hover:bg-black/10 dark:hover:bg-white/10 shrink-0 cursor-pointer transition-colors",
+                  isChecked ? "text-white dark:text-slate-900" : "text-slate-400"
+                )}
               >
                 {isExpanded ? (
-                  <ChevronDown className="h-3 w-3" />
+                  <ChevronDown className="h-3.5 w-3.5" />
                 ) : (
-                  <ChevronRight className="h-3 w-3" />
+                  <ChevronRight className="h-3.5 w-3.5" />
                 )}
               </button>
             ) : (
-              <span className="w-3 shrink-0" />
+              <span className="w-3.5 shrink-0" />
             )}
 
             {/* Checkbox */}
@@ -334,15 +336,18 @@ export function CategoryHierarchySelector({
               checked={isChecked}
               onCheckedChange={() => handleToggleCategory(node.category.id)}
               onClick={(e) => e.stopPropagation()}
-              className="h-3.5 w-3.5 shrink-0"
+              className={cn(
+                "h-3.5 w-3.5 shrink-0 rounded border-slate-300 dark:border-slate-600",
+                isChecked && "border-white bg-white text-slate-900 dark:border-slate-900 dark:bg-slate-900 dark:text-white"
+              )}
             />
 
             {/* Category Name */}
             <span
               className={cn(
-                "truncate text-xs leading-tight",
+                "truncate text-xs tracking-tight",
                 isRoot ? "font-semibold" : "font-normal",
-                isChecked && "text-primary font-semibold"
+                isChecked && "font-bold text-white dark:text-slate-900"
               )}
             >
               {node.category.name}
@@ -350,7 +355,14 @@ export function CategoryHierarchySelector({
 
             {/* Child count pill */}
             {hasChildren && (
-              <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.2 rounded-full font-mono shrink-0">
+              <span
+                className={cn(
+                  "text-[10px] px-1.5 py-0.2 rounded-full font-mono shrink-0",
+                  isChecked
+                    ? "bg-white/20 text-white dark:bg-black/15 dark:text-slate-900 font-semibold"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                )}
+              >
                 {node.children.length}
               </span>
             )}
@@ -361,9 +373,9 @@ export function CategoryHierarchySelector({
             {isChecked && isPrimary && (
               <Badge
                 variant="default"
-                className="h-4 px-1.5 text-[9px] bg-primary text-primary-foreground font-bold flex items-center gap-0.5"
+                className="h-4.5 px-2 text-[9px] font-bold flex items-center gap-1 rounded bg-amber-400 hover:bg-amber-400 text-slate-950 border-none shadow-2xs"
               >
-                <Star className="h-2 w-2 fill-current" />
+                <Star className="h-2.5 w-2.5 fill-slate-950 text-slate-950" />
                 Primary
               </Badge>
             )}
@@ -372,7 +384,10 @@ export function CategoryHierarchySelector({
               <button
                 type="button"
                 onClick={(e) => handleSetPrimary(node.category.id, e)}
-                className="text-[9px] text-muted-foreground hover:text-primary hover:underline px-1 py-0.5 rounded transition-colors"
+                className={cn(
+                  "text-[9px] hover:underline px-1 py-0.5 rounded transition-colors font-medium cursor-pointer",
+                  isChecked ? "text-slate-300 dark:text-slate-600 hover:text-white" : "text-slate-400 hover:text-slate-900"
+                )}
                 title="Make this the primary category"
               >
                 Make Primary
@@ -383,7 +398,7 @@ export function CategoryHierarchySelector({
 
         {/* Child branches if expanded */}
         {hasChildren && isExpanded && (
-          <div className="relative pl-1">
+          <div className="relative pl-2 border-l border-slate-200/60 dark:border-slate-800 ml-3 my-0.5 space-y-0.5">
             {node.children.map(renderTreeNode)}
           </div>
         )}
@@ -392,25 +407,25 @@ export function CategoryHierarchySelector({
   };
 
   return (
-    <div ref={containerRef} className={cn("space-y-2", className)}>
-      {/* ── CARD HEADER (Compact & Elegant) ── */}
+    <div ref={containerRef} className={cn("space-y-2.5", className)}>
+      {/* ── CARD HEADER (Compact & Luxury) ── */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <FolderTree className="h-4 w-4 text-primary" />
-          <Label className="text-xs font-semibold text-foreground">
-            Product Categories
+        <div className="flex items-center gap-2">
+          <FolderTree className="h-4 w-4 text-slate-900 dark:text-white" />
+          <Label className="text-xs font-bold text-slate-900 dark:text-white tracking-tight">
+            Store Categories
           </Label>
         </div>
         {selectedCategoryIds.length > 0 && (
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-mono">
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
             {selectedCategoryIds.length} Assigned
-          </Badge>
+          </span>
         )}
       </div>
 
-      {/* ── ASSIGNED CATEGORIES CHIPS (Shopify-Style Clean Removable Pills) ── */}
+      {/* ── ASSIGNED CATEGORIES CHIPS ── */}
       {selectedCategories.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-muted/30 border border-border/60">
+        <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
           {selectedCategories.map((cat) => {
             const isPrimary = primaryCategoryId === cat.id;
             return (
@@ -418,26 +433,26 @@ export function CategoryHierarchySelector({
                 key={cat.id}
                 variant={isPrimary ? "default" : "secondary"}
                 className={cn(
-                  "text-[11px] pl-2 pr-1 py-0.5 gap-1 transition-all flex items-center shadow-2xs",
+                  "text-xs pl-2.5 pr-1.5 py-1 gap-1.5 transition-all flex items-center rounded-lg shadow-2xs font-medium",
                   isPrimary
-                    ? "bg-primary text-primary-foreground font-bold border-primary"
-                    : "bg-background text-foreground border-border/60 hover:bg-muted"
+                    ? "bg-slate-900 hover:bg-slate-900 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-white font-semibold"
+                    : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100"
                 )}
               >
-                {isPrimary && <Star className="h-2.5 w-2.5 fill-current shrink-0" />}
+                {isPrimary && <Star className="h-3 w-3 fill-amber-400 text-amber-400 shrink-0" />}
                 <span className="truncate max-w-[130px]">{cat.name}</span>
                 {isPrimary && (
-                  <span className="text-[8px] uppercase font-bold opacity-80">
+                  <span className="text-[8px] uppercase font-bold tracking-wider px-1 py-0.2 rounded bg-white/20 dark:bg-black/10">
                     Primary
                   </span>
                 )}
                 <button
                   type="button"
                   onClick={() => handleToggleCategory(cat.id)}
-                  className="p-0.5 hover:bg-destructive/20 hover:text-destructive rounded-full transition-colors ml-0.5"
+                  className="p-0.5 hover:bg-red-500 hover:text-white rounded-md transition-colors ml-0.5 cursor-pointer"
                   aria-label={`Remove ${cat.name}`}
                 >
-                  <X className="h-2.5 w-2.5" />
+                  <X className="h-3 w-3" />
                 </button>
               </Badge>
             );
@@ -449,10 +464,10 @@ export function CategoryHierarchySelector({
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full flex items-center justify-between h-9 px-3 text-xs rounded-lg border border-input bg-background hover:bg-muted/40 transition-colors shadow-2xs cursor-pointer text-left"
+        className="w-full flex items-center justify-between h-10 px-3.5 text-xs rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-2xs cursor-pointer text-left"
       >
-        <span className="flex items-center gap-1.5 text-foreground truncate">
-          <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <span className="flex items-center gap-2 text-slate-900 dark:text-white truncate font-medium">
+          <Folder className="h-3.5 w-3.5 text-slate-400 shrink-0" />
           <span className="truncate">
             {selectedCategoryIds.length > 0
               ? `${selectedCategoryIds.length} categories assigned`
@@ -461,30 +476,30 @@ export function CategoryHierarchySelector({
         </span>
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 text-muted-foreground shrink-0 transition-transform duration-200",
-            isOpen && "rotate-180"
+            "h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform duration-200",
+            isOpen && "rotate-180 text-slate-900 dark:text-white"
           )}
         />
       </button>
 
-      {/* ── DROPDOWN POPOVER PANEL (Fixed Height, No Long Sprawling List!) ── */}
+      {/* ── DROPDOWN POPOVER PANEL (Fixed Height, Contained) ── */}
       {isOpen && (
-        <div className="border border-border rounded-xl bg-card shadow-lg p-2 space-y-2 animate-in fade-in-50 zoom-in-95 duration-150">
+        <div className="border border-slate-200/90 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-xl p-3 space-y-2.5 animate-in fade-in-50 zoom-in-95 duration-150">
           {/* Search Box */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-3 w-3 text-muted-foreground" />
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <Input
               placeholder="Search category (e.g. Shirts, Panjabi)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-7 pr-6 h-7 text-xs bg-muted/40 border-border/70"
+              className="pl-8.5 pr-7 h-8 text-xs bg-slate-50 dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-700 rounded-xl"
               autoFocus
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -492,10 +507,10 @@ export function CategoryHierarchySelector({
           </div>
 
           {/* Tree Scroll Box (Constrained max height of 220px) */}
-          <div className="max-h-56 overflow-y-auto pr-1 space-y-0.5 border-y border-border/40 py-1.5 scrollbar-thin">
+          <div className="max-h-56 overflow-y-auto pr-1 space-y-0.5 border-y border-slate-100 dark:border-slate-800/80 py-1.5 scrollbar-thin">
             {searchQuery.trim() ? (
               filteredFlatList.length === 0 ? (
-                <div className="text-center py-5 text-xs text-muted-foreground space-y-1">
+                <div className="text-center py-6 text-xs text-slate-400 space-y-1.5">
                   <p>No categories match &ldquo;{searchQuery}&rdquo;</p>
                   <button
                     type="button"
@@ -503,7 +518,7 @@ export function CategoryHierarchySelector({
                       setNewCatName(searchQuery);
                       setShowAddNew(true);
                     }}
-                    className="text-primary hover:underline font-medium text-[11px]"
+                    className="text-slate-900 dark:text-white hover:underline font-semibold text-[11px] cursor-pointer"
                   >
                     + Create &ldquo;{searchQuery}&rdquo; as new category
                   </button>
@@ -517,8 +532,10 @@ export function CategoryHierarchySelector({
                     <div
                       key={item.category.id}
                       className={cn(
-                        "flex items-center justify-between gap-1.5 py-1 px-2 rounded-md text-xs cursor-pointer transition-colors",
-                        isChecked ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/60"
+                        "flex items-center justify-between gap-2 py-1.5 px-2.5 rounded-lg text-xs cursor-pointer transition-colors",
+                        isChecked
+                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold"
+                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
                       )}
                       onClick={() => handleToggleCategory(item.category.id)}
                     >
@@ -528,11 +545,14 @@ export function CategoryHierarchySelector({
                           checked={isChecked}
                           onCheckedChange={() => handleToggleCategory(item.category.id)}
                           onClick={(e) => e.stopPropagation()}
-                          className="h-3.5 w-3.5 shrink-0"
+                          className="h-3.5 w-3.5 shrink-0 rounded"
                         />
                         <div className="min-w-0 flex-1">
                           <span className="block truncate text-xs">{item.category.name}</span>
-                          <span className="block truncate text-[9px] text-muted-foreground font-mono">
+                          <span className={cn(
+                            "block truncate text-[10px] font-mono",
+                            isChecked ? "text-slate-300 dark:text-slate-600" : "text-slate-400"
+                          )}>
                             {item.path}
                           </span>
                         </div>
@@ -540,7 +560,7 @@ export function CategoryHierarchySelector({
 
                       <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                         {isChecked && isPrimary && (
-                          <Badge variant="default" className="h-4 px-1 text-[9px] bg-primary">
+                          <Badge variant="default" className="h-4.5 px-1.5 text-[9px] bg-amber-400 text-slate-950 font-bold border-none">
                             Primary
                           </Badge>
                         )}
@@ -548,7 +568,10 @@ export function CategoryHierarchySelector({
                           <button
                             type="button"
                             onClick={(e) => handleSetPrimary(item.category.id, e)}
-                            className="text-[9px] text-muted-foreground hover:text-primary hover:underline px-1 py-0.5"
+                            className={cn(
+                              "text-[9px] hover:underline px-1 py-0.5 rounded cursor-pointer",
+                              isChecked ? "text-slate-300 hover:text-white" : "text-slate-400 hover:text-slate-900"
+                            )}
                           >
                             Make Primary
                           </button>
@@ -559,7 +582,7 @@ export function CategoryHierarchySelector({
                 })
               )
             ) : tree.length === 0 ? (
-              <div className="text-center py-4 text-xs text-muted-foreground">
+              <div className="text-center py-4 text-xs text-slate-400">
                 No categories found in store.
               </div>
             ) : (
@@ -574,7 +597,7 @@ export function CategoryHierarchySelector({
                 <button
                   type="button"
                   onClick={() => setShowAddNew(true)}
-                  className="text-[11px] text-primary hover:underline font-medium flex items-center gap-1"
+                  className="text-[11px] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="h-3 w-3" />
                   Add New Category
@@ -582,8 +605,7 @@ export function CategoryHierarchySelector({
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
-                  className="h-7 text-xs px-2.5 font-medium"
+                  className="h-7 text-xs px-3 font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900"
                   onClick={() => setIsOpen(false)}
                 >
                   <Check className="h-3 w-3 mr-1" />
@@ -593,14 +615,14 @@ export function CategoryHierarchySelector({
             ) : (
               <form
                 onSubmit={handleCreateNewCategory}
-                className="p-2 rounded-lg bg-muted/40 border border-border/80 space-y-2 text-xs animate-in fade-in-50"
+                className="p-3 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/90 dark:border-slate-700 space-y-2.5 text-xs animate-in fade-in-50"
               >
-                <div className="flex items-center justify-between font-semibold text-[11px]">
-                  <span>New Category</span>
+                <div className="flex items-center justify-between font-bold text-xs text-slate-900 dark:text-white">
+                  <span>Create Category Inline</span>
                   <button
                     type="button"
                     onClick={() => setShowAddNew(false)}
-                    className="text-muted-foreground hover:text-foreground"
+                    className="text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -610,12 +632,12 @@ export function CategoryHierarchySelector({
                   placeholder="Category Name (e.g. Denim Shirts)..."
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
-                  className="h-7 text-xs bg-background"
+                  className="h-8 text-xs bg-white dark:bg-slate-900 rounded-lg"
                   autoFocus
                 />
 
                 <Select value={newCatParentId} onValueChange={setNewCatParentId}>
-                  <SelectTrigger className="h-7 text-xs bg-background">
+                  <SelectTrigger className="h-8 text-xs bg-white dark:bg-slate-900 rounded-lg">
                     <SelectValue placeholder="Parent Category (Optional)" />
                   </SelectTrigger>
                   <SelectContent className="max-h-48 text-xs">
@@ -633,7 +655,7 @@ export function CategoryHierarchySelector({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-6 text-[10px] px-2"
+                    className="h-7 text-xs px-2.5"
                     onClick={() => setShowAddNew(false)}
                   >
                     Cancel
@@ -642,9 +664,9 @@ export function CategoryHierarchySelector({
                     type="submit"
                     size="sm"
                     disabled={isCreatingCategory || !newCatName.trim()}
-                    className="h-6 text-[10px] px-2.5 gap-1"
+                    className="h-7 text-xs px-3 gap-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-semibold"
                   >
-                    {isCreatingCategory && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
+                    {isCreatingCategory && <Loader2 className="h-3 w-3 animate-spin" />}
                     Add Category
                   </Button>
                 </div>

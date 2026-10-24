@@ -38,7 +38,7 @@ export default async function AdminLayout({
   const sanitizedUser = JSON.parse(JSON.stringify(user));
 
   return (
-    <div className="fixed inset-0 flex h-full w-full overflow-hidden bg-slate-50 dark:bg-background text-slate-900 dark:text-foreground">
+    <div className="fixed inset-0 flex h-full w-full overflow-hidden bg-slate-50 dark:bg-background text-slate-900 dark:text-foreground font-sans antialiased">
       <style>{`html, body { overflow: hidden !important; height: 100% !important; margin: 0 !important; padding: 0 !important; }`}</style>
       <ClientAdminSidebar role={role} className="hidden md:flex shrink-0 h-full border-r border-border" />
       <div className="flex min-w-0 min-h-0 flex-1 flex-col h-full overflow-hidden">

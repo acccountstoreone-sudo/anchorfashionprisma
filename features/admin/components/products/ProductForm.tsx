@@ -797,9 +797,9 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             <Button
               type="button"
               className={cn(
-                "cursor-pointer text-white font-semibold",
+                "cursor-pointer text-white font-semibold shadow-xs rounded-xl px-4",
                 !isEditMode && !hasLinkedInventory
-                  ? "bg-amber-600 hover:bg-amber-700"
+                  ? "bg-slate-900 hover:bg-slate-800"
                   : "bg-emerald-600 hover:bg-emerald-500"
               )}
               onClick={() => {
@@ -818,72 +818,25 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
           </div>
         </div>
 
-        {/* INVENTORY LINK REQUIREMENT BANNER (MANDATORY INVENTORY-FIRST POLICY) */}
-        {!isEditMode && !hasLinkedInventory ? (
-          <div className="rounded-2xl border-2 border-amber-500/50 bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent p-5 sm:p-6 shadow-sm space-y-4">
+        {/* VERIFIED LINKED INVENTORY ITEM CARD (Shows when an item is linked) */}
+        {hasLinkedInventory && (
+          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-card p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0">
-                  <AlertTriangle className="h-6 w-6" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="text-base sm:text-lg font-bold text-foreground">
-                      Step 1: Select Inventory Product (Mandatory)
-                    </h2>
-                    <Badge variant="destructive" className="text-[11px] font-semibold uppercase tracking-wider">
-                      Required Policy
-                    </Badge>
-                  </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
-                    In Anchor Fashion, products cannot be created directly without first selecting an existing Inventory item.
-                    First, select an inventory style below to link SKU, barcodes, pricing, and stock. Then add photos, titles, descriptions, and assign multiple categories before publishing.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                <Button
-                  type="button"
-                  size="default"
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold gap-2 shadow-sm w-full sm:w-auto cursor-pointer"
-                  onClick={() => setPickerOpen(true)}
-                >
-                  <Boxes className="h-4 w-4" />
-                  Select from Inventory
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="default"
-                  className="border-amber-500/40 text-amber-800 dark:text-amber-300 hover:bg-amber-500/10 gap-2 w-full sm:w-auto cursor-pointer"
-                  onClick={() => setIntakeModalOpen(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  + Add to Inventory First
-                </Button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* VERIFIED LINKED INVENTORY ITEM CARD */
-          <div className="rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent p-4 sm:p-5 shadow-xs space-y-3">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs font-semibold gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Linked Inventory Product
+                  <Badge className="bg-slate-900 hover:bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-semibold gap-1.5 px-3 py-1 rounded-full">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                    Linked Warehouse Inventory
                   </Badge>
-                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                     {activeInventoryItem?.sku || form.watch("sku") || initialData?.sku || "SKU"}
                   </span>
-                  <h3 className="font-bold text-base text-foreground">
+                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
                     {activeInventoryItem?.name || form.watch("name") || initialData?.name}
                   </h3>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Inventory stock, prices &amp; barcodes linked. Now upload photos, fine-tune titles, write descriptions, and assign multiple categories to publish live.
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Stock, pricing &amp; barcodes synchronized with physical warehouse. Now fine-tune imagery, copy, and store categories to publish.
                 </p>
               </div>
 
@@ -892,13 +845,13 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="text-xs font-medium cursor-pointer"
+                  className="text-xs font-medium cursor-pointer rounded-xl h-8 border-slate-200 dark:border-slate-700"
                   onClick={() => setPickerOpen(true)}
                 >
-                  Change Inventory Item
+                  Change Style
                 </Button>
                 <Link href="/admin/inventory" target="_blank">
-                  <Button type="button" variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1 cursor-pointer">
+                  <Button type="button" variant="ghost" size="sm" className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white gap-1 cursor-pointer h-8">
                     Inventory Center <ArrowUpRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
@@ -906,28 +859,28 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             </div>
 
             {/* Quick Metrics Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-emerald-500/20 text-xs">
-              <div className="bg-background/80 p-2 rounded-lg border">
-                <span className="text-muted-foreground block text-[11px]">Warehouse Stock</span>
-                <span className="font-bold text-primary text-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/70 dark:border-slate-800">
+                <span className="text-slate-400 block text-[11px] font-medium">Warehouse Stock</span>
+                <span className="font-bold text-slate-900 dark:text-white text-sm">
                   {activeInventoryItem?.totalAvailable ?? form.watch("stockQuantity") ?? 0} units
                 </span>
               </div>
-              <div className="bg-background/80 p-2 rounded-lg border">
-                <span className="text-muted-foreground block text-[11px]">Retail / Sell Price</span>
-                <span className="font-bold text-foreground text-sm">
+              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/70 dark:border-slate-800">
+                <span className="text-slate-400 block text-[11px] font-medium">Retail MRP</span>
+                <span className="font-bold text-slate-900 dark:text-white text-sm">
                   ৳{Number(activeInventoryItem?.basePrice || form.watch("basePrice") || 0).toLocaleString()}
                 </span>
               </div>
-              <div className="bg-background/80 p-2 rounded-lg border">
-                <span className="text-muted-foreground block text-[11px]">Cost / Buy Price</span>
-                <span className="font-bold text-foreground text-sm">
+              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/70 dark:border-slate-800">
+                <span className="text-slate-400 block text-[11px] font-medium">Unit Cost (COGS)</span>
+                <span className="font-bold text-slate-900 dark:text-white text-sm">
                   ৳{Number(activeInventoryItem?.costPrice || form.watch("costPrice") || 0).toLocaleString()}
                 </span>
               </div>
-              <div className="bg-background/80 p-2 rounded-lg border">
-                <span className="text-muted-foreground block text-[11px]">Barcode</span>
-                <span className="font-mono font-medium text-foreground text-xs truncate block">
+              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/70 dark:border-slate-800">
+                <span className="text-slate-400 block text-[11px] font-medium">Barcode / EAN-13</span>
+                <span className="font-mono font-medium text-slate-900 dark:text-white text-xs truncate block">
                   {activeInventoryItem?.barcode || form.watch("barcode") || initialData?.barcode || "—"}
                 </span>
               </div>
@@ -2535,16 +2488,16 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
         </div>
 
         {/* Bottom Actions Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border border-border/80 bg-card/90 shadow-sm backdrop-blur-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-card/95 shadow-sm backdrop-blur-xs">
           <div className="text-xs text-muted-foreground flex items-center gap-2">
             {!isEditMode && !hasLinkedInventory ? (
-              <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                Select an inventory product above to enable publishing.
+              <span className="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
+                <AlertCircle className="h-4 w-4 text-slate-500 shrink-0" />
+                Select an inventory product above to enable live publishing.
               </span>
             ) : (
-              <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span className="text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                 Ready to publish: <strong>{form.watch("name") || "Product"}</strong> ({form.watch("sku") || "SKU"})
               </span>
             )}
@@ -2556,7 +2509,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
               type="button"
               onClick={() => router.push(returnPath)}
               disabled={isLoading || isPublishing}
-              className="cursor-pointer"
+              className="cursor-pointer rounded-xl h-9"
             >
               Cancel
             </Button>
@@ -2572,7 +2525,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                 submitWithStatus("DRAFT");
               }}
               disabled={isLoading || isPublishing}
-              className="cursor-pointer"
+              className="cursor-pointer rounded-xl h-9"
             >
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Save Draft
@@ -2580,9 +2533,9 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             <Button
               type="button"
               className={cn(
-                "cursor-pointer text-white font-semibold shadow-xs",
+                "cursor-pointer text-white font-semibold shadow-xs rounded-xl h-9 px-5",
                 !isEditMode && !hasLinkedInventory
-                  ? "bg-amber-600 hover:bg-amber-700"
+                  ? "bg-slate-900 hover:bg-slate-800"
                   : "bg-emerald-600 hover:bg-emerald-500"
               )}
               onClick={() => {

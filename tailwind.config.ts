@@ -21,7 +21,9 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-jost)", "var(--font-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "'Inter'", "var(--font-sans)", "system-ui", "sans-serif"],
+        inter: ["var(--font-inter)", "'Inter'", "system-ui", "sans-serif"],
+        jost: ["var(--font-jost)", "'Jost'", "system-ui", "sans-serif"],
         heading: ["var(--font-playfair)", "var(--font-heading)", "Georgia", "serif"],
         mono: ["var(--font-mono)", "monospace"],
       },
