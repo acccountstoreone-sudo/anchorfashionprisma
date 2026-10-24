@@ -14,6 +14,7 @@ function toCategory(c: any): Category {
     image_url: c.imageUrl ?? null,
     imageUrl: c.imageUrl ?? null,
     parent_id: c.parentId ?? null,
+    parentId: c.parentId ?? null,
     icon_url: c.imageUrl ?? null,
     display_order: c.displayOrder ?? 0,
     is_active: c.isActive ?? true,

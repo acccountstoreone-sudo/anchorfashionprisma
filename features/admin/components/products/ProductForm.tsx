@@ -29,12 +29,17 @@ import {
   SlidersHorizontal,
   RefreshCw,
   Check,
+  AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { InventoryPickerModal } from "@/components/admin/inventory/InventoryPickerModal";
 import { InventoryMasterIntakeDialog } from "@/components/admin/inventory/InventoryMasterIntakeDialog";
 import { StorefrontLivePreview } from "@/features/admin/components/products/StorefrontLivePreview";
 import { InventoryPOSQuickShelf } from "@/features/admin/components/products/InventoryPOSQuickShelf";
+import { CategoryHierarchySelector } from "@/features/admin/components/catalog/CategoryHierarchySelector";
 import { PrintBarcodeModal, BarcodeLabelData } from "@/components/admin/inventory/PrintBarcodeModal";
 import { generateProductCodeAction } from "@/lib/actions/admin/inventory-master.actions";
 import { formatVariantSku, APPAREL_SIZE_SYSTEMS, detectApparelSystemForCategory } from "@/lib/utils/product-code";
@@ -85,6 +90,8 @@ interface CategoryOption {
   name: string;
   slug?: string;
   parentId?: string | null;
+  parent_id?: string | null;
+  parent?: { id: string; name: string } | null;
 }
 
 interface BrandOption {
@@ -629,6 +636,19 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
   };
 
   const submitWithStatus = async (statusOverride?: "DRAFT" | "ACTIVE" | "ARCHIVED") => {
+    // ENFORCE INVENTORY-FIRST POLICY
+    // A catalog product CANNOT be added without selecting an inventory product first!
+    const isEditMode = Boolean(initialData?.id);
+    const hasLinkedInventory = Boolean(linkedProductId || activeInventoryItem?.id);
+
+    if (!isEditMode && !hasLinkedInventory) {
+      toast.error(
+        "❌ Inventory product required! You cannot add a product without selecting an inventory product first. Please select an item from Inventory."
+      );
+      setPickerOpen(true);
+      return;
+    }
+
     // If slug is empty, auto-generate from name
     const currentName = form.getValues("name")?.trim();
     const currentSlug = form.getValues("slug")?.trim();
@@ -642,7 +662,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
 
     const currentCat = form.getValues("categoryId");
     if (!currentCat || currentCat === "") {
-      toast.error("Please select a category for the product.");
+      toast.error("Please select at least one primary category for the product.");
       return;
     }
 
@@ -659,6 +679,9 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
       status,
       brandId: rawValues.brandId && rawValues.brandId !== "" && rawValues.brandId !== "none" ? rawValues.brandId : null,
       categoryId: rawValues.categoryId,
+      categoryIds: Array.from(
+        new Set([rawValues.categoryId, ...(rawValues.categoryIds || [])].filter((c): c is string => Boolean(c) && typeof c === "string"))
+      ),
       barcode: rawValues.barcode && rawValues.barcode.trim() !== "" ? rawValues.barcode.trim() : null,
       sku: rawValues.sku && rawValues.sku.trim() !== "" ? rawValues.sku.trim() : null,
       warehouseId: selectedWarehouseId || (rawValues as any).warehouseId || null,
@@ -707,20 +730,8 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
           toast.error(res.error || "Failed to update product");
         }
       } else {
-        const res = await createAdminProductAction(data);
-        if (res.success) {
-          toast.success(
-            status === "ACTIVE"
-              ? "🎉 Product published live to storefront!"
-              : status === "DRAFT"
-              ? "Product created as draft"
-              : "Product created!"
-          );
-          router.push(returnPath);
-          router.refresh();
-        } else {
-          toast.error(res.error || "Failed to create product");
-        }
+        toast.error("Inventory item required! Please select an inventory product first.");
+        setPickerOpen(true);
       }
     } finally {
       setIsLoading(false);
@@ -731,6 +742,9 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
   const onSubmit = async (data: ProductFormValues) => {
     await submitWithStatus(data.status as "DRAFT" | "ACTIVE" | "ARCHIVED");
   };
+
+  const isEditMode = Boolean(initialData?.id);
+  const hasLinkedInventory = Boolean(linkedProductId || activeInventoryItem?.id);
 
   return (
     <Form {...form}>
@@ -766,7 +780,14 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             <Button
               type="button"
               variant="outline"
-              onClick={() => submitWithStatus("DRAFT")}
+              onClick={() => {
+                if (!isEditMode && !hasLinkedInventory) {
+                  toast.error("Inventory item required! Please select an inventory product before saving.");
+                  setPickerOpen(true);
+                  return;
+                }
+                submitWithStatus("DRAFT");
+              }}
               disabled={isLoading || isPublishing}
               className="cursor-pointer"
             >
@@ -775,8 +796,20 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             </Button>
             <Button
               type="button"
-              className="bg-emerald-600 text-white hover:bg-emerald-500 cursor-pointer"
-              onClick={() => submitWithStatus("ACTIVE")}
+              className={cn(
+                "cursor-pointer text-white font-semibold",
+                !isEditMode && !hasLinkedInventory
+                  ? "bg-amber-600 hover:bg-amber-700"
+                  : "bg-emerald-600 hover:bg-emerald-500"
+              )}
+              onClick={() => {
+                if (!isEditMode && !hasLinkedInventory) {
+                  toast.error("Inventory item required! You cannot add a product without selecting an inventory product first. Please select an item from Inventory.");
+                  setPickerOpen(true);
+                  return;
+                }
+                submitWithStatus("ACTIVE");
+              }}
               disabled={isLoading || isPublishing}
             >
               {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -784,6 +817,123 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             </Button>
           </div>
         </div>
+
+        {/* INVENTORY LINK REQUIREMENT BANNER (MANDATORY INVENTORY-FIRST POLICY) */}
+        {!isEditMode && !hasLinkedInventory ? (
+          <div className="rounded-2xl border-2 border-amber-500/50 bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent p-5 sm:p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 shrink-0">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-bold text-foreground">
+                      Step 1: Select Inventory Product (Mandatory)
+                    </h2>
+                    <Badge variant="destructive" className="text-[11px] font-semibold uppercase tracking-wider">
+                      Required Policy
+                    </Badge>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
+                    In Anchor Fashion, products cannot be created directly without first selecting an existing Inventory item.
+                    First, select an inventory style below to link SKU, barcodes, pricing, and stock. Then add photos, titles, descriptions, and assign multiple categories before publishing.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                <Button
+                  type="button"
+                  size="default"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-semibold gap-2 shadow-sm w-full sm:w-auto cursor-pointer"
+                  onClick={() => setPickerOpen(true)}
+                >
+                  <Boxes className="h-4 w-4" />
+                  Select from Inventory
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="default"
+                  className="border-amber-500/40 text-amber-800 dark:text-amber-300 hover:bg-amber-500/10 gap-2 w-full sm:w-auto cursor-pointer"
+                  onClick={() => setIntakeModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  + Add to Inventory First
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* VERIFIED LINKED INVENTORY ITEM CARD */
+          <div className="rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent p-4 sm:p-5 shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white text-xs font-semibold gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Linked Inventory Product
+                  </Badge>
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20">
+                    {activeInventoryItem?.sku || form.watch("sku") || initialData?.sku || "SKU"}
+                  </span>
+                  <h3 className="font-bold text-base text-foreground">
+                    {activeInventoryItem?.name || form.watch("name") || initialData?.name}
+                  </h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Inventory stock, prices &amp; barcodes linked. Now upload photos, fine-tune titles, write descriptions, and assign multiple categories to publish live.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-medium cursor-pointer"
+                  onClick={() => setPickerOpen(true)}
+                >
+                  Change Inventory Item
+                </Button>
+                <Link href="/admin/inventory" target="_blank">
+                  <Button type="button" variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1 cursor-pointer">
+                    Inventory Center <ArrowUpRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Quick Metrics Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-emerald-500/20 text-xs">
+              <div className="bg-background/80 p-2 rounded-lg border">
+                <span className="text-muted-foreground block text-[11px]">Warehouse Stock</span>
+                <span className="font-bold text-primary text-sm">
+                  {activeInventoryItem?.totalAvailable ?? form.watch("stockQuantity") ?? 0} units
+                </span>
+              </div>
+              <div className="bg-background/80 p-2 rounded-lg border">
+                <span className="text-muted-foreground block text-[11px]">Retail / Sell Price</span>
+                <span className="font-bold text-foreground text-sm">
+                  ৳{Number(activeInventoryItem?.basePrice || form.watch("basePrice") || 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="bg-background/80 p-2 rounded-lg border">
+                <span className="text-muted-foreground block text-[11px]">Cost / Buy Price</span>
+                <span className="font-bold text-foreground text-sm">
+                  ৳{Number(activeInventoryItem?.costPrice || form.watch("costPrice") || 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="bg-background/80 p-2 rounded-lg border">
+                <span className="text-muted-foreground block text-[11px]">Barcode</span>
+                <span className="font-mono font-medium text-foreground text-xs truncate block">
+                  {activeInventoryItem?.barcode || form.watch("barcode") || initialData?.barcode || "—"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Clothing POS Inventory Master Rack */}
         <InventoryPOSQuickShelf
@@ -2285,151 +2435,39 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field }) => {
-                    const selectedCategory = categories.find((cat) => cat.id === field.value);
-                    return (
-                      <FormItem>
-                        <FormLabel>Category *</FormLabel>
-                        <Select
-                          onValueChange={(val) => {
-                            field.onChange(val);
-                            const currentSku = form.getValues("sku");
-                            const currentName = form.getValues("name");
-                            if (!currentSku && currentName?.trim()) {
-                              setTimeout(() => handleGenerateCode(), 100);
-                            }
-                          }}
-                          items={categories.map((c) => ({ value: c.id, label: c.name }))}
-                          value={field.value || ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="bg-background/90 text-sm">
-                              <SelectValue placeholder="Select a category">
-                                {selectedCategory?.name}
-                              </SelectValue>
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {categories.map((cat) => (
-                              <SelectItem key={cat.id} value={cat.id}>
-                                {cat.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
-                />
+                {/* WordPress-Style Hierarchical Multi-Category Selector */}
+                <div className="pt-2">
+                  <CategoryHierarchySelector
+                    categories={categories}
+                    selectedCategoryIds={
+                      form.watch("categoryIds") && form.watch("categoryIds")!.length > 0
+                        ? form.watch("categoryIds")!
+                        : form.watch("categoryId")
+                        ? [form.watch("categoryId")!]
+                        : []
+                    }
+                    primaryCategoryId={form.watch("categoryId")}
+                    onSelectionChange={(selectedIds, primaryId) => {
+                      form.setValue("categoryIds", selectedIds, { shouldValidate: true });
+                      form.setValue("categoryId", primaryId || "", { shouldValidate: true });
 
-                <FormField
-                  control={form.control}
-                  name="categoryIds"
-                  render={({ field }) => {
-                    const selectedIds: string[] = field.value || [];
-                    const primaryId = form.watch("categoryId");
-
-                    const toggleCategory = (catId: string) => {
-                      if (catId === primaryId) return; // Primary is always included
-                      const next = selectedIds.includes(catId)
-                        ? selectedIds.filter((id) => id !== catId)
-                        : [...selectedIds, catId];
-                      field.onChange(next);
-                    };
-
-                    const secondarySelected = selectedIds.filter((id) => id !== primaryId);
-
-                    return (
-                      <FormItem className="space-y-2 pt-1">
-                        <div className="flex items-center justify-between">
-                          <FormLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                            <Tag className="w-3.5 h-3.5 text-primary" />
-                            Additional Categories (Multiple)
-                          </FormLabel>
-                          <span className="text-[11px] text-muted-foreground">
-                            {secondarySelected.length} secondary selected
-                          </span>
-                        </div>
-                        <FormDescription className="text-xs">
-                          Tag this product into multiple collections (e.g. Men, Eid Collection, Festive Wear) so it appears across all matching categories.
-                        </FormDescription>
-
-                        {/* Selected Categories Badges */}
-                        <div className="flex flex-wrap gap-1.5 min-h-[38px] p-2 rounded-lg border border-border/60 bg-muted/20 items-center">
-                          {primaryId && (
-                            <Badge variant="default" className="gap-1 bg-primary text-primary-foreground text-xs shadow-xs font-medium">
-                              <span className="text-[10px] uppercase font-bold opacity-75">Primary:</span>
-                              {categories.find((c) => c.id === primaryId)?.name || "Primary Category"}
-                            </Badge>
-                          )}
-                          {secondarySelected.map((catId) => {
-                            const cat = categories.find((c) => c.id === catId);
-                            if (!cat) return null;
-                            return (
-                              <Badge
-                                key={cat.id}
-                                variant="secondary"
-                                className="gap-1 text-xs bg-secondary/80 hover:bg-secondary border border-border/40 pl-2 pr-1 py-0.5 transition-all"
-                              >
-                                <span>{cat.name}</span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    toggleCategory(cat.id);
-                                  }}
-                                  className="p-0.5 hover:bg-destructive/10 hover:text-destructive rounded-full transition-colors"
-                                  aria-label={`Remove ${cat.name}`}
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </Badge>
-                            );
-                          })}
-                          {!primaryId && secondarySelected.length === 0 && (
-                            <span className="text-xs text-muted-foreground/60 italic py-0.5">
-                              Select primary category above, then click additional categories below.
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Quick Add Available Categories */}
-                        <div className="space-y-1 pt-1">
-                          <span className="text-[11px] font-medium text-muted-foreground">Click to add/remove:</span>
-                          <div className="flex flex-wrap gap-1 max-h-36 overflow-y-auto p-1.5 rounded-md border border-border/40 bg-background/50">
-                            {categories
-                              .filter((c) => c.id !== primaryId)
-                              .map((c) => {
-                                const isSelected = selectedIds.includes(c.id);
-                                return (
-                                  <button
-                                    type="button"
-                                    key={c.id}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      toggleCategory(c.id);
-                                    }}
-                                    className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md border transition-all ${
-                                      isSelected
-                                        ? "bg-primary text-primary-foreground border-primary font-medium shadow-xs"
-                                        : "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/70 hover:text-foreground"
-                                    }`}
-                                  >
-                                    <span>{isSelected ? "✓" : "+"}</span>
-                                    <span>{c.name}</span>
-                                  </button>
-                                );
-                              })}
-                          </div>
-                        </div>
-                      </FormItem>
-                    );
-                  }}
-                />
+                      // Auto generate SKU if needed when primary category changes
+                      const currentSku = form.getValues("sku");
+                      const currentName = form.getValues("name");
+                      if (!currentSku && currentName?.trim()) {
+                        setTimeout(() => handleGenerateCode(), 100);
+                      }
+                    }}
+                    onCategoryCreated={(newCat) => {
+                      setCategories((prev) => [...prev, newCat]);
+                    }}
+                  />
+                  {form.formState.errors.categoryId && (
+                    <p className="text-destructive text-xs font-medium mt-1.5">
+                      {form.formState.errors.categoryId.message || "Please select at least one primary category."}
+                    </p>
+                  )}
+                </div>
 
                 <FormField
                   control={form.control}
@@ -2495,6 +2533,73 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             </div>
           </div>
         </div>
+
+        {/* Bottom Actions Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border border-border/80 bg-card/90 shadow-sm backdrop-blur-xs">
+          <div className="text-xs text-muted-foreground flex items-center gap-2">
+            {!isEditMode && !hasLinkedInventory ? (
+              <span className="text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1.5">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                Select an inventory product above to enable publishing.
+              </span>
+            ) : (
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                Ready to publish: <strong>{form.watch("name") || "Product"}</strong> ({form.watch("sku") || "SKU"})
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => router.push(returnPath)}
+              disabled={isLoading || isPublishing}
+              className="cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (!isEditMode && !hasLinkedInventory) {
+                  toast.error("Inventory item required! Please select an inventory product before saving.");
+                  setPickerOpen(true);
+                  return;
+                }
+                submitWithStatus("DRAFT");
+              }}
+              disabled={isLoading || isPublishing}
+              className="cursor-pointer"
+            >
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save Draft
+            </Button>
+            <Button
+              type="button"
+              className={cn(
+                "cursor-pointer text-white font-semibold shadow-xs",
+                !isEditMode && !hasLinkedInventory
+                  ? "bg-amber-600 hover:bg-amber-700"
+                  : "bg-emerald-600 hover:bg-emerald-500"
+              )}
+              onClick={() => {
+                if (!isEditMode && !hasLinkedInventory) {
+                  toast.error("Inventory item required! You cannot add a product without selecting an inventory product first. Please select an item from Inventory.");
+                  setPickerOpen(true);
+                  return;
+                }
+                submitWithStatus("ACTIVE");
+              }}
+              disabled={isLoading || isPublishing}
+            >
+              {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isPublishing ? "Publishing..." : "Publish Product"}
+            </Button>
+          </div>
+        </div>
       </form>
 
       {/* Select from Inventory Master Modal */}
@@ -2503,6 +2608,10 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
         onOpenChange={setPickerOpen}
         onSelectProduct={handleSelectInventoryProduct}
         categories={categories}
+        onOpenIntake={(catId) => {
+          if (catId) setIntakeDefaultCategory(catId);
+          setIntakeModalOpen(true);
+        }}
       />
 
       {/* Intake directly into Inventory Modal */}

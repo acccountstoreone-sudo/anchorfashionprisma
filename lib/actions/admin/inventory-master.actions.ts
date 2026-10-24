@@ -305,6 +305,7 @@ export async function getInventoryMasterListAction(params?: {
         { name: { contains: search, mode: "insensitive" } },
         { sku: { contains: search, mode: "insensitive" } },
         { barcode: { contains: search, mode: "insensitive" } },
+        { category: { name: { contains: search, mode: "insensitive" } } },
         {
           variants: {
             some: {
@@ -323,17 +324,57 @@ export async function getInventoryMasterListAction(params?: {
     }
 
     if (categoryId && categoryId !== "ALL") {
-      where.categoryId = categoryId;
+      // Find all subcategories under categoryId recursively
+      const allCategories = await prisma.category.findMany({
+        where: { isActive: true },
+        select: { id: true, parentId: true },
+      });
+      const matchingCategoryIds = new Set<string>([categoryId]);
+      let added = true;
+      while (added) {
+        added = false;
+        for (const cat of allCategories) {
+          if (cat.parentId && matchingCategoryIds.has(cat.parentId) && !matchingCategoryIds.has(cat.id)) {
+            matchingCategoryIds.add(cat.id);
+            added = true;
+          }
+        }
+      }
+      const categoryIdList = Array.from(matchingCategoryIds);
+
+      where.AND = [
+        ...(where.AND || []),
+        {
+          OR: [
+            { categoryId: { in: categoryIdList } },
+            { productCategories: { some: { categoryId: { in: categoryIdList } } } },
+          ],
+        },
+      ];
     }
 
-    const [products, total] = await Promise.all([
+    const [products, total, categoryGroupCounts] = await Promise.all([
       prisma.product.findMany({
         where,
         take: limit,
         skip,
         orderBy: { createdAt: "desc" },
         include: {
-          category: { select: { id: true, name: true, slug: true } },
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              parentId: true,
+              parent: { select: { id: true, name: true } },
+            },
+          },
+          productCategories: {
+            select: {
+              categoryId: true,
+              category: { select: { id: true, name: true } },
+            },
+          },
           media: {
             select: {
               id: true,
@@ -368,7 +409,19 @@ export async function getInventoryMasterListAction(params?: {
         },
       }),
       prisma.product.count({ where }),
+      prisma.product.groupBy({
+        by: ["categoryId"],
+        _count: { id: true },
+        where: { deletedAt: null },
+      }),
     ]);
+
+    const categoryCounts: Record<string, number> = {};
+    for (const group of categoryGroupCounts) {
+      if (group.categoryId) {
+        categoryCounts[group.categoryId] = group._count.id;
+      }
+    }
 
     const items = products.map((p) => {
       let totalAvailable = 0;
@@ -405,6 +458,10 @@ export async function getInventoryMasterListAction(params?: {
       const totalCostValue = totalAvailable * costPrice;
       const totalRetailValue = totalAvailable * sellingPrice;
 
+      const categoryPath = p.category?.parent
+        ? `${p.category.parent.name} › ${p.category.name}`
+        : p.category?.name || "Uncategorized";
+
       return {
         id: p.id,
         name: p.name,
@@ -414,6 +471,18 @@ export async function getInventoryMasterListAction(params?: {
         status: p.status, // "DRAFT" = Inventory Intake only, "ACTIVE" = Published to Store
         category: p.category?.name || "Uncategorized",
         categoryId: p.categoryId,
+        categoryPath,
+        parentCategory: p.category?.parent ? p.category.parent.name : null,
+        categoryIds: (p as any).productCategories?.length
+          ? (p as any).productCategories.map((pc: any) => pc.categoryId).filter(Boolean)
+          : p.categoryId
+          ? [p.categoryId]
+          : [],
+        categories: (p as any).productCategories?.length
+          ? (p as any).productCategories.map((pc: any) => pc.category?.name).filter(Boolean)
+          : p.category?.name
+          ? [p.category.name]
+          : [],
         basePrice: sellingPrice,
         costPrice,
         unitProfit,
@@ -456,6 +525,7 @@ export async function getInventoryMasterListAction(params?: {
         total,
         page,
         limit,
+        categoryCounts,
       },
     };
   } catch (error: any) {

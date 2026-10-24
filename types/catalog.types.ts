@@ -245,6 +245,7 @@ export type Category = {
   image_url?: string | null;
   imageUrl?: string | null;
   parent_id: string | null;
+  parentId?: string | null;
   icon_url?: string | null;
   is_active: boolean;
   display_order?: number;
