@@ -20,7 +20,7 @@ export default async function ManagerLayout({ children }: { children: ReactNode 
     redirect("/auth/login?next=/manager");
   }
 
-  const role = (await resolveUserRole(user)).toUpperCase().trim();
+  const role = (user.role || (await resolveUserRole(user))).toUpperCase().trim();
   const isManagerOrStaff = STAFF_ROLES.includes(role);
 
   if (!isManagerOrStaff) {

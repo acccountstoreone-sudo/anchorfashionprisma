@@ -25,7 +25,7 @@ export default async function AdminLayout({
     redirect("/auth/login?next=/admin");
   }
 
-  const role = (await resolveUserRole(user)).toUpperCase().trim();
+  const role = (user.role || (await resolveUserRole(user))).toUpperCase().trim();
 
   const isAdmin = ADMIN_ROLES.includes(role);
   const isManager = MANAGER_ROLES.includes(role);

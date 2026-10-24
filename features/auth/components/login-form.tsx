@@ -25,6 +25,7 @@ import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema";
 export function LoginForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
   const form = useForm<LoginFormValues>({
@@ -51,10 +52,7 @@ export function LoginForm() {
     const email = values.email.trim().toLowerCase();
     const password = values.password.trim();
 
-    try {
-      await authClient.signOut();
-    } catch (_) {}
-
+    // Fast sign-in: avoids redundant remote signOut roundtrip before login
     const { data, error } = await authClient.signIn.email({
       email,
       password,
@@ -75,15 +73,16 @@ export function LoginForm() {
     } catch {}
 
     toast.success("Successfully logged in!");
+    setIsRedirecting(true);
 
     const params = new URLSearchParams(window.location.search);
     const next = params.get("next");
 
     try {
       const { redirectUrl } = await getPostLoginRedirectAction(next, data?.user);
-      window.location.href = redirectUrl;
+      window.location.replace(redirectUrl);
     } catch {
-      window.location.href = next || "/account/profile";
+      window.location.replace(next || "/account/profile");
     }
   }
 
@@ -199,10 +198,14 @@ export function LoginForm() {
           {/* Submit */}
           <LoadingButton
             type="submit"
-            isLoading={isLoading}
+            isLoading={isLoading || isRedirecting}
             className="w-full h-12 bg-[#C9A86A] hover:bg-[#b09156] active:bg-[#9d7e47] text-white shadow-md shadow-[#C9A86A]/20 transition-all rounded-lg font-semibold mt-2 tracking-wide"
           >
-            {isLoading ? "Signing in…" : "Sign In"}
+            {isRedirecting
+              ? "Redirecting to Dashboard…"
+              : isLoading
+              ? "Signing in…"
+              : "Sign In"}
           </LoadingButton>
         </form>
       </Form>
