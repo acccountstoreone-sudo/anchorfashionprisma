@@ -30,18 +30,15 @@ export class AnalyticsRepository {
     const currentToStr = currentTo.toISOString().split("T")[0];
     const previousFromStr = previousFrom.toISOString().split("T")[0];
 
-    // Revenue and Orders from BI Rollup if available, otherwise from orders table
-    const { data: allRollups } = await supabase.from("bi_daily_revenue_rollup").select("*")
-        .gte("date", previousFromStr)
-        .lte("date", currentToStr);
+    // Revenue and Orders: Calculated directly from orders table
+    const { data: orders } = await supabase
+      .from("orders")
+      .select("grand_total, status, created_at");
 
-    const rollups = allRollups?.filter((r: any) => r.date >= currentFromStr) || [];
-    const previousRollups = allRollups?.filter((r: any) => r.date >= previousFromStr && r.date < currentFromStr) || [];
-
-    // Customers
+    // Customers from customers table
     const { data: allCustomers } = await supabase
-      .from("customer_profiles")
-      .select("id, created_at, is_active")
+      .from("customers")
+      .select("id, created_at, status")
       .gte("created_at", previousFrom.toISOString())
       .lte("created_at", currentTo.toISOString());
 
@@ -65,65 +62,48 @@ export class AnalyticsRepository {
     let prevTotalRevenue = 0;
     let prevTotalOrders = 0;
 
-    // Calculate today, week, month, year based on rollups
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
 
     const weekAgo = new Date();
     weekAgo.setDate(now.getDate() - 7);
-    const weekAgoStr = weekAgo.toISOString().split("T")[0];
 
     const monthAgo = new Date();
     monthAgo.setMonth(now.getMonth() - 1);
-    const monthAgoStr = monthAgo.toISOString().split("T")[0];
 
     const yearAgo = new Date();
     yearAgo.setFullYear(now.getFullYear() - 1);
-    const yearAgoStr = yearAgo.toISOString().split("T")[0];
 
     let todaysRevenue = 0;
     let weeklyRevenue = 0;
     let monthlyRevenue = 0;
     let yearlyRevenue = 0;
 
-    rollups?.forEach((r: any) => {
-      totalRevenue += r.total_revenue || 0;
-      totalOrders += r.total_orders || 0;
-      totalProfit += r.total_profit || 0;
+    if (orders && orders.length > 0) {
+      orders.forEach((o: any) => {
+        const s = (o.status || "").toLowerCase();
+        if (s !== "cancelled" && s !== "returned") {
+          const createdAt = new Date(o.created_at);
+          const createdAtStr = createdAt.toISOString().split("T")[0];
+          const isCurrent = createdAt >= currentFrom && createdAt <= currentTo;
+          const isPrevious = createdAt >= previousFrom && createdAt < currentFrom;
+          const amount = Number(o.grand_total) || 0;
 
-      if (r.date === todayStr) todaysRevenue += r.total_revenue || 0;
-      if (r.date >= weekAgoStr) weeklyRevenue += r.total_revenue || 0;
-      if (r.date >= monthAgoStr) monthlyRevenue += r.total_revenue || 0;
-      if (r.date >= yearAgoStr) yearlyRevenue += r.total_revenue || 0;
-    });
+          if (isCurrent) {
+            totalRevenue += amount;
+            totalOrders++;
+            totalProfit += amount * 0.35; // Estimated profit margin
 
-    previousRollups?.forEach((r: any) => {
-      prevTotalRevenue += r.total_revenue || 0;
-      prevTotalOrders += r.total_orders || 0;
-    });
-
-    // Fallback if rollups are empty: query orders directly
-    if (!allRollups || allRollups.length === 0) {
-      const { data: orders } = await supabase
-        .from("orders")
-        .select("grand_total, status, created_at");
-      if (orders) {
-        orders.forEach((o: any) => {
-          const s = (o.status || "").toLowerCase();
-          if (s !== "cancelled" && s !== "returned") {
-            const isCurrent = new Date(o.created_at) >= currentFrom;
-            const amount = Number(o.grand_total) || 0;
-            if (isCurrent) {
-              totalRevenue += amount;
-              totalOrders++;
-              totalProfit += amount * 0.35; // Estimated profit margin
-            } else {
-              prevTotalRevenue += amount;
-              prevTotalOrders++;
-            }
+            if (createdAtStr === todayStr) todaysRevenue += amount;
+            if (createdAt >= weekAgo) weeklyRevenue += amount;
+            if (createdAt >= monthAgo) monthlyRevenue += amount;
+            if (createdAt >= yearAgo) yearlyRevenue += amount;
+          } else if (isPrevious) {
+            prevTotalRevenue += amount;
+            prevTotalOrders++;
           }
-        });
-      }
+        }
+      });
     }
 
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;

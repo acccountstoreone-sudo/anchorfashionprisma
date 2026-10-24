@@ -449,8 +449,7 @@ export class SupportRepository {
     const supabase = await SupportRepository.getClient();
     let { data: agents } = await supabase
       .from("support_agents")
-      .select("id, user_id, current_status, is_active")
-      .eq("is_active", true);
+      .select("id, user_id, is_online, active_tickets_count");
 
     const { data: profiles } = await supabase
       .from("profiles")
@@ -467,10 +466,10 @@ export class SupportRepository {
             .from("support_agents")
             .insert({
               user_id: p.id,
-              current_status: "online",
-              is_active: true,
+              is_online: true,
+              active_tickets_count: 0,
             })
-            .select("id, user_id, current_status, is_active")
+            .select("id, user_id, is_online, active_tickets_count")
             .single();
 
           if (newSa) {
@@ -497,7 +496,7 @@ export class SupportRepository {
         first_name: p?.first_name || "Agent",
         last_name: p?.last_name || "",
         full_name: name || "Support Agent",
-        status: a.current_status || "online",
+        status: a.is_online ? "online" : "offline",
       };
     });
   }

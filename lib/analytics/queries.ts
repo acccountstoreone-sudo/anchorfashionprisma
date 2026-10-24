@@ -60,24 +60,40 @@ export async function getExecutiveKpis() {
 export async function getSalesTrends() {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("bi_daily_revenue_rollup")
-    .select("date, total_revenue, total_profit")
-    .order("date", { ascending: true })
-    .limit(30);
+    .from("orders")
+    .select("created_at, grand_total, status")
+    .order("created_at", { ascending: false })
+    .limit(200);
 
-  if (error) {
-    console.error("Error fetching sales trends:", error);
+  if (error || !data) {
+    if (error) console.error("Error fetching sales trends:", error);
     return [];
   }
 
-  return data.map((day: any) => ({
-    date: new Date(day.date).toLocaleDateString("en-US", {
+  const grouped: Record<string, { sales: number; profit: number }> = {};
+  for (const o of data) {
+    const s = (o.status || "").toLowerCase();
+    if (s === "cancelled" || s === "returned") continue;
+    const dateKey = new Date(o.created_at).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-    }),
-    sales: Number(day.total_revenue),
-    profit: Number(day.total_profit),
-  }));
+    });
+    const val = Number(o.grand_total) || 0;
+    if (!grouped[dateKey]) {
+      grouped[dateKey] = { sales: 0, profit: 0 };
+    }
+    grouped[dateKey].sales += val;
+    grouped[dateKey].profit += val * 0.35;
+  }
+
+  return Object.entries(grouped)
+    .reverse()
+    .slice(-30)
+    .map(([date, vals]) => ({
+      date,
+      sales: vals.sales,
+      profit: vals.profit,
+    }));
 }
 
 export async function getTopCategories() {
