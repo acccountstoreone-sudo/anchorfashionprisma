@@ -245,11 +245,11 @@ export function InventoryMasterHubClient({
   return (
     <div className="space-y-6 font-sans">
       {/* Top Header & Quick Action Buttons */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-border">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 tracking-wide uppercase">
-              <Boxes className="h-3 w-3 text-slate-700 dark:text-slate-300" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-muted text-foreground tracking-wide uppercase">
+              <Boxes className="h-3 w-3 text-primary" />
               Anchor Central Warehouse
             </span>
             <span className="text-xs text-muted-foreground">&bull;</span>
@@ -258,10 +258,10 @@ export function InventoryMasterHubClient({
               Live Operations Sync
             </span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 font-sans">
+          <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-foreground font-sans">
             Inventory &amp; POS Command Center
           </h1>
-          <p className="text-xs lg:text-sm text-slate-500 dark:text-slate-400 max-w-2xl">
+          <p className="text-xs lg:text-sm text-muted-foreground max-w-2xl">
             Master catalog intake, variant matrix management, EAN-13 barcodes, multi-branch dispatch, and real-time margin analytics.
           </p>
         </div>
@@ -269,7 +269,7 @@ export function InventoryMasterHubClient({
         <div className="flex flex-wrap items-center gap-2.5">
           <Button
             onClick={() => setIntakeOpen(true)}
-            className="gap-2 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 font-semibold shadow-xs cursor-pointer h-9 px-4 text-xs rounded-lg"
+            className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-xs cursor-pointer h-9 px-4 text-xs rounded-lg"
           >
             <PackagePlus className="h-4 w-4" />
             New Stock Intake
@@ -281,18 +281,18 @@ export function InventoryMasterHubClient({
               setPreselectedVariantId(undefined);
               setTransferOpen(true);
             }}
-            className="gap-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium cursor-pointer h-9 px-3.5 text-xs shadow-2xs rounded-lg"
+            className="gap-2 border-border bg-card hover:bg-accent text-foreground font-medium cursor-pointer h-9 px-3.5 text-xs shadow-xs rounded-lg"
           >
-            <ArrowRightLeft className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+            <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
             Dispatch to Branch
           </Button>
 
           <Link href="/admin/products/new">
             <Button
               variant="outline"
-              className="gap-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium cursor-pointer h-9 px-3.5 text-xs shadow-2xs rounded-lg"
+              className="gap-2 border-border bg-card hover:bg-accent text-foreground font-medium cursor-pointer h-9 px-3.5 text-xs shadow-xs rounded-lg"
             >
-              <Sparkles className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+              <Sparkles className="h-4 w-4 text-muted-foreground" />
               Publish to Store
             </Button>
           </Link>
@@ -301,76 +301,76 @@ export function InventoryMasterHubClient({
 
       {/* Financial & Operational KPI Cards - 5 Spacious Executive Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all rounded-xl">
+        <Card className="border border-border bg-card shadow-xs hover:border-border/80 transition-all rounded-xl">
           <CardContent className="p-4 space-y-1">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               <span>Total In Stock</span>
-              <Warehouse className="h-3.5 w-3.5 text-slate-400" />
+              <Warehouse className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
-            <div className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight font-sans">
+            <div className="text-2xl font-bold text-foreground tracking-tight font-sans">
               {(finSummary.totalInStockUnits ?? 0).toLocaleString()}
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">
+            <p className="text-[11px] text-muted-foreground font-medium">
               +{(branchSummary.overallUnitsSent ?? 0).toLocaleString()} across {branchSummary.branchesCount ?? 5} branches
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all rounded-xl">
+        <Card className="border border-border bg-card shadow-xs hover:border-border/80 transition-all rounded-xl">
           <CardContent className="p-4 space-y-1">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               <span>Stock Cost (COGS)</span>
-              <Coins className="h-3.5 w-3.5 text-slate-400" />
+              <Coins className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
-            <div className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight font-sans">
+            <div className="text-2xl font-bold text-foreground tracking-tight font-sans">
               ৳{(finSummary.totalStockCostValue ?? 0).toLocaleString()}
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">
+            <p className="text-[11px] text-muted-foreground font-medium">
               Central inventory investment
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all rounded-xl">
+        <Card className="border border-border bg-card shadow-xs hover:border-border/80 transition-all rounded-xl">
           <CardContent className="p-4 space-y-1">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               <span>Retail Value (MRP)</span>
-              <Tag className="h-3.5 w-3.5 text-slate-400" />
+              <Tag className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
-            <div className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight font-sans">
+            <div className="text-2xl font-bold text-foreground tracking-tight font-sans">
               ৳{(finSummary.totalStockRetailValue ?? 0).toLocaleString()}
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">
+            <p className="text-[11px] text-muted-foreground font-medium">
               Projected showroom gross
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all rounded-xl">
+        <Card className="border border-border bg-card shadow-xs hover:border-border/80 transition-all rounded-xl">
           <CardContent className="p-4 space-y-1">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               <span>Gross Margin</span>
               <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
             </div>
-            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight font-sans">
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight font-sans">
               {finSummary.overallGrossMargin ?? 0}%
             </div>
-            <p className="text-[11px] text-slate-500 font-medium truncate">
+            <p className="text-[11px] text-muted-foreground font-medium truncate">
               ৳{(finSummary.totalProjectedGrossProfit ?? 0).toLocaleString()} potential profit
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all rounded-xl">
+        <Card className="border border-border bg-card shadow-xs hover:border-border/80 transition-all rounded-xl">
           <CardContent className="p-4 space-y-1">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               <span>Realized Sales</span>
-              <BarChart3 className="h-3.5 w-3.5 text-slate-400" />
+              <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
             </div>
-            <div className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight font-sans">
+            <div className="text-2xl font-bold text-foreground tracking-tight font-sans">
               ৳{(finSummary.totalRealizedRevenue ?? 0).toLocaleString()}
             </div>
-            <p className="text-[11px] text-slate-500 font-medium">
+            <p className="text-[11px] text-muted-foreground font-medium">
               {(finSummary.totalSoldUnits ?? 0).toLocaleString()} units &bull; {finSummary.overallSellThroughRate ?? 0}% sell-through
             </p>
           </CardContent>
@@ -379,17 +379,17 @@ export function InventoryMasterHubClient({
 
       {/* Main Interactive Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800 pb-2">
-          <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
-            <TabsTrigger value="catalog" className="text-xs font-semibold gap-1.5 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-2">
+          <TabsList className="bg-muted p-1 rounded-xl">
+            <TabsTrigger value="catalog" className="text-xs font-semibold gap-1.5 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
               <Boxes className="h-3.5 w-3.5" />
               Master Inventory Catalog ({filteredCatalog.length})
             </TabsTrigger>
-            <TabsTrigger value="branches" className="text-xs font-semibold gap-1.5 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-xs">
+            <TabsTrigger value="branches" className="text-xs font-semibold gap-1.5 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
               <Building2 className="h-3.5 w-3.5" />
               Branch Dispatch Report ({recentTransfers.length})
             </TabsTrigger>
-            <TabsTrigger value="financials" className="text-xs font-semibold gap-1.5 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-xs">
+            <TabsTrigger value="financials" className="text-xs font-semibold gap-1.5 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs">
               <TrendingUp className="h-3.5 w-3.5" />
               Profit &amp; Margin Intelligence
             </TabsTrigger>
@@ -400,7 +400,7 @@ export function InventoryMasterHubClient({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs gap-1.5 cursor-pointer border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg shadow-2xs font-semibold"
+                className="h-8 text-xs gap-1.5 cursor-pointer border-border bg-card hover:bg-accent text-foreground rounded-lg shadow-xs font-semibold"
                 onClick={() => setIntakeOpen(true)}
               >
                 <PackagePlus className="h-3.5 w-3.5" />
@@ -411,7 +411,7 @@ export function InventoryMasterHubClient({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs gap-1.5 cursor-pointer border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg shadow-2xs font-semibold"
+                className="h-8 text-xs gap-1.5 cursor-pointer border-border bg-card hover:bg-accent text-foreground rounded-lg shadow-xs font-semibold"
                 onClick={handleExportTransfers}
               >
                 <Download className="h-3.5 w-3.5" />
@@ -422,7 +422,7 @@ export function InventoryMasterHubClient({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 text-xs gap-1.5 cursor-pointer border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg shadow-2xs font-semibold"
+                className="h-8 text-xs gap-1.5 cursor-pointer border-border bg-card hover:bg-accent text-foreground rounded-lg shadow-xs font-semibold"
                 onClick={handleExportFinancials}
               >
                 <Download className="h-3.5 w-3.5" />
@@ -435,12 +435,12 @@ export function InventoryMasterHubClient({
         {/* ─── TAB 1: MASTER INVENTORY CATALOG ─────────────────────────────── */}
         <TabsContent value="catalog" className="space-y-4">
           {/* Search & Filter Bar */}
-          <div className="flex flex-col md:flex-row items-center gap-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <div className="flex flex-col md:flex-row items-center gap-3 bg-card p-3 rounded-xl border border-border shadow-xs">
             <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search inventory by title, SKU, barcode, or category..."
-                className="pl-9 h-9 text-xs bg-slate-50/50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg"
+                className="pl-9 h-9 text-xs bg-background border-border rounded-lg text-foreground placeholder:text-muted-foreground"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -456,7 +456,7 @@ export function InventoryMasterHubClient({
                   ...categories.map((c) => ({ value: c.name, label: c.name })),
                 ]}
               >
-                <SelectTrigger className="h-9 text-xs border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 rounded-lg">
+                <SelectTrigger className="h-9 text-xs border-border bg-background rounded-lg text-foreground">
                   <SelectValue placeholder="All Categories">
                     {categoryFilter === "ALL" ? "All Categories" : categoryFilter}
                   </SelectValue>
@@ -473,7 +473,7 @@ export function InventoryMasterHubClient({
             </div>
 
             {/* Status Filter Buttons */}
-            <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto overflow-x-auto bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+            <div className="flex items-center gap-1.5 shrink-0 w-full sm:w-auto overflow-x-auto bg-muted p-1 rounded-lg">
               {["ALL", "DRAFT", "ACTIVE"].map((st) => {
                 const isActive = statusFilter === st;
                 return (
@@ -483,8 +483,8 @@ export function InventoryMasterHubClient({
                     onClick={() => setStatusFilter(st)}
                     className={`text-xs px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
                       isActive
-                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs font-semibold"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {st === "DRAFT" ? "Draft in Warehouse" : st === "ACTIVE" ? "Published (Live)" : "All Products"}
@@ -495,10 +495,10 @@ export function InventoryMasterHubClient({
           </div>
 
           {/* Master Catalog Table */}
-          <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto shadow-2xs">
+          <div className="rounded-xl border border-border bg-card overflow-x-auto shadow-xs">
             <Table className="min-w-full">
               <TableHeader>
-                <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200/80 dark:border-slate-800 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <tr className="bg-muted/40 border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
                   <TableHead className="font-semibold py-3 pl-4">Product Name &amp; Category</TableHead>
                   <TableHead className="font-semibold">SKU &amp; Barcode</TableHead>
                   <TableHead className="font-semibold text-center">Warehouse Stock</TableHead>
@@ -512,7 +512,7 @@ export function InventoryMasterHubClient({
               <TableBody>
                 {filteredCatalog.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12 text-slate-400">
+                    <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                       No inventory products found matching your search.
                     </TableCell>
                   </TableRow>
@@ -521,34 +521,34 @@ export function InventoryMasterHubClient({
                     const isExpanded = expandedProductIds.has(item.id);
                     return (
                       <Fragment key={item.id}>
-                        <TableRow className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 text-xs border-b border-slate-100 dark:border-slate-800 transition-colors">
+                        <TableRow className="hover:bg-muted/30 text-xs border-b border-border/60 transition-colors">
                           <TableCell className="font-medium py-3 pl-4">
                             <div className="flex items-start gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-6 w-6 p-0 text-slate-400 hover:text-slate-800 shrink-0 mt-0.5 rounded"
+                                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground shrink-0 mt-0.5 rounded"
                                 onClick={() => toggleExpandProduct(item.id)}
                                 title={isExpanded ? "Collapse Variants" : "Expand Color/Size Breakdown"}
                               >
                                 {isExpanded ? (
-                                  <ChevronDown className="h-4 w-4 text-slate-900 dark:text-white" />
+                                  <ChevronDown className="h-4 w-4 text-foreground" />
                                 ) : (
                                   <ChevronRight className="h-4 w-4" />
                                 )}
                               </Button>
                               <div>
-                                <p className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-tight">
+                                <p className="font-bold text-foreground text-sm leading-tight">
                                   {item.name}
                                 </p>
                                 <div className="flex items-center gap-1.5 mt-1">
-                                  <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                  <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-muted text-muted-foreground border border-border">
                                     {item.category}
                                   </span>
                                   <button
                                     type="button"
                                     onClick={() => toggleExpandProduct(item.id)}
-                                    className="text-[11px] text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer underline-offset-2 hover:underline"
+                                    className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer underline-offset-2 hover:underline"
                                   >
                                     {item.variantCount} color/size variants
                                   </button>
@@ -559,8 +559,8 @@ export function InventoryMasterHubClient({
 
                           <TableCell>
                             <div className="font-mono text-[11px] space-y-0.5">
-                              <p className="font-semibold text-slate-800 dark:text-slate-200">{item.sku}</p>
-                              <p className="text-slate-400 flex items-center gap-1 text-[10px]">
+                              <p className="font-semibold text-foreground">{item.sku}</p>
+                              <p className="text-muted-foreground flex items-center gap-1 text-[10px]">
                                 <BarcodeIcon className="h-3 w-3" />
                                 {item.barcode}
                               </p>
@@ -571,16 +571,16 @@ export function InventoryMasterHubClient({
                             <span
                               className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
                                 item.totalAvailable <= 0
-                                  ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                  ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
                                   : item.totalAvailable <= 10
-                                  ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                  : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                                  : "bg-muted text-foreground border border-border font-semibold"
                               }`}
                             >
                               {item.totalAvailable} units
                             </span>
                             {item.totalDispatched > 0 && (
-                              <p className="text-[10px] text-purple-600 mt-0.5 font-medium">
+                              <p className="text-[10px] text-purple-600 dark:text-purple-400 mt-0.5 font-medium">
                                 +{item.totalDispatched} in branches
                               </p>
                             )}
@@ -589,17 +589,17 @@ export function InventoryMasterHubClient({
                           <TableCell className="text-center">
                             {item.totalSold > 0 ? (
                               <div className="flex flex-col items-center">
-                                <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
                                   {item.totalSold} sold
                                 </span>
-                                <span className="text-[10px] text-slate-400 mt-0.5 font-medium">
+                                <span className="text-[10px] text-muted-foreground mt-0.5 font-medium">
                                   {item.sellThroughRate}% rate
                                 </span>
                               </div>
                             ) : (
                               <div className="flex flex-col items-center">
-                                <span className="text-[11px] text-slate-500 font-medium">0 sold</span>
-                                <span className="text-[10px] text-slate-400">
+                                <span className="text-[11px] text-muted-foreground font-medium">0 sold</span>
+                                <span className="text-[10px] text-muted-foreground">
                                   {item.totalInflow || item.totalAvailable} intake
                                 </span>
                               </div>
@@ -607,10 +607,10 @@ export function InventoryMasterHubClient({
                           </TableCell>
 
                           <TableCell className="text-right">
-                            <p className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                            <p className="font-bold text-foreground text-xs">
                               ৳{item.basePrice.toLocaleString()}
                             </p>
-                            <p className="text-[10px] text-slate-400 font-medium">
+                            <p className="text-[10px] text-muted-foreground font-medium">
                               Cost: ৳{item.costPrice.toLocaleString()}
                             </p>
                           </TableCell>
@@ -619,7 +619,7 @@ export function InventoryMasterHubClient({
                             <p className="font-bold text-emerald-600 text-xs">
                               +৳{item.unitProfit.toLocaleString()}
                             </p>
-                            <span className="inline-block mt-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                            <span className="inline-block mt-0.5 px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
                               {item.profitMarginPercent}% margin
                             </span>
                           </TableCell>
@@ -629,8 +629,8 @@ export function InventoryMasterHubClient({
                               onClick={() => handleTogglePublish(item.id)}
                               className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold cursor-pointer transition-all ${
                                 item.status === "ACTIVE"
-                                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs"
-                                  : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200"
+                                  ? "bg-primary text-primary-foreground shadow-xs"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80 border border-border"
                               }`}
                               title="Click to toggle publish status"
                             >
@@ -644,7 +644,7 @@ export function InventoryMasterHubClient({
                                 <Link href={`/admin/products/new?importId=${item.id}`}>
                                   <Button
                                     size="sm"
-                                    className="h-7 px-2.5 text-xs gap-1 bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-semibold cursor-pointer shadow-2xs rounded-lg shrink-0"
+                                    className="h-7 px-2.5 text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold cursor-pointer shadow-xs rounded-lg shrink-0"
                                     title="Open Product Form with pre-populated colors, sizes and barcodes to add photos & publish live"
                                   >
                                     <Sparkles className="h-3 w-3" />
@@ -655,7 +655,7 @@ export function InventoryMasterHubClient({
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-7 px-2 text-xs border-slate-200 dark:border-slate-800 rounded-lg text-slate-600 shrink-0"
+                                  className="h-7 px-2 text-xs border-border bg-card text-foreground hover:bg-accent rounded-lg shrink-0"
                                   disabled={togglingId === item.id}
                                   onClick={() => handleTogglePublish(item.id)}
                                 >
@@ -666,7 +666,7 @@ export function InventoryMasterHubClient({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg shrink-0"
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg shrink-0"
                                 title="Print Barcode Stickers"
                                 onClick={() => handlePrintItemBarcodes(item)}
                               >
@@ -676,7 +676,7 @@ export function InventoryMasterHubClient({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg shrink-0"
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg shrink-0"
                                 title="Dispatch to Retail Branch"
                                 onClick={() => handleOpenTransferForProduct(item)}
                               >
@@ -687,7 +687,7 @@ export function InventoryMasterHubClient({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-7 w-7 p-0 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg shrink-0"
+                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg shrink-0"
                                   title="Edit Description, Media & Images"
                                 >
                                   <ExternalLink className="h-3.5 w-3.5" />
@@ -699,32 +699,32 @@ export function InventoryMasterHubClient({
 
                         {/* Variant Expansion Row */}
                         {isExpanded && (
-                          <TableRow className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200/80 hover:bg-slate-50/80">
+                          <TableRow className="bg-muted/20 border-b border-border hover:bg-muted/20">
                             <TableCell colSpan={8} className="p-3 pl-10">
-                              <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-950 p-3.5 shadow-2xs space-y-2.5">
-                                <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-slate-800">
-                                  <span className="flex items-center gap-1.5">
-                                    <Boxes className="h-3.5 w-3.5 text-slate-500" />
+                              <div className="rounded-xl border border-border bg-card p-3.5 shadow-xs space-y-2.5">
+                                <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground pb-2 border-b border-border">
+                                  <span className="flex items-center gap-1.5 text-foreground font-medium">
+                                    <Boxes className="h-3.5 w-3.5 text-primary" />
                                     Color &amp; Size Breakdown for &quot;{item.name}&quot; ({item.variants.length} variants)
                                   </span>
-                                  <span className="font-mono text-[11px] text-slate-400">Base SKU: {item.sku}</span>
+                                  <span className="font-mono text-[11px] text-muted-foreground">Base SKU: {item.sku}</span>
                                 </div>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 pt-1">
                                   {item.variants.map((v: any) => {
                                     const color = v.attributes?.Color || v.attributes?.color || "Standard";
                                     const size = v.attributes?.Size || v.attributes?.size || "Default";
                                     return (
-                                      <div key={v.id} className="rounded-lg border border-slate-200/80 dark:border-slate-800 p-2.5 bg-slate-50/50 dark:bg-slate-900 text-xs space-y-1">
+                                      <div key={v.id} className="rounded-lg border border-border p-2.5 bg-muted/30 text-xs space-y-1">
                                         <div className="flex items-center justify-between font-bold">
-                                          <span className="truncate text-slate-900 dark:text-slate-100">{color}</span>
-                                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold bg-white dark:bg-slate-800 border">
+                                          <span className="truncate text-foreground">{color}</span>
+                                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold bg-background text-foreground border border-border">
                                             {size}
                                           </Badge>
                                         </div>
-                                        <p className="font-mono text-[10px] text-slate-400 truncate">{v.sku}</p>
-                                        <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
+                                        <p className="font-mono text-[10px] text-muted-foreground truncate">{v.sku}</p>
+                                        <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-border">
                                           <span className="text-emerald-600 font-semibold">{v.available} in stock</span>
-                                          <span className="text-slate-500 font-semibold">{v.sold || 0} sold</span>
+                                          <span className="text-muted-foreground font-medium">{v.sold || 0} sold</span>
                                         </div>
                                       </div>
                                     );
@@ -748,23 +748,23 @@ export function InventoryMasterHubClient({
           {/* Summary Cards per Branch */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
             {branchSummaries.map((b: any) => (
-              <Card key={b.branchId} className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+              <Card key={b.branchId} className="border border-border bg-card rounded-xl shadow-xs hover:border-border/80 transition-all">
                 <CardHeader className="p-3.5 pb-2">
-                  <CardTitle className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center justify-between">
+                  <CardTitle className="text-xs font-bold text-foreground flex items-center justify-between">
                     <span className="truncate">{b.branchName}</span>
-                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold">
+                    <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold">
                       {b.branchCode}
                     </span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3.5 pt-0 space-y-1">
-                  <div className="text-xl font-black text-slate-900 dark:text-slate-100 font-sans">
+                  <div className="text-xl font-bold text-foreground font-sans">
                     {b.totalUnits.toLocaleString()} units
                   </div>
-                  <p className="text-[11px] text-slate-500">
-                    Valuation: <strong className="text-slate-900 dark:text-slate-100 font-semibold">৳{b.totalRetailValue.toLocaleString()}</strong>
+                  <p className="text-[11px] text-muted-foreground">
+                    Valuation: <strong className="text-foreground font-semibold">৳{b.totalRetailValue.toLocaleString()}</strong>
                   </p>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[10px] text-muted-foreground">
                     {b.transferCount} dispatches logged
                   </p>
                 </CardContent>
@@ -776,15 +776,15 @@ export function InventoryMasterHubClient({
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Branch Dispatch History Log</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="text-sm font-bold text-foreground">Branch Dispatch History Log</h3>
+                <p className="text-xs text-muted-foreground">
                   Audit trail of all products dispatched from central inventory to retail outlets.
                 </p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1.5 text-xs h-8 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs font-semibold"
+                className="gap-1.5 text-xs h-8 rounded-lg border-border bg-card hover:bg-accent text-foreground shadow-xs font-semibold cursor-pointer"
                 onClick={() => {
                   setPreselectedVariantId(undefined);
                   setTransferOpen(true);
@@ -795,10 +795,10 @@ export function InventoryMasterHubClient({
               </Button>
             </div>
 
-            <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto shadow-2xs">
+            <div className="rounded-xl border border-border bg-card overflow-x-auto shadow-xs">
               <Table className="min-w-full">
                 <TableHeader>
-                  <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200/80 dark:border-slate-800 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <tr className="bg-muted/40 border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
                     <TableHead className="font-semibold py-3 pl-4">Transfer #</TableHead>
                     <TableHead className="font-semibold">Target Branch</TableHead>
                     <TableHead className="font-semibold">Product &amp; SKU</TableHead>
@@ -811,39 +811,39 @@ export function InventoryMasterHubClient({
                 <TableBody>
                   {recentTransfers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-10 text-slate-400">
+                      <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                         No branch dispatches recorded yet. Click &quot;New Branch Dispatch&quot; to transfer stock.
                       </TableCell>
                     </TableRow>
                   ) : (
                     recentTransfers.map((t: any) => (
-                      <TableRow key={t.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 text-xs border-b border-slate-100 dark:border-slate-800 transition-colors">
-                        <TableCell className="font-mono font-semibold text-slate-700 dark:text-slate-300 py-3 pl-4">
+                      <TableRow key={t.id} className="hover:bg-muted/30 text-xs border-b border-border/60 transition-colors">
+                        <TableCell className="font-mono font-semibold text-foreground py-3 pl-4">
                           {t.transferNumber}
                         </TableCell>
-                        <TableCell className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                          <Building2 className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                        <TableCell className="font-bold text-foreground flex items-center gap-1.5">
+                          <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           {t.branchName}
                         </TableCell>
                         <TableCell>
-                          <p className="font-semibold text-slate-900 dark:text-slate-100">{t.productName}</p>
-                          <p className="font-mono text-[10px] text-slate-400">
+                          <p className="font-semibold text-foreground">{t.productName}</p>
+                          <p className="font-mono text-[10px] text-muted-foreground">
                             {t.sku}{" "}
                             {t.attributes &&
                               `(${Object.values(t.attributes).filter(Boolean).join(" / ")})`}
                           </p>
                         </TableCell>
-                        <TableCell className="text-center font-bold text-slate-900 dark:text-slate-100">
+                        <TableCell className="text-center font-bold text-foreground">
                           {t.quantity} units
                         </TableCell>
-                        <TableCell className="text-right font-bold text-slate-900 dark:text-slate-100">
+                        <TableCell className="text-right font-bold text-foreground">
                           ৳{t.totalRetail.toLocaleString()}
                         </TableCell>
-                        <TableCell className="text-center text-slate-400 text-[11px]">
+                        <TableCell className="text-center text-muted-foreground text-[11px]">
                           {t.dispatchedAt ? new Date(t.dispatchedAt).toLocaleDateString() : "Just now"}
                         </TableCell>
                         <TableCell className="text-center pr-4">
-                          <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                          <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground border border-border">
                             {t.status}
                           </span>
                         </TableCell>
@@ -860,15 +860,15 @@ export function InventoryMasterHubClient({
         <TabsContent value="financials" className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Product-Level Profit Margin Intelligence</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="text-sm font-bold text-foreground">Product-Level Profit Margin Intelligence</h3>
+              <p className="text-xs text-muted-foreground">
                 Detailed landed cost, selling price, gross profit margins, and inventory valuation per product style.
               </p>
             </div>
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 text-xs h-8 cursor-pointer rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs font-semibold"
+              className="gap-1.5 text-xs h-8 cursor-pointer rounded-lg border-border bg-card hover:bg-accent text-foreground shadow-xs font-semibold"
               onClick={handleExportFinancials}
             >
               <Download className="h-3.5 w-3.5" />
@@ -876,10 +876,10 @@ export function InventoryMasterHubClient({
             </Button>
           </div>
 
-          <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto shadow-2xs">
+          <div className="rounded-xl border border-border bg-card overflow-x-auto shadow-xs">
             <Table className="min-w-full">
               <TableHeader>
-                <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200/80 dark:border-slate-800 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <tr className="bg-muted/40 border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
                   <TableHead className="font-semibold py-3 pl-4">Product Name</TableHead>
                   <TableHead className="font-semibold text-right">Cost Price (COGS)</TableHead>
                   <TableHead className="font-semibold text-right">Selling Price (MRP)</TableHead>
@@ -895,43 +895,43 @@ export function InventoryMasterHubClient({
               <TableBody>
                 {financialProducts.map((p: any) => {
                   let healthLabel = "Healthy";
-                  let healthClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                  let healthClass = "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800";
                   if (p.marginPercent >= 50) {
                     healthLabel = "High Margin";
-                    healthClass = "bg-emerald-50 text-emerald-800 border-emerald-300 font-bold";
+                    healthClass = "bg-emerald-50 text-emerald-800 border-emerald-300 font-bold dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-700";
                   } else if (p.marginPercent < 30) {
                     healthLabel = "Low Margin";
-                    healthClass = "bg-amber-50 text-amber-800 border-amber-200";
+                    healthClass = "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
                   }
 
                   return (
-                    <TableRow key={p.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 text-xs border-b border-slate-100 dark:border-slate-800 transition-colors">
+                    <TableRow key={p.id} className="hover:bg-muted/30 text-xs border-b border-border/60 transition-colors">
                       <TableCell className="font-medium py-3 pl-4">
-                        <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">{p.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">{p.sku}</p>
+                        <p className="font-bold text-foreground text-sm">{p.name}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">{p.sku}</p>
                       </TableCell>
-                      <TableCell className="text-right text-slate-500">
+                      <TableCell className="text-right text-muted-foreground">
                         ৳{p.costPrice.toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right font-bold text-slate-900 dark:text-slate-100">
+                      <TableCell className="text-right font-bold text-foreground">
                         ৳{p.basePrice.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right font-bold text-emerald-600">
                         +৳{p.unitProfit.toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-center font-bold text-slate-900 dark:text-slate-100">
+                      <TableCell className="text-center font-bold text-foreground">
                         {p.marginPercent}%
                       </TableCell>
-                      <TableCell className="text-center font-semibold text-slate-700 dark:text-slate-300">
+                      <TableCell className="text-center font-semibold text-foreground">
                         {p.inStock} units
                       </TableCell>
-                      <TableCell className="text-center font-bold text-blue-600">
+                      <TableCell className="text-center font-bold text-primary">
                         {p.soldUnits || 0} sold
                       </TableCell>
                       <TableCell className="text-right font-bold text-emerald-600">
                         ৳{(p.realizedProfit || 0).toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right font-bold text-slate-900 dark:text-slate-100">
+                      <TableCell className="text-right font-bold text-foreground">
                         ৳{p.retailValuation.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-center pr-4">

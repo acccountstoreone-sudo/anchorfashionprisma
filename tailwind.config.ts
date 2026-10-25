@@ -21,10 +21,9 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ["'Inter'", "var(--font-inter)", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "Helvetica", "Arial", "sans-serif"],
-        inter: ["'Inter'", "var(--font-inter)", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "Helvetica", "Arial", "sans-serif"],
-        jost: ["var(--font-jost)", "'Jost'", "system-ui", "sans-serif"],
-        heading: ["var(--font-playfair)", "var(--font-heading)", "Georgia", "serif"],
+        sans: ["'Jost'", "var(--font-jost)", "var(--font-sans)", "system-ui", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "sans-serif"],
+        jost: ["'Jost'", "var(--font-jost)", "system-ui", "sans-serif"],
+        heading: ["'Playfair Display'", "var(--font-playfair)", "var(--font-heading)", "Georgia", "serif"],
         mono: ["var(--font-mono)", "monospace"],
       },
       colors: {

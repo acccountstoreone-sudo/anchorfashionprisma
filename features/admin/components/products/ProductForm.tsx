@@ -799,7 +799,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
               className={cn(
                 "cursor-pointer text-white font-semibold shadow-xs rounded-xl px-4",
                 !isEditMode && !hasLinkedInventory
-                  ? "bg-slate-900 hover:bg-slate-800"
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                   : "bg-emerald-600 hover:bg-emerald-500"
               )}
               onClick={() => {
@@ -820,22 +820,22 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
 
         {/* VERIFIED LINKED INVENTORY ITEM CARD (Shows when an item is linked) */}
         {hasLinkedInventory && (
-          <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-card p-5 shadow-xs space-y-4">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className="bg-slate-900 hover:bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-semibold gap-1.5 px-3 py-1 rounded-full">
+                  <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold gap-1.5 px-3 py-1 rounded-full">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                     Linked Warehouse Inventory
                   </Badge>
-                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-muted text-foreground border border-border">
                     {activeInventoryItem?.sku || form.watch("sku") || initialData?.sku || "SKU"}
                   </span>
-                  <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                  <h3 className="font-bold text-base text-foreground">
                     {activeInventoryItem?.name || form.watch("name") || initialData?.name}
                   </h3>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Stock, pricing &amp; barcodes synchronized with physical warehouse. Now fine-tune imagery, copy, and store categories to publish.
                 </p>
               </div>
@@ -845,13 +845,13 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="text-xs font-medium cursor-pointer rounded-xl h-8 border-slate-200 dark:border-slate-700"
+                  className="text-xs font-medium cursor-pointer rounded-xl h-8 border-border bg-card text-foreground hover:bg-accent"
                   onClick={() => setPickerOpen(true)}
                 >
                   Change Style
                 </Button>
                 <Link href="/admin/inventory" target="_blank">
-                  <Button type="button" variant="ghost" size="sm" className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white gap-1 cursor-pointer h-8">
+                  <Button type="button" variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer h-8">
                     Inventory Center <ArrowUpRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
@@ -859,28 +859,28 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             </div>
 
             {/* Quick Metrics Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/70 dark:border-slate-800">
-                <span className="text-slate-400 block text-[11px] font-medium">Warehouse Stock</span>
-                <span className="font-bold text-slate-900 dark:text-white text-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-border text-xs">
+              <div className="bg-muted/40 p-3 rounded-xl border border-border">
+                <span className="text-muted-foreground block text-[11px] font-medium">Warehouse Stock</span>
+                <span className="font-bold text-foreground text-sm">
                   {activeInventoryItem?.totalAvailable ?? form.watch("stockQuantity") ?? 0} units
                 </span>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/70 dark:border-slate-800">
-                <span className="text-slate-400 block text-[11px] font-medium">Retail MRP</span>
-                <span className="font-bold text-slate-900 dark:text-white text-sm">
+              <div className="bg-muted/40 p-3 rounded-xl border border-border">
+                <span className="text-muted-foreground block text-[11px] font-medium">Retail MRP</span>
+                <span className="font-bold text-foreground text-sm">
                   ৳{Number(activeInventoryItem?.basePrice || form.watch("basePrice") || 0).toLocaleString()}
                 </span>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/70 dark:border-slate-800">
-                <span className="text-slate-400 block text-[11px] font-medium">Unit Cost (COGS)</span>
-                <span className="font-bold text-slate-900 dark:text-white text-sm">
+              <div className="bg-muted/40 p-3 rounded-xl border border-border">
+                <span className="text-muted-foreground block text-[11px] font-medium">Unit Cost (COGS)</span>
+                <span className="font-bold text-foreground text-sm">
                   ৳{Number(activeInventoryItem?.costPrice || form.watch("costPrice") || 0).toLocaleString()}
                 </span>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/70 dark:border-slate-800">
-                <span className="text-slate-400 block text-[11px] font-medium">Barcode / EAN-13</span>
-                <span className="font-mono font-medium text-slate-900 dark:text-white text-xs truncate block">
+              <div className="bg-muted/40 p-3 rounded-xl border border-border">
+                <span className="text-muted-foreground block text-[11px] font-medium">Barcode / EAN-13</span>
+                <span className="font-mono font-medium text-foreground text-xs truncate block">
                   {activeInventoryItem?.barcode || form.watch("barcode") || initialData?.barcode || "—"}
                 </span>
               </div>

@@ -95,22 +95,22 @@ export function InventoryPOSQuickShelf({
   const currentCategoryName = currentCategoryObj ? currentCategoryObj.name : "Selected Category";
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-card shadow-xs transition-all p-5 sm:p-6 space-y-4">
+    <div className="rounded-2xl border border-border bg-card shadow-xs transition-all p-5 sm:p-6 space-y-4">
       {/* ── LUXURY STUDIO INVENTORY HEADER ── */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
               <Boxes className="h-4 w-4" />
             </span>
-            <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">
+            <h3 className="font-bold text-base sm:text-lg text-foreground tracking-tight">
               Select Inventory Product to Publish
             </h3>
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700">
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-muted text-foreground border border-border">
               ✦ Step 1: Inventory-First Gate
             </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl">
+          <p className="text-xs text-muted-foreground max-w-2xl">
             Every storefront product must originate in Inventory. Select an existing warehouse style below to link SKU, pricing, and live physical stock.
           </p>
         </div>
@@ -121,7 +121,7 @@ export function InventoryPOSQuickShelf({
               type="button"
               variant="outline"
               size="sm"
-              className="h-8.5 rounded-xl border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium text-xs gap-1.5 cursor-pointer"
+              className="h-8.5 rounded-xl border-border bg-card text-foreground hover:bg-accent font-medium text-xs gap-1.5 cursor-pointer"
               onClick={() => onOpenIntakeDialog(effectiveCategory !== "ALL" ? effectiveCategory : undefined)}
             >
               <Plus className="h-3.5 w-3.5" />
@@ -132,7 +132,7 @@ export function InventoryPOSQuickShelf({
           <Button
             type="button"
             size="sm"
-            className="h-8.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white font-semibold gap-1.5 shadow-2xs cursor-pointer text-xs"
+            className="h-8.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-1.5 shadow-xs cursor-pointer text-xs"
             onClick={onOpenFullModal}
           >
             <Sparkles className="h-3.5 w-3.5" />
@@ -143,7 +143,7 @@ export function InventoryPOSQuickShelf({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8.5 w-8.5 p-0 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-xl"
+            className="h-8.5 w-8.5 p-0 text-muted-foreground hover:text-foreground rounded-xl"
             onClick={() => setIsOpen(!isOpen)}
             aria-label={isOpen ? "Collapse Shelf" : "Expand Shelf"}
           >
@@ -160,16 +160,16 @@ export function InventoryPOSQuickShelf({
             <span className="font-semibold text-emerald-900 dark:text-emerald-200">
               Active Inventory Linked:
             </span>
-            <span className="font-bold text-slate-900 dark:text-white">{activeItem.name}</span>
+            <span className="font-bold text-foreground">{activeItem.name}</span>
             <span className="font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300/60 dark:border-emerald-700/60">
               Code: {activeItem.sku || "N/A"}
             </span>
-            <span className="text-slate-300 dark:text-slate-700">&bull;</span>
-            <span className="text-slate-600 dark:text-slate-400">
-              Physical Stock: <strong className="text-slate-900 dark:text-white">{activeItem.totalAvailable || 0} units</strong>
+            <span className="text-muted-foreground/40">&bull;</span>
+            <span className="text-muted-foreground">
+              Physical Stock: <strong className="text-foreground">{activeItem.totalAvailable || 0} units</strong>
             </span>
-            <span className="text-slate-300 dark:text-slate-700">&bull;</span>
-            <span className="text-slate-600 dark:text-slate-400">
+            <span className="text-muted-foreground/40">&bull;</span>
+            <span className="text-muted-foreground">
               Cost: <strong>৳{activeItem.costPrice || 0}</strong> &rarr; Retail: <strong>৳{activeItem.basePrice || 0}</strong>
             </span>
           </div>
@@ -177,7 +177,7 @@ export function InventoryPOSQuickShelf({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-7 text-[11px] text-slate-500 hover:text-slate-900 dark:hover:text-white font-medium cursor-pointer"
+            className="h-7 text-[11px] text-muted-foreground hover:text-foreground font-medium cursor-pointer"
             onClick={onOpenFullModal}
           >
             Change Style
@@ -192,8 +192,8 @@ export function InventoryPOSQuickShelf({
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
             {/* Direct Category Dropdown */}
             <div className="sm:col-span-4 flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0 flex items-center gap-1">
-                <Filter className="h-3.5 w-3.5 text-slate-400" />
+              <span className="text-xs font-semibold text-muted-foreground shrink-0 flex items-center gap-1">
+                <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                 Department:
               </span>
               <Select
@@ -204,7 +204,7 @@ export function InventoryPOSQuickShelf({
                   ...categories.map((c) => ({ value: c.id, label: c.name })),
                 ]}
               >
-                <SelectTrigger className="h-9 bg-slate-50 dark:bg-slate-900 text-xs font-medium border-slate-200/90 dark:border-slate-800 rounded-xl">
+                <SelectTrigger className="h-9 bg-background text-xs font-medium border-border rounded-xl">
                   <SelectValue placeholder="Select Category">
                     {effectiveCategory === "ALL"
                       ? "All Categories"
@@ -224,12 +224,12 @@ export function InventoryPOSQuickShelf({
 
             {/* Quick Search Input */}
             <div className="sm:col-span-8 relative">
-              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Search style name, code (e.g. AFPTS1, AFPNJ1), or barcode..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-9 pl-8.5 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200/90 dark:border-slate-800 rounded-xl placeholder:text-slate-400"
+                className="h-9 pl-8.5 text-xs bg-background border-border rounded-xl placeholder:text-muted-foreground"
               />
             </div>
           </div>
@@ -242,8 +242,8 @@ export function InventoryPOSQuickShelf({
               className={cn(
                 "px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer",
                 effectiveCategory === "ALL" || !effectiveCategory
-                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs font-semibold"
-                  : "bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                  ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                  : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
               )}
             >
               All Categories
@@ -256,8 +256,8 @@ export function InventoryPOSQuickShelf({
                 className={cn(
                   "px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer",
                   effectiveCategory === cat.id
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs font-semibold"
-                    : "bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                    ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                    : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
                 )}
               >
                 {cat.name}
@@ -267,22 +267,22 @@ export function InventoryPOSQuickShelf({
 
           {/* Grid Cards of Inventory Styles */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-10 text-slate-400 gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-slate-600 dark:text-slate-300" />
+            <div className="flex items-center justify-center py-10 text-muted-foreground gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
               <span className="text-xs font-medium">Loading warehouse products...</span>
             </div>
           ) : shelfItems.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 p-8 text-center space-y-3">
+            <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center space-y-3">
               <div className="flex justify-center">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                   <PackagePlus className="h-5 w-5" />
                 </span>
               </div>
               <div className="space-y-1">
-                <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                <h4 className="font-bold text-sm text-foreground">
                   No inventory products found {effectiveCategory !== "ALL" ? `under "${currentCategoryName}"` : ""}
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                <p className="text-xs text-muted-foreground max-w-md mx-auto">
                   Every storefront product must first be registered in physical Inventory with stock, pricing, and barcodes.
                 </p>
               </div>
@@ -290,7 +290,7 @@ export function InventoryPOSQuickShelf({
                 <Button
                   type="button"
                   onClick={() => onOpenIntakeDialog(effectiveCategory !== "ALL" ? effectiveCategory : undefined)}
-                  className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-semibold text-xs gap-1.5 shadow-2xs cursor-pointer rounded-xl"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs gap-1.5 shadow-xs cursor-pointer rounded-xl"
                 >
                   <Plus className="h-4 w-4" />
                   Add {effectiveCategory !== "ALL" ? `"${currentCategoryName}"` : "Product"} to Inventory First
@@ -306,18 +306,18 @@ export function InventoryPOSQuickShelf({
                   <div
                     key={item.id}
                     className={cn(
-                      "group relative rounded-xl border p-3.5 bg-white dark:bg-slate-900/60 hover:border-slate-400 dark:hover:border-slate-600 hover:shadow-md transition-all flex flex-col justify-between space-y-3 cursor-pointer",
+                      "group relative rounded-xl border p-3.5 bg-card hover:border-primary/50 hover:shadow-xs transition-all flex flex-col justify-between space-y-3 cursor-pointer",
                       isSelected
-                        ? "border-slate-900 dark:border-white ring-2 ring-slate-900/10 dark:ring-white/20 bg-slate-50/60 dark:bg-slate-800/40"
-                        : "border-slate-200/90 dark:border-slate-800"
+                        ? "border-primary ring-2 ring-primary/10 bg-primary/5"
+                        : "border-border"
                     )}
                     onClick={() => onSelectItem(item)}
                   >
                     <div>
                       {/* Short Code & Stock */}
                       <div className="flex items-center justify-between gap-1 mb-2">
-                        <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 flex items-center gap-1">
-                          <Tag className="h-2.5 w-2.5 text-slate-500" />
+                        <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-muted text-foreground border border-border flex items-center gap-1">
+                          <Tag className="h-2.5 w-2.5 text-muted-foreground" />
                           {item.sku || "N/A"}
                         </span>
                         <div className="flex items-center gap-1">
@@ -328,23 +328,23 @@ export function InventoryPOSQuickShelf({
                       </div>
 
                       {/* Title */}
-                      <h4 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white line-clamp-1 group-hover:text-primary transition-colors">
+                      <h4 className="text-xs sm:text-sm font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
                         {item.name}
                       </h4>
 
                       {/* Category & Variants count */}
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
                         {item.category?.name || item.category || "General"} &bull; {item.variantCount || item.variants?.length || 0} variants
                       </p>
                     </div>
 
                     {/* Financials & Select Button */}
-                    <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                    <div className="pt-2.5 border-t border-border flex items-center justify-between text-xs">
                       <div className="space-y-0.5">
-                        <p className="text-[10px] text-slate-400">
+                        <p className="text-[10px] text-muted-foreground">
                           Cost: ৳{item.costPrice || 0}
                         </p>
-                        <p className="font-bold text-slate-900 dark:text-white text-xs">
+                        <p className="font-bold text-foreground text-xs">
                           ৳{Number(item.basePrice || 0).toLocaleString()}
                         </p>
                       </div>
@@ -357,7 +357,7 @@ export function InventoryPOSQuickShelf({
                           "h-7 px-3 text-[11px] font-semibold rounded-lg gap-1 cursor-pointer transition-all",
                           isSelected
                             ? "bg-emerald-600 hover:bg-emerald-500 text-white border-transparent"
-                            : "bg-slate-100 hover:bg-slate-900 hover:text-white dark:bg-slate-800 dark:hover:bg-white dark:hover:text-slate-900 border-transparent text-slate-700 dark:text-slate-200"
+                            : "bg-muted hover:bg-primary hover:text-primary-foreground border-transparent text-foreground"
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
