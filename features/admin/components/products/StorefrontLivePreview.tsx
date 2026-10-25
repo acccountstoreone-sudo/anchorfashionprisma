@@ -150,9 +150,9 @@ export function StorefrontLivePreview({
       </div>
 
       {/* The Anchor Fashion Card Shell */}
-      <div className="mx-auto max-w-[280px] rounded-2xl border border-border/80 bg-white dark:bg-zinc-950 overflow-hidden shadow-md transition-all">
+      <div className="mx-auto max-w-[280px] rounded-2xl border border-border bg-card overflow-hidden shadow-md transition-all">
         {/* Image Container with Floating Badges */}
-        <div className="relative aspect-[3/4] w-full bg-slate-100 overflow-hidden group">
+        <div className="relative aspect-[3/4] w-full bg-muted/30 overflow-hidden group">
           {imageUrl && imageUrl !== "/images/placeholder.webp" ? (
             <img
               src={imageUrl}
@@ -160,9 +160,9 @@ export function StorefrontLivePreview({
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center text-slate-300 p-6 text-center">
-              <Boxes className="h-10 w-10 mb-2 opacity-50" />
-              <p className="text-xs font-medium text-slate-400">
+            <div className="flex h-full w-full flex-col items-center justify-center text-muted-foreground/40 p-6 text-center">
+              <Boxes className="h-10 w-10 mb-2 opacity-40" />
+              <p className="text-xs font-medium text-muted-foreground">
                 Upload image to preview
               </p>
             </div>
@@ -182,10 +182,10 @@ export function StorefrontLivePreview({
 
           {/* Quick Floating Action Icons */}
           <div className="absolute right-2 top-12 z-10 flex flex-col gap-1.5 opacity-90">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-sm backdrop-blur-md">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-card/95 text-foreground shadow-sm backdrop-blur-md border border-border/40">
               <Heart className="h-3.5 w-3.5" />
             </div>
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow-sm backdrop-blur-md">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-card/95 text-foreground shadow-sm backdrop-blur-md border border-border/40">
               <Eye className="h-3.5 w-3.5" />
             </div>
           </div>
@@ -210,7 +210,7 @@ export function StorefrontLivePreview({
         </div>
 
         {/* Card Details Body */}
-        <div className="p-3.5 space-y-2.5 bg-white dark:bg-zinc-950">
+        <div className="p-3.5 space-y-2.5 bg-card">
           {/* Brand & Short Style Code Row */}
           <div className="flex items-center justify-between gap-1 text-[10px]">
             <span className="font-bold uppercase tracking-wider text-muted-foreground truncate">
@@ -304,7 +304,7 @@ export function StorefrontLivePreview({
 
             <button
               type="button"
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-black transition-all"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-primary/90 transition-all cursor-pointer"
             >
               <ShoppingBag className="h-3 w-3" />
               Add

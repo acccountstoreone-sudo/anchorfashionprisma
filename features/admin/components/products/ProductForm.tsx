@@ -26,11 +26,14 @@ import {
   Calculator,
   ArrowRight,
   ArrowUpRight,
+  ArrowLeft,
   SlidersHorizontal,
   RefreshCw,
   Check,
   AlertCircle,
   AlertTriangle,
+  FileText,
+  FolderTree,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -749,22 +752,39 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="flex items-center justify-between flex-wrap gap-4 pb-6 border-b border-border/50">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              {initialData ? "Edit Product" : "Create Product"}
+        {/* Modern Luxury Executive Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-border">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Link
+                href={returnPath}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to Catalog
+              </Link>
+              <span className="text-muted-foreground/40">&bull;</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                Storefront Publishing Suite
+              </span>
+            </div>
+            <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-foreground">
+              {initialData ? "Edit Storefront Product" : "Create Storefront Product"}
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {initialData ? `Editing: ${initialData.name}` : "Add a new product to your catalog"}
+            <p className="text-xs lg:text-sm text-muted-foreground">
+              {initialData
+                ? `Managing online catalog listing: ${initialData.name}`
+                : "Synchronize warehouse inventory with online shop, optimize pricing, media & SEO."}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
             <Button
               variant="outline"
               type="button"
               onClick={() => router.push(returnPath)}
               disabled={isLoading || isPublishing}
-              className="cursor-pointer"
+              className="h-9 px-3.5 text-xs font-medium rounded-xl cursor-pointer"
             >
               Cancel
             </Button>
@@ -772,10 +792,10 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
               type="button"
               variant="outline"
               onClick={() => setPrintModalOpen(true)}
-              className="cursor-pointer gap-1.5 text-xs text-slate-700 hover:text-primary hover:bg-primary/5"
+              className="h-9 px-3 text-xs font-medium rounded-xl cursor-pointer gap-1.5"
             >
               <Printer className="h-3.5 w-3.5 text-primary" />
-              Print Barcodes
+              Barcodes
             </Button>
             <Button
               type="button"
@@ -789,15 +809,15 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                 submitWithStatus("DRAFT");
               }}
               disabled={isLoading || isPublishing}
-              className="cursor-pointer"
+              className="h-9 px-3.5 text-xs font-semibold rounded-xl cursor-pointer"
             >
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isLoading ? "Saving..." : "Save Draft"}
+              {isLoading ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+              Save Draft
             </Button>
             <Button
               type="button"
               className={cn(
-                "cursor-pointer text-white font-semibold shadow-xs rounded-xl px-4",
+                "h-9 px-5 text-xs font-semibold shadow-xs rounded-xl cursor-pointer text-white",
                 !isEditMode && !hasLinkedInventory
                   ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                   : "bg-emerald-600 hover:bg-emerald-500"
@@ -812,81 +832,11 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
               }}
               disabled={isLoading || isPublishing}
             >
-              {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isPublishing ? "Publishing..." : "Publish Product"}
+              {isPublishing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+              {isPublishing ? "Publishing..." : "Publish to Store"}
             </Button>
           </div>
         </div>
-
-        {/* VERIFIED LINKED INVENTORY ITEM CARD (Shows when an item is linked) */}
-        {hasLinkedInventory && (
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold gap-1.5 px-3 py-1 rounded-full">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                    Linked Warehouse Inventory
-                  </Badge>
-                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-muted text-foreground border border-border">
-                    {activeInventoryItem?.sku || form.watch("sku") || initialData?.sku || "SKU"}
-                  </span>
-                  <h3 className="font-bold text-base text-foreground">
-                    {activeInventoryItem?.name || form.watch("name") || initialData?.name}
-                  </h3>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Stock, pricing &amp; barcodes synchronized with physical warehouse. Now fine-tune imagery, copy, and store categories to publish.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-xs font-medium cursor-pointer rounded-xl h-8 border-border bg-card text-foreground hover:bg-accent"
-                  onClick={() => setPickerOpen(true)}
-                >
-                  Change Style
-                </Button>
-                <Link href="/admin/inventory" target="_blank">
-                  <Button type="button" variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground gap-1 cursor-pointer h-8">
-                    Inventory Center <ArrowUpRight className="h-3.5 w-3.5" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Quick Metrics Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-border text-xs">
-              <div className="bg-muted/40 p-3 rounded-xl border border-border">
-                <span className="text-muted-foreground block text-[11px] font-medium">Warehouse Stock</span>
-                <span className="font-bold text-foreground text-sm">
-                  {activeInventoryItem?.totalAvailable ?? form.watch("stockQuantity") ?? 0} units
-                </span>
-              </div>
-              <div className="bg-muted/40 p-3 rounded-xl border border-border">
-                <span className="text-muted-foreground block text-[11px] font-medium">Retail MRP</span>
-                <span className="font-bold text-foreground text-sm">
-                  ৳{Number(activeInventoryItem?.basePrice || form.watch("basePrice") || 0).toLocaleString()}
-                </span>
-              </div>
-              <div className="bg-muted/40 p-3 rounded-xl border border-border">
-                <span className="text-muted-foreground block text-[11px] font-medium">Unit Cost (COGS)</span>
-                <span className="font-bold text-foreground text-sm">
-                  ৳{Number(activeInventoryItem?.costPrice || form.watch("costPrice") || 0).toLocaleString()}
-                </span>
-              </div>
-              <div className="bg-muted/40 p-3 rounded-xl border border-border">
-                <span className="text-muted-foreground block text-[11px] font-medium">Barcode / EAN-13</span>
-                <span className="font-mono font-medium text-foreground text-xs truncate block">
-                  {activeInventoryItem?.barcode || form.watch("barcode") || initialData?.barcode || "—"}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Clothing POS Inventory Master Rack */}
         <InventoryPOSQuickShelf
@@ -905,8 +855,55 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
           refreshTrigger={intakeRefreshTrigger}
         />
 
+        {/* Sleek Form Section Stepper / Sticky Navigation Bar */}
+        <div className="sticky top-0 z-20 -mx-2 px-2 py-2.5 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between gap-3 overflow-x-auto scrollbar-none rounded-xl">
+          <div className="flex items-center gap-1.5 min-w-max">
+            <a
+              href="#section-basics"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground shadow-2xs transition-all"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              1. Basics &amp; Details
+            </a>
+            <a
+              href="#section-images"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            >
+              <ImagePlus className="h-3.5 w-3.5 text-primary" />
+              2. Imagery ({form.watch("media")?.length || 0})
+            </a>
+            <a
+              href="#section-architecture"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            >
+              <Layers className="h-3.5 w-3.5 text-primary" />
+              3. Variants ({productType === "VARIABLE" ? (form.watch("variants")?.length || 0) : "Single"})
+            </a>
+            <a
+              href="#section-pricing"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            >
+              <Calculator className="h-3.5 w-3.5 text-primary" />
+              4. Pricing &amp; Margin
+            </a>
+            <a
+              href="#section-organization"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            >
+              <FolderTree className="h-3.5 w-3.5 text-primary" />
+              5. Organization &amp; SEO
+            </a>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+              Status: <strong className="text-foreground">{form.watch("status") || "DRAFT"}</strong>
+            </span>
+          </div>
+        </div>
+
         {/* Product Type Architecture Selector (Single Product vs Variable Product Matrix) */}
-        <Card className="border-border/70 shadow-sm bg-gradient-to-r from-card via-muted/15 to-card overflow-hidden">
+        <Card id="section-architecture" className="border-border/70 shadow-sm bg-gradient-to-r from-card via-muted/15 to-card overflow-hidden scroll-mt-20">
           <CardContent className="p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1">
@@ -981,9 +978,19 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
         <div className="grid gap-6 md:grid-cols-3 pb-8">
           {/* Main Info Column */}
           <div className="space-y-6 md:col-span-2">
-            <Card className="border-border/60 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg">General Information</CardTitle>
+            <Card id="section-basics" className="border-border/60 shadow-sm scroll-mt-20">
+              <CardHeader className="pb-4 border-b border-border/50">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base sm:text-lg font-bold">General Information</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Product title, URL slug, description, and primary brand identity
+                    </p>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -1185,20 +1192,30 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
               </CardContent>
             </Card>
 
-            <Card className="border-border/60 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg">Product Images</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Upload photos. First image shown as thumbnail.
-                  </p>
+            <Card id="section-images" className="border-border/60 shadow-sm scroll-mt-20">
+              <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-border/50">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <ImagePlus className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-base sm:text-lg font-bold">Product Photography</CardTitle>
+                      <Badge variant="outline" className="text-xs font-mono">
+                        {mediaFields.length} {mediaFields.length === 1 ? "Image" : "Images"}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      High-resolution studio photography. First image is featured on storefront listing.
+                    </p>
+                  </div>
                 </div>
                 <label className="cursor-pointer">
-                  <div className="inline-flex items-center justify-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium shadow-xs hover:bg-accent hover:text-accent-foreground transition-colors">
+                  <div className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold shadow-2xs hover:bg-muted text-foreground transition-colors">
                     {uploadingImage !== null ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                     ) : (
-                      <ImagePlus className="h-3.5 w-3.5 text-slate-500" />
+                      <Upload className="h-3.5 w-3.5 text-primary" />
                     )}
                     <span>{uploadingImage !== null ? "Uploading..." : "Add Images"}</span>
                   </div>
@@ -1212,14 +1229,14 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                   />
                 </label>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-4">
                 {mediaFields.map((field, index) => {
                   const currentUrl = form.watch(`media.${index}.url`);
                   return (
-                    <div key={field.id} className="rounded-lg border bg-slate-50/50 p-4 space-y-3">
+                    <div key={field.id} className="rounded-xl border border-border bg-muted/20 p-4 space-y-3 transition-all hover:border-primary/30">
                       <div className="flex items-start gap-4">
                         {/* Preview thumbnail */}
-                        <div className="h-20 w-20 shrink-0 rounded-md border bg-white overflow-hidden flex items-center justify-center">
+                        <div className="h-20 w-20 shrink-0 rounded-xl border border-border bg-card overflow-hidden flex items-center justify-center shadow-2xs">
                           {currentUrl ? (
                             <img
                               src={currentUrl}
@@ -1228,27 +1245,29 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                               loading="lazy"
                             />
                           ) : (
-                            <div className="flex flex-col items-center text-slate-300">
+                            <div className="flex flex-col items-center text-muted-foreground/40">
                               <Upload className="h-6 w-6" />
-                              <span className="text-[10px] mt-1">No image</span>
+                              <span className="text-[10px] mt-1 font-mono">No image</span>
                             </div>
                           )}
                         </div>
                         <div className="flex-1 space-y-3">
                           {/* Upload label */}
                           <div>
-                            <p className="text-xs font-medium text-slate-600 mb-1">
-                              {index === 0 ? "Primary Image" : `Image ${index + 1}`}
-                              {index === 0 && (
-                                <Badge variant="outline" className="ml-2 text-[10px] border-emerald-300 text-emerald-700 bg-emerald-50">Main</Badge>
-                              )}
-                            </p>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                                {index === 0 ? "Primary Thumbnail" : `Gallery Photo #${index + 1}`}
+                                {index === 0 && (
+                                  <Badge className="text-[10px] bg-primary text-primary-foreground font-semibold px-2 py-0">Main</Badge>
+                                )}
+                              </p>
+                            </div>
                             <label className="cursor-pointer block">
-                              <div className="flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-600 hover:border-slate-400 hover:bg-slate-50 transition-colors">
+                              <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-card hover:bg-muted/50 px-3.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-all">
                                 {uploadingImage === index ? (
-                                  <><Loader2 className="h-4 w-4 animate-spin text-slate-400" /><span>Uploading...</span></>
+                                  <><Loader2 className="h-3.5 w-3.5 animate-spin text-primary" /><span>Uploading to CDN...</span></>
                                 ) : (
-                                  <><Upload className="h-4 w-4 text-slate-400" /><span>{currentUrl ? "Replace Image" : "Upload Image"}</span></>
+                                  <><Upload className="h-3.5 w-3.5 text-primary" /><span>{currentUrl ? "Replace File" : "Upload File"}</span></>
                                 )}
                               </div>
                               <input
@@ -1274,13 +1293,13 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                             name={`media.${index}.altText`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-xs text-slate-600">Alt Text</FormLabel>
+                                <FormLabel className="text-xs font-medium text-muted-foreground">SEO Alt Text</FormLabel>
                                 <FormControl>
                                   <Input
-                                    placeholder="Describe this image for accessibility..."
+                                    placeholder="Describe this photo for screen readers &amp; SEO..."
                                     {...field}
                                     value={field.value || ""}
-                                    className="h-8 text-sm"
+                                    className="h-8 text-xs bg-card"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1289,13 +1308,13 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                           />
                         </div>
                         {/* Controls */}
-                        <div className="flex flex-col items-center gap-2">
+                        <div className="flex flex-col items-center gap-2 shrink-0">
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
                             onClick={() => removeMedia(index)}
-                            className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded-lg"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -1304,7 +1323,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                             name={`media.${index}.isPrimary`}
                             render={({ field }) => (
                               <FormItem className="flex flex-col items-center gap-1">
-                                <FormLabel className="text-[10px] text-slate-500">Primary</FormLabel>
+                                <FormLabel className="text-[10px] text-muted-foreground font-medium">Primary</FormLabel>
                                 <FormControl>
                                   <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                                 </FormControl>
@@ -1317,18 +1336,23 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                   );
                 })}
                 {mediaFields.length === 0 && (
-                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-200 p-10 text-center hover:border-slate-300 hover:bg-slate-50/50 transition-colors">
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/80 bg-muted/20 p-8 text-center hover:border-primary/50 hover:bg-muted/40 transition-all group">
                     {uploadingImage !== null ? (
                       <>
-                        <Loader2 className="mb-3 h-8 w-8 animate-spin text-slate-400" />
-                        <p className="text-sm font-medium text-slate-600">Uploading image(s)...</p>
-                        <p className="mt-1 text-xs text-slate-400">Processing file, please wait.</p>
+                        <Loader2 className="mb-3 h-8 w-8 animate-spin text-primary" />
+                        <p className="text-sm font-semibold text-foreground">Uploading images...</p>
+                        <p className="mt-1 text-xs text-muted-foreground">Compressing and storing securely on CDN.</p>
                       </>
                     ) : (
                       <>
-                        <ImagePlus className="mb-3 h-8 w-8 text-slate-300" />
-                        <p className="text-sm font-medium text-slate-600">Add Product Images</p>
-                        <p className="mt-1 text-xs text-slate-400">Click to upload. PNG, JPG, WEBP supported.</p>
+                        <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                          <ImagePlus className="h-6 w-6" />
+                        </div>
+                        <p className="text-sm font-bold text-foreground">Click to upload product photography</p>
+                        <p className="mt-1 text-xs text-muted-foreground">PNG, JPG, WEBP • Recommended 1200×1600px luxury ratio</p>
+                        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-card border border-border text-xs font-semibold text-foreground shadow-2xs">
+                          <Upload className="h-3.5 w-3.5 text-primary" /> Choose Files
+                        </div>
                       </>
                     )}
                     <input
@@ -1913,207 +1937,157 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
               </Card>
             )}
 
-            <Card className="border-border/60 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  Search Engine Optimization (SEO)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="seo.metaTitle"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Meta Title</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="SEO Title"
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="seo.metaDescription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Meta Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="SEO Description"
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Sidebar Column */}
-          <div className="space-y-6">
-            {/* Real-time Storefront Live Preview Card */}
-            <StorefrontLivePreview
-              name={form.watch("name") || ""}
-              categoryName={categories.find((c) => c.id === form.watch("categoryId"))?.name}
-              brandName={brands.find((b) => b.id === form.watch("brandId"))?.name}
-              sku={form.watch("sku") || ""}
-              basePrice={Number(form.watch("basePrice")) || 0}
-              salePrice={form.watch("salePrice")}
-              costPrice={form.watch("costPrice")}
-              media={form.watch("media") || []}
-              variants={form.watch("variants") || []}
-              status={form.watch("status") || "DRAFT"}
-            />
-
             {/* Pricing & Profit Margin Engine */}
-            <Card className="border-border/60 shadow-sm">
-              <CardHeader className="pb-3">
+            <Card id="section-pricing" className="border-border/60 shadow-sm scroll-mt-20">
+              <CardHeader className="pb-3 border-b border-border/50">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calculator className="h-4 w-4 text-emerald-600" />
-                    <CardTitle className="text-base font-bold">Pricing &amp; Profit Engine</CardTitle>
-                  </div>
-                  <Badge variant="outline" className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border-emerald-200">
-                    Retail Calculator
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* 1. Buy / Cost Price */}
-                <FormField
-                  control={form.control}
-                  name="costPrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">1. Purchase Cost / Buy Price ({CURRENCY_SYMBOL})</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-medium">{CURRENCY_SYMBOL}</span>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0.00"
-                            className="pl-7 h-9 text-sm"
-                            {...field}
-                            value={field.value ?? ""}
-                            onChange={(e) => {
-                              const val = e.target.value ? parseFloat(e.target.value) : null;
-                              field.onChange(val);
-                              if (val && Number(marginPercent) > 0) {
-                                const newSell = Math.round(val * (1 + Number(marginPercent) / 100));
-                                form.setValue("basePrice", newSell, { shouldValidate: true });
-                              }
-                            }}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormDescription className="text-[11px]">Factory / Supplier wholesale cost</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* 2. Profit Margin % Selector & Presets */}
-                <div className="space-y-1.5 pt-0.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                      <Percent className="h-3 w-3 text-emerald-600" />
-                      2. Profit Margin % (Markup)
-                    </label>
-                    <span className="text-[11px] font-mono font-bold text-emerald-700">
-                      +{marginPercent}%
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    <Input
-                      type="number"
-                      min="0"
-                      max="1000"
-                      placeholder="e.g. 40"
-                      value={marginPercent}
-                      onChange={(e) => {
-                        const m = e.target.value;
-                        setMarginPercent(m);
-                        const numM = parseFloat(m);
-                        const cost = Number(form.getValues("costPrice")) || 0;
-                        if (!isNaN(numM) && cost > 0) {
-                          const newSell = Math.round(cost * (1 + numM / 100));
-                          form.setValue("basePrice", newSell, { shouldValidate: true });
-                        }
-                      }}
-                      className="h-8 text-xs font-mono font-bold w-20"
-                    />
-                    <div className="flex flex-wrap gap-1 flex-1">
-                      {[20, 30, 40, 50, 60, 100].map((pct) => (
-                        <button
-                          key={pct}
-                          type="button"
-                          onClick={() => {
-                            setMarginPercent(pct);
-                            const cost = Number(form.getValues("costPrice")) || 0;
-                            if (cost > 0) {
-                              const newSell = Math.round(cost * (1 + pct / 100));
-                              form.setValue("basePrice", newSell, { shouldValidate: true });
-                            }
-                          }}
-                          className={`text-[11px] px-2 py-1 rounded font-mono font-semibold transition-all cursor-pointer ${
-                            Number(marginPercent) === pct
-                              ? "bg-emerald-600 text-white shadow-xs"
-                              : "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
-                          }`}
-                        >
-                          +{pct}%
-                        </button>
-                      ))}
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                      <Calculator className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-base font-bold">Pricing &amp; Profit Engine</CardTitle>
+                        <Badge variant="outline" className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border-emerald-200">
+                          Automated Markup
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Define wholesale unit cost (COGS) and calculate selling price with target margins
+                      </p>
                     </div>
                   </div>
                 </div>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* 1. Buy / Cost Price */}
+                  <FormField
+                    control={form.control}
+                    name="costPrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">1. Purchase Cost (COGS) ({CURRENCY_SYMBOL})</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">{CURRENCY_SYMBOL}</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              className="pl-7 h-9 text-sm font-semibold"
+                              {...field}
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value ? parseFloat(e.target.value) : null;
+                                field.onChange(val);
+                                if (val && Number(marginPercent) > 0) {
+                                  const newSell = Math.round(val * (1 + Number(marginPercent) / 100));
+                                  form.setValue("basePrice", newSell, { shouldValidate: true });
+                                }
+                              }}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription className="text-[11px]">Factory / Supplier wholesale cost</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                {/* 3. Sell Price */}
-                <FormField
-                  control={form.control}
-                  name="basePrice"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-semibold">3. Retail Selling Price ({CURRENCY_SYMBOL}) <span className="text-red-500">*</span></FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">{CURRENCY_SYMBOL}</span>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0.00"
-                            className="pl-7 h-9 text-sm font-bold text-slate-900"
-                            {...field}
-                            onChange={(e) => {
-                              const sellVal = parseFloat(e.target.value) || 0;
-                              field.onChange(sellVal);
+                  {/* 2. Profit Margin % Selector & Presets */}
+                  <div className="space-y-1.5 pt-0.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-foreground flex items-center gap-1">
+                        <Percent className="h-3 w-3 text-emerald-600" />
+                        2. Target Margin %
+                      </label>
+                      <span className="text-[11px] font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                        +{marginPercent}%
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="1000"
+                        placeholder="e.g. 40"
+                        value={marginPercent}
+                        onChange={(e) => {
+                          const m = e.target.value;
+                          setMarginPercent(m);
+                          const numM = parseFloat(m);
+                          const cost = Number(form.getValues("costPrice")) || 0;
+                          if (!isNaN(numM) && cost > 0) {
+                            const newSell = Math.round(cost * (1 + numM / 100));
+                            form.setValue("basePrice", newSell, { shouldValidate: true });
+                          }
+                        }}
+                        className="h-9 text-xs font-mono font-bold"
+                      />
+                      <div className="flex flex-wrap gap-1">
+                        {[20, 30, 40, 50, 60, 100].map((pct) => (
+                          <button
+                            key={pct}
+                            type="button"
+                            onClick={() => {
+                              setMarginPercent(pct);
                               const cost = Number(form.getValues("costPrice")) || 0;
-                              if (cost > 0 && sellVal > cost) {
-                                const calculatedMargin = Math.round(((sellVal - cost) / cost) * 100);
-                                setMarginPercent(calculatedMargin);
+                              if (cost > 0) {
+                                const newSell = Math.round(cost * (1 + pct / 100));
+                                form.setValue("basePrice", newSell, { shouldValidate: true });
                               }
                             }}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormDescription className="text-[11px]">Customer-facing selling price</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                            className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-semibold transition-all cursor-pointer ${
+                              Number(marginPercent) === pct
+                                ? "bg-emerald-600 text-white shadow-2xs"
+                                : "bg-muted text-muted-foreground border border-border hover:bg-muted/80 hover:text-foreground"
+                            }`}
+                          >
+                            +{pct}%
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Sell Price */}
+                  <FormField
+                    control={form.control}
+                    name="basePrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">3. Retail Selling Price ({CURRENCY_SYMBOL}) <span className="text-destructive">*</span></FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">{CURRENCY_SYMBOL}</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              className="pl-7 h-9 text-sm font-bold text-foreground"
+                              {...field}
+                              onChange={(e) => {
+                                const sellVal = parseFloat(e.target.value) || 0;
+                                field.onChange(sellVal);
+                                const cost = Number(form.getValues("costPrice")) || 0;
+                                if (cost > 0 && sellVal > cost) {
+                                  const calculatedMargin = Math.round(((sellVal - cost) / cost) * 100);
+                                  setMarginPercent(calculatedMargin);
+                                }
+                              }}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription className="text-[11px]">Customer-facing selling price</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 {/* Dynamic Profit Margin Badge */}
                 {(() => {
@@ -2123,15 +2097,19 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                   const margin = cost > 0 ? Math.round((profit / cost) * 100) : 0;
                   if (base > 0 && cost > 0) {
                     return (
-                      <div className="rounded-lg bg-emerald-50/90 border border-emerald-300 p-3 text-xs text-emerald-950 flex items-center justify-between shadow-xs">
-                        <div>
-                          <p className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider">Unit Gross Profit</p>
-                          <p className="font-bold text-sm text-emerald-900">+৳{profit.toLocaleString()} <span className="text-[11px] font-normal text-emerald-700">/ pc</span></p>
+                      <div className="rounded-xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-transparent border border-emerald-500/30 p-3.5 text-xs text-foreground flex items-center justify-between shadow-2xs">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold">
+                            <TrendingUp className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-muted-foreground font-semibold">Projected Gross Margin</p>
+                            <p className="font-bold text-sm text-foreground">+৳{profit.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">per unit sold</span></p>
+                          </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider">Markup Margin</p>
-                          <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-700 text-white shadow-xs">
-                            +{margin}%
+                          <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-2xs">
+                            +{margin}% Markup
                           </span>
                         </div>
                       </div>
@@ -2155,10 +2133,10 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
 
                     return (
                       <FormItem>
-                        <FormLabel className="text-xs font-semibold">Sale / Offer Price ({CURRENCY_SYMBOL}) <span className="text-muted-foreground font-normal">(Optional)</span></FormLabel>
+                        <FormLabel className="text-xs font-semibold">Sale / Offer Price ({CURRENCY_SYMBOL}) <span className="text-muted-foreground font-normal">(Optional promotional discount)</span></FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-medium">{CURRENCY_SYMBOL}</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-medium">{CURRENCY_SYMBOL}</span>
                             <Input
                               type="number"
                               step="0.01"
@@ -2174,19 +2152,19 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                           </div>
                         </FormControl>
                         {isValidDiscount && (
-                          <div className="mt-1 flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
+                          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800">
                             <span className="font-bold">✓ {discountPct}% OFF</span>
-                            <span className="text-emerald-800 font-medium">
+                            <span className="font-medium">
                               (Customer saves ৳{savings.toLocaleString()})
                             </span>
                           </div>
                         )}
                         {isInvalidDiscount && (
-                          <div className="mt-1 flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 px-2.5 py-1 rounded border border-amber-300">
-                            <span>⚠️ Sale price should be less than regular price (৳{basePrice}) to provide a discount.</span>
+                          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-800">
+                            <span>⚠️ Sale price must be strictly less than retail price (৳{basePrice}) to provide a valid customer discount.</span>
                           </div>
                         )}
-                        <FormDescription className="text-[11px]">Shows strikethrough regular price on storefront if set</FormDescription>
+                        <FormDescription className="text-[11px]">Displays strikethrough regular price on storefront if active</FormDescription>
                         <FormMessage />
                       </FormItem>
                     );
@@ -2197,111 +2175,125 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
 
             {/* Inventory & Opening Stock Intake Card */}
             <Card className="border-border/60 shadow-sm">
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 border-b border-border/50">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Boxes className="h-4 w-4 text-blue-600" />
-                    <CardTitle className="text-base font-bold">Inventory &amp; Opening Stock</CardTitle>
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
+                      <Boxes className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-base font-bold">Inventory &amp; Opening Stock</CardTitle>
+                        <Badge variant="outline" className="text-[10px] font-mono text-blue-700 bg-blue-50 border-blue-200">
+                          Warehouse Sync
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Physical facility allocation and audit-tracked opening stock balances
+                      </p>
+                    </div>
                   </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setPrintModalOpen(true)}
-                    className="h-6 text-[11px] px-2 text-sky-700 hover:text-sky-900 hover:bg-sky-50 cursor-pointer gap-1 font-semibold"
+                    className="h-7 text-xs px-2.5 text-primary hover:bg-primary/5 cursor-pointer gap-1.5 font-semibold rounded-lg"
                   >
-                    <Printer className="h-3 w-3" />
-                    Print Stickers
+                    <Printer className="h-3.5 w-3.5" />
+                    Print Barcodes
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Destination Warehouse */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Destination Warehouse / Store</label>
-                  <Select
-                    value={selectedWarehouseId}
-                    onValueChange={(val) => {
-                      setSelectedWarehouseId(val);
-                      form.setValue("warehouseId" as any, val);
-                    }}
-                  >
-                    <SelectTrigger className="h-9 text-xs">
-                      <SelectValue placeholder="Select Warehouse Location">
-                        {warehouses.find((w) => w.id === selectedWarehouseId)?.name || "Main Central Warehouse (WH-MAIN-01)"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {warehouses.map((w) => (
-                        <SelectItem key={w.id} value={w.id} className="text-xs">
-                          {w.name} {w.code ? `(${w.code})` : ""}
-                        </SelectItem>
-                      ))}
-                      {warehouses.length === 0 && (
-                        <SelectItem value="default" className="text-xs">
-                          Main Central Warehouse (WH-MAIN-01)
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground">
-                    Initial intake stock movements will be assigned to this facility.
-                  </p>
-                </div>
-
-                {/* Opening Stock Quantity */}
-                {productType === "SINGLE" ? (
-                  <FormField
-                    control={form.control}
-                    name="stockQuantity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center justify-between">
-                          <FormLabel className="text-xs font-semibold">Opening Stock Quantity</FormLabel>
-                          {Number(field.value) > 0 && (
-                            <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-800 border-emerald-300 font-mono py-0 px-1.5">
-                              ✓ Auto-Intake
-                            </Badge>
-                          )}
-                        </div>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            placeholder="0"
-                            className="h-9 font-semibold text-sm"
-                            {...field}
-                            value={field.value ?? 0}
-                            onChange={(e) =>
-                              field.onChange(parseInt(e.target.value, 10) || 0)
-                            }
-                          />
-                        </FormControl>
-                        <FormDescription className="text-[11px]">
-                          Available physical units. Opening stock automatically creates an audit entry in Stock Movements ledger.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ) : (
-                  <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-3 space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-purple-900">Multi-Variant Aggregated Stock:</span>
-                      <span className="font-bold text-sm text-purple-900 font-mono">
-                        {variantFields.reduce((sum, _, i) => sum + (Number(form.watch(`variants.${i}.stockQuantity`)) || 0), 0)} pcs
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-purple-700">
-                      Stock is managed per variant in the Variations Matrix. The overall product stock is automatically maintained as the sum of all variant opening stocks.
+              <CardContent className="space-y-4 pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Destination Warehouse */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">Destination Facility / Store</label>
+                    <Select
+                      value={selectedWarehouseId}
+                      onValueChange={(val) => {
+                        setSelectedWarehouseId(val);
+                        form.setValue("warehouseId" as any, val);
+                      }}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue placeholder="Select Warehouse Location">
+                          {warehouses.find((w) => w.id === selectedWarehouseId)?.name || "Main Central Warehouse (WH-MAIN-01)"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {warehouses.map((w) => (
+                          <SelectItem key={w.id} value={w.id} className="text-xs">
+                            {w.name} {w.code ? `(${w.code})` : ""}
+                          </SelectItem>
+                        ))}
+                        {warehouses.length === 0 && (
+                          <SelectItem value="default" className="text-xs">
+                            Main Central Warehouse (WH-MAIN-01)
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground">
+                      Initial intake movements will be booked to this location.
                     </p>
                   </div>
-                )}
+
+                  {/* Opening Stock Quantity */}
+                  {productType === "SINGLE" ? (
+                    <FormField
+                      control={form.control}
+                      name="stockQuantity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className="flex items-center justify-between">
+                            <FormLabel className="text-xs font-semibold">Opening Stock Quantity</FormLabel>
+                            {Number(field.value) > 0 && (
+                              <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-800 border-emerald-300 font-mono py-0 px-1.5">
+                                ✓ Auto-Intake
+                              </Badge>
+                            )}
+                          </div>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              placeholder="0"
+                              className="h-9 font-semibold text-sm"
+                              {...field}
+                              value={field.value ?? 0}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value, 10) || 0)
+                              }
+                            />
+                          </FormControl>
+                          <FormDescription className="text-[11px]">
+                            Physical available units. Recorded to Stock Movements ledger.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : (
+                    <div className="rounded-xl border border-purple-200 dark:border-purple-800/40 bg-purple-50/50 dark:bg-purple-950/20 p-3 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-purple-900 dark:text-purple-200">Aggregated Variant Stock:</span>
+                        <span className="font-bold text-sm text-purple-900 dark:text-purple-200 font-mono">
+                          {variantFields.reduce((sum, _, i) => sum + (Number(form.watch(`variants.${i}.stockQuantity`)) || 0), 0)} pcs
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-purple-700 dark:text-purple-300">
+                        Stock is calculated dynamically from individual sizes/colors in the Variations Matrix.
+                      </p>
+                    </div>
+                  )}
+                </div>
 
                 {/* Low Stock Alert Quantity (Reorder Point) */}
                 <div className="space-y-1.5 pt-1">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-slate-700">Alert Quantity (Reorder Point)</label>
+                    <label className="text-xs font-semibold text-foreground">Alert Quantity (Reorder Point)</label>
                     <span className="text-[11px] text-muted-foreground font-mono font-semibold">
                       {alertQuantity} pcs
                     </span>
@@ -2316,179 +2308,267 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
                       setAlertQuantity(v);
                       form.setValue("alertQuantity" as any, v);
                     }}
-                    className="h-9 text-xs font-mono"
+                    className="h-9 text-xs font-mono max-w-xs"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Triggers low stock alert badges on POS inventory shelf when available units drop below this threshold.
+                    Triggers low-stock badges when available units drop below this threshold.
                   </p>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Search Engine Optimization (SEO) */}
             <Card className="border-border/60 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg">Status & Organization</CardTitle>
+              <CardHeader className="pb-3 border-b border-border/50">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Tag className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base font-bold">Search Engine Optimization (SEO)</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">Customize Google snippet &amp; social sharing preview</p>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-4">
                 <FormField
                   control={form.control}
-                  name="status"
+                  name="seo.metaTitle"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        items={[
-                          { value: "DRAFT", label: "Draft" },
-                          { value: "ACTIVE", label: "Active" },
-                          { value: "ARCHIVED", label: "Archived" },
-                        ]}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a status">
-                              {field.value === "ACTIVE"
-                                ? "Active"
-                                : field.value === "DRAFT"
-                                ? "Draft"
-                                : field.value === "ARCHIVED"
-                                ? "Archived"
-                                : undefined}
-                            </SelectValue>
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="DRAFT">Draft</SelectItem>
-                          <SelectItem value="ACTIVE">Active</SelectItem>
-                          <SelectItem value="ARCHIVED">Archived</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormLabel className="text-xs font-medium">Meta Title</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g. Luxury Linen Classic Shirt | Anchor Fashion"
+                          {...field}
+                          value={field.value || ""}
+                          className="h-9 text-xs"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
-                  name="isFeatured"
+                  name="seo.metaDescription"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel>Featured</FormLabel>
-                        <FormDescription>Show on homepage</FormDescription>
-                      </div>
+                    <FormItem>
+                      <FormLabel className="text-xs font-medium">Meta Description</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
+                        <Textarea
+                          placeholder="Brief summary of this product for search results..."
+                          {...field}
+                          value={field.value || ""}
+                          className="text-xs resize-none"
+                          rows={3}
                         />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
+              </CardContent>
+            </Card>
+          </div>
 
-                {/* WordPress-Style Hierarchical Multi-Category Selector */}
-                <div className="pt-2">
-                  <CategoryHierarchySelector
-                    categories={categories}
-                    selectedCategoryIds={
-                      form.watch("categoryIds") && form.watch("categoryIds")!.length > 0
-                        ? form.watch("categoryIds")!
-                        : form.watch("categoryId")
-                        ? [form.watch("categoryId")!]
-                        : []
-                    }
-                    primaryCategoryId={form.watch("categoryId")}
-                    onSelectionChange={(selectedIds, primaryId) => {
-                      form.setValue("categoryIds", selectedIds, { shouldValidate: true });
-                      form.setValue("categoryId", primaryId || "", { shouldValidate: true });
+          {/* Right Sidebar Column */}
+          <div className="space-y-6 md:col-span-1">
+            <div className="sticky top-16 space-y-6">
+              {/* Real-time Storefront Live Preview Card */}
+              <StorefrontLivePreview
+                name={form.watch("name") || ""}
+                categoryName={
+                  categories.find((c) => c.id === form.watch("categoryId"))?.name ||
+                  categories.find((c) => form.watch("categoryIds")?.includes(c.id))?.name ||
+                  "Apparel"
+                }
+                brandName={brands.find((b) => b.id === form.watch("brandId"))?.name || "Anchor Fashion"}
+                sku={form.watch("sku") || activeInventoryItem?.sku || ""}
+                basePrice={Number(form.watch("basePrice")) || 0}
+                salePrice={form.watch("salePrice")}
+                costPrice={form.watch("costPrice")}
+                media={form.watch("media") || []}
+                variants={form.watch("variants") || []}
+                status={form.watch("status") || "DRAFT"}
+              />
 
-                      // Auto generate SKU if needed when primary category changes
-                      const currentSku = form.getValues("sku");
-                      const currentName = form.getValues("name");
-                      if (!currentSku && currentName?.trim()) {
-                        setTimeout(() => handleGenerateCode(), 100);
-                      }
-                    }}
-                    onCategoryCreated={(newCat) => {
-                      setCategories((prev) => [...prev, newCat]);
-                    }}
-                  />
-                  {form.formState.errors.categoryId && (
-                    <p className="text-destructive text-xs font-medium mt-1.5">
-                      {form.formState.errors.categoryId.message || "Please select at least one primary category."}
-                    </p>
-                  )}
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="brandId"
-                  render={({ field }) => {
-                    const selectedBrand = brands.find((brand) => brand.id === field.value);
-                    const brandDisplayValue =
-                      field.value === "none" || !field.value
-                        ? field.value === "none"
-                          ? "No Brand"
-                          : undefined
-                        : selectedBrand
-                        ? selectedBrand.name
-                        : undefined;
-
-                    return (
+              {/* Status & Taxonomy / Organization Card */}
+              <Card id="section-organization" className="border-border/60 shadow-sm scroll-mt-20">
+                <CardHeader className="pb-3 border-b border-border/50">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <FolderTree className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base font-bold">Status &amp; Taxonomy</CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">Storefront visibility &amp; categories</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-4">
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Brand</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Publishing Status</FormLabel>
                         <Select
-                          onValueChange={(val) =>
-                            field.onChange(val === "none" ? "" : val)
-                          }
-                          value={field.value || "none"}
+                          onValueChange={field.onChange}
+                          value={field.value}
                           items={[
-                            { value: "none", label: "No Brand" },
-                            ...brands.map((brand) => ({
-                              value: brand.id,
-                              label: brand.name,
-                            })),
+                            { value: "DRAFT", label: "Draft (Hidden from shoppers)" },
+                            { value: "ACTIVE", label: "Active (Live on website)" },
+                            { value: "ARCHIVED", label: "Archived (Discontinued)" },
                           ]}
                         >
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a brand">
-                                {brandDisplayValue}
+                            <SelectTrigger className="h-9 text-xs">
+                              <SelectValue placeholder="Select a status">
+                                {field.value === "ACTIVE"
+                                  ? "Active (Live on website)"
+                                  : field.value === "DRAFT"
+                                  ? "Draft (Hidden from shoppers)"
+                                  : field.value === "ARCHIVED"
+                                  ? "Archived (Discontinued)"
+                                  : undefined}
                               </SelectValue>
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="none">No Brand</SelectItem>
-                            {brands.map((brand) => (
-                              <SelectItem key={brand.id} value={brand.id}>
-                                {brand.name}
-                              </SelectItem>
-                            ))}
+                            <SelectItem value="DRAFT" className="text-xs">Draft (Hidden from shoppers)</SelectItem>
+                            <SelectItem value="ACTIVE" className="text-xs">Active (Live on website)</SelectItem>
+                            <SelectItem value="ARCHIVED" className="text-xs">Archived (Discontinued)</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
-                    );
-                  }}
-                />
-              </CardContent>
-            </Card>
+                    )}
+                  />
 
-            {/* Quick help tips */}
-            <div className="rounded-xl bg-muted/40 border border-border p-4 text-xs text-muted-foreground space-y-1">
-              <p className="font-semibold text-foreground">💡 Tips</p>
-              <p>• <strong>Save Draft</strong> — save without publishing</p>
-              <p>• <strong>Publish</strong> — make live in store immediately</p>
-              <p>• Use variants for different sizes/colors</p>
-              <p>• Add alt text for better SEO &amp; accessibility</p>
+                  <FormField
+                    control={form.control}
+                    name="isFeatured"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border bg-muted/20 p-3 shadow-2xs">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-xs font-semibold">Featured Garment</FormLabel>
+                          <FormDescription className="text-[11px]">Pin to storefront homepage showcases</FormDescription>
+                        </div>
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* WordPress-Style Hierarchical Multi-Category Selector */}
+                  <div className="pt-2">
+                    <CategoryHierarchySelector
+                      categories={categories}
+                      selectedCategoryIds={
+                        form.watch("categoryIds") && form.watch("categoryIds")!.length > 0
+                          ? form.watch("categoryIds")!
+                          : form.watch("categoryId")
+                          ? [form.watch("categoryId")!]
+                          : []
+                      }
+                      primaryCategoryId={form.watch("categoryId")}
+                      onSelectionChange={(selectedIds, primaryId) => {
+                        form.setValue("categoryIds", selectedIds, { shouldValidate: true });
+                        form.setValue("categoryId", primaryId || "", { shouldValidate: true });
+
+                        // Auto generate SKU if needed when primary category changes
+                        const currentSku = form.getValues("sku");
+                        const currentName = form.getValues("name");
+                        if (!currentSku && currentName?.trim()) {
+                          setTimeout(() => handleGenerateCode(), 100);
+                        }
+                      }}
+                      onCategoryCreated={(newCat) => {
+                        setCategories((prev) => [...prev, newCat]);
+                      }}
+                    />
+                    {form.formState.errors.categoryId && (
+                      <p className="text-destructive text-xs font-medium mt-1.5">
+                        {form.formState.errors.categoryId.message || "Please select at least one primary category."}
+                      </p>
+                    )}
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="brandId"
+                    render={({ field }) => {
+                      const selectedBrand = brands.find((brand) => brand.id === field.value);
+                      const brandDisplayValue =
+                        field.value === "none" || !field.value
+                          ? field.value === "none"
+                            ? "No Brand"
+                            : undefined
+                          : selectedBrand
+                          ? selectedBrand.name
+                          : undefined;
+
+                      return (
+                        <FormItem>
+                          <FormLabel className="text-xs font-semibold">Brand / Designer</FormLabel>
+                          <Select
+                            onValueChange={(val) =>
+                              field.onChange(val === "none" ? "" : val)
+                            }
+                            value={field.value || "none"}
+                            items={[
+                              { value: "none", label: "No Brand" },
+                              ...brands.map((brand) => ({
+                                value: brand.id,
+                                label: brand.name,
+                              })),
+                            ]}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-9 text-xs">
+                                <SelectValue placeholder="Select a brand">
+                                  {brandDisplayValue}
+                                </SelectValue>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="none" className="text-xs">No Brand</SelectItem>
+                              {brands.map((brand) => (
+                                <SelectItem key={brand.id} value={brand.id} className="text-xs">
+                                  {brand.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Executive Publishing Checklist Tips */}
+              <div className="rounded-xl bg-muted/40 border border-border p-4 text-xs text-muted-foreground space-y-2">
+                <p className="font-semibold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Executive Publishing Checklist
+                </p>
+                <p>• <strong>Save Draft:</strong> Saves style data without making it visible to storefront shoppers.</p>
+                <p>• <strong>Publish to Store:</strong> Makes style immediately live and purchasable online.</p>
+                <p>• <strong>Variants Matrix:</strong> Use for fashion styles with size/color options.</p>
+                <p>• <strong>Warehouse Link:</strong> Real stock sync prevents accidental overselling.</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Actions Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card/95 shadow-sm backdrop-blur-xs">
+        <div className="sticky bottom-3 z-30 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card/95 shadow-xl backdrop-blur-md">
           <div className="text-xs text-muted-foreground flex items-center gap-2">
             {!isEditMode && !hasLinkedInventory ? (
               <span className="text-muted-foreground font-medium flex items-center gap-1.5">

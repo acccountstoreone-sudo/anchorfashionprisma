@@ -50,10 +50,16 @@ export function InventoryPOSQuickShelf({
   onOpenIntakeDialog,
   refreshTrigger = 0,
 }: InventoryPOSQuickShelfProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  // If an active item is already linked, default to collapsed so the form is immediately visible
+  const [isOpen, setIsOpen] = useState(!activeItem);
   const [search, setSearch] = useState("");
   const [internalCategory, setInternalCategory] = useState("ALL");
   const effectiveCategory = selectedCategoryId !== undefined ? selectedCategoryId : internalCategory;
+
+  const handleSelectItem = (item: any) => {
+    onSelectItem(item);
+    setIsOpen(false);
+  };
 
   const handleCategoryChange = (catId: string) => {
     setInternalCategory(catId);
@@ -154,34 +160,58 @@ export function InventoryPOSQuickShelf({
 
       {/* ── VERIFIED IMPORTED STYLE NOTIFICATION ── */}
       {activeItem && (
-        <div className="flex flex-wrap items-center justify-between p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-800/40 text-xs gap-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span className="font-semibold text-emerald-900 dark:text-emerald-200">
-              Active Inventory Linked:
-            </span>
-            <span className="font-bold text-foreground">{activeItem.name}</span>
-            <span className="font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300/60 dark:border-emerald-700/60">
-              Code: {activeItem.sku || "N/A"}
-            </span>
-            <span className="text-muted-foreground/40">&bull;</span>
-            <span className="text-muted-foreground">
-              Physical Stock: <strong className="text-foreground">{activeItem.totalAvailable || 0} units</strong>
-            </span>
-            <span className="text-muted-foreground/40">&bull;</span>
-            <span className="text-muted-foreground">
-              Cost: <strong>৳{activeItem.costPrice || 0}</strong> &rarr; Retail: <strong>৳{activeItem.basePrice || 0}</strong>
-            </span>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/25 text-xs gap-3.5 shadow-2xs">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs shrink-0">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-sm text-foreground tracking-tight">
+                  {activeItem.name}
+                </span>
+                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-muted text-foreground border border-border">
+                  {activeItem.sku || "SKU"}
+                </span>
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-300/60 dark:border-emerald-700/60">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {activeItem.totalAvailable || 0} in warehouse
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground flex-wrap">
+                <span>Unit Cost (COGS): <strong className="text-foreground">৳{Number(activeItem.costPrice || 0).toLocaleString()}</strong></span>
+                <span>&bull;</span>
+                <span>Retail MRP: <strong className="text-foreground">৳{Number(activeItem.basePrice || 0).toLocaleString()}</strong></span>
+                {activeItem.barcode && (
+                  <>
+                    <span>&bull;</span>
+                    <span className="font-mono">Barcode: {activeItem.barcode}</span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-7 text-[11px] text-muted-foreground hover:text-foreground font-medium cursor-pointer"
-            onClick={onOpenFullModal}
-          >
-            Change Style
-          </Button>
+          <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs font-medium border-border bg-card hover:bg-muted text-foreground cursor-pointer rounded-lg"
+              onClick={onOpenFullModal}
+            >
+              Switch Style
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs font-semibold text-primary hover:text-primary/80 hover:bg-primary/5 cursor-pointer rounded-lg gap-1"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              {isOpen ? "Hide Shelf" : "Browse Styles"}
+              {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
         </div>
       )}
 
@@ -311,7 +341,7 @@ export function InventoryPOSQuickShelf({
                         ? "border-primary ring-2 ring-primary/10 bg-primary/5"
                         : "border-border"
                     )}
-                    onClick={() => onSelectItem(item)}
+                    onClick={() => handleSelectItem(item)}
                   >
                     <div>
                       {/* Short Code & Stock */}
@@ -361,7 +391,7 @@ export function InventoryPOSQuickShelf({
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onSelectItem(item);
+                          handleSelectItem(item);
                         }}
                       >
                         {isSelected ? "Imported ✓" : "Import Style"}
