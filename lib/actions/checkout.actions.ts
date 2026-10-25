@@ -2,10 +2,8 @@
 
 import { CheckoutService } from "../services/checkout.service";
 import { OrderService } from "../services/order.service";
-import { auth, getServerSession } from "@/lib/auth/server";
+import { getServerSession } from "@/lib/auth/server";
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
 import {
   CheckoutFormValues,
   checkoutFormSchema,
