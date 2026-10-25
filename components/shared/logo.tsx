@@ -24,63 +24,49 @@ export const AnchorFashionLogo = ({
       <style>{`
         .af-draw-gold {
           fill: #C9A86A;
-          stroke: #C9A86A;
-          stroke-width: 1px;
-          stroke-dasharray: 1000;
-          stroke-dashoffset: 1000;
-          animation: af-draw-loop 6s cubic-bezier(0.64, 0.04, 0.35, 1) infinite;
         }
 
         .af-draw-blue {
           fill: #122B59;
-          stroke: #122B59;
-          stroke-width: 0.8px;
-          stroke-dasharray: 1500;
-          stroke-dashoffset: 1500;
-          animation: af-draw-loop 6s cubic-bezier(0.64, 0.04, 0.35, 1) infinite;
-        }
-
-        .af-draw-line {
-          stroke: #122B59;
-          stroke-width: 1.5px;
-          stroke-dasharray: 300;
-          stroke-dashoffset: 300;
-          animation: af-draw-line-loop 6s cubic-bezier(0.64, 0.04, 0.35, 1) infinite;
         }
 
         .dark .af-draw-blue {
           fill: #F8FAFC;
-          stroke: #F8FAFC;
         }
 
-        .dark .af-draw-line {
+        .af-loading .af-draw-gold {
+          stroke: #C9A86A;
+          stroke-width: 1px;
+          stroke-dasharray: 1000;
+          stroke-dashoffset: 1000;
+          animation: af-draw-loop 3s cubic-bezier(0.64, 0.04, 0.35, 1) infinite;
+        }
+
+        .af-loading .af-draw-blue {
+          stroke: #122B59;
+          stroke-width: 0.8px;
+          stroke-dasharray: 1500;
+          stroke-dashoffset: 1500;
+          animation: af-draw-loop 3s cubic-bezier(0.64, 0.04, 0.35, 1) infinite;
+        }
+
+        .dark .af-loading .af-draw-blue {
           stroke: #F8FAFC;
         }
 
         @keyframes af-draw-loop {
           0% { stroke-dashoffset: 1500; fill-opacity: 0; }
-          25% { stroke-dashoffset: 0; fill-opacity: 0; }
-          35% { stroke-dashoffset: 0; fill-opacity: 1; }
-          75% { stroke-dashoffset: 0; fill-opacity: 1; }
-          85% { stroke-dashoffset: 0; fill-opacity: 0; }
+          40% { stroke-dashoffset: 0; fill-opacity: 0.3; }
+          60% { stroke-dashoffset: 0; fill-opacity: 1; }
+          90% { stroke-dashoffset: 0; fill-opacity: 1; }
           100% { stroke-dashoffset: 1500; fill-opacity: 0; }
-        }
-
-        @keyframes af-draw-line-loop {
-          0% { stroke-dashoffset: 300; opacity: 1; }
-          25% { stroke-dashoffset: 0; opacity: 1; }
-          35% { stroke-dashoffset: 0; opacity: 1; }
-          75% { stroke-dashoffset: 0; opacity: 1; }
-          85% { stroke-dashoffset: 0; opacity: 0; }
-          95% { stroke-dashoffset: 300; opacity: 0; }
-          100% { stroke-dashoffset: 300; opacity: 1; }
         }
       `}</style>
 
       {/* SVG Canvas for the Perfect Anchor Fashion Logo */}
       <svg
         viewBox="0 0 440 130"
-        className="h-auto w-full"
+        className={`h-auto w-full ${isLoading ? "af-loading" : ""}`}
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>

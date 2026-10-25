@@ -393,7 +393,7 @@ export function ProductsTable({
                 </Button>
               </Link>
               <Link href="/admin/products/new">
-                <Button className="bg-slate-900 text-white hover:bg-slate-800 gap-1.5">
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5 font-semibold">
                   <Plus className="h-4 w-4" /> Add Product
                 </Button>
               </Link>

@@ -115,5 +115,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "lnum" 1, "tnum" 1;
+    font-variant-numeric: lining-nums tabular-nums;
   }
 }

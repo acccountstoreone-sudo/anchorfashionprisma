@@ -2477,8 +2477,8 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             </Card>
 
             {/* Quick help tips */}
-            <div className="rounded-lg bg-slate-50 border border-slate-100 p-4 text-xs text-slate-500 space-y-1">
-              <p className="font-medium text-slate-600">💡 Tips</p>
+            <div className="rounded-xl bg-muted/40 border border-border p-4 text-xs text-muted-foreground space-y-1">
+              <p className="font-semibold text-foreground">💡 Tips</p>
               <p>• <strong>Save Draft</strong> — save without publishing</p>
               <p>• <strong>Publish</strong> — make live in store immediately</p>
               <p>• Use variants for different sizes/colors</p>
@@ -2488,11 +2488,11 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
         </div>
 
         {/* Bottom Actions Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-card/95 shadow-sm backdrop-blur-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card/95 shadow-sm backdrop-blur-xs">
           <div className="text-xs text-muted-foreground flex items-center gap-2">
             {!isEditMode && !hasLinkedInventory ? (
-              <span className="text-slate-600 dark:text-slate-400 font-medium flex items-center gap-1.5">
-                <AlertCircle className="h-4 w-4 text-slate-500 shrink-0" />
+              <span className="text-muted-foreground font-medium flex items-center gap-1.5">
+                <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0" />
                 Select an inventory product above to enable live publishing.
               </span>
             ) : (
@@ -2533,10 +2533,10 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
             <Button
               type="button"
               className={cn(
-                "cursor-pointer text-white font-semibold shadow-xs rounded-xl h-9 px-5",
+                "cursor-pointer font-semibold shadow-xs rounded-xl h-9 px-5",
                 !isEditMode && !hasLinkedInventory
-                  ? "bg-slate-900 hover:bg-slate-800"
-                  : "bg-emerald-600 hover:bg-emerald-500"
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white"
               )}
               onClick={() => {
                 if (!isEditMode && !hasLinkedInventory) {

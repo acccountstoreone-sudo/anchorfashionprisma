@@ -538,7 +538,7 @@ export function InventoryMasterHubClient({
                                 )}
                               </Button>
                               <div>
-                                <p className="font-bold text-foreground text-sm leading-tight">
+                                <p className="font-bold text-foreground text-sm leading-tight font-sans">
                                   {item.name}
                                 </p>
                                 <div className="flex items-center gap-1.5 mt-1">
