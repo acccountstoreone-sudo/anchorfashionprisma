@@ -21,8 +21,8 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-inter)", "'Inter'", "var(--font-sans)", "system-ui", "sans-serif"],
-        inter: ["var(--font-inter)", "'Inter'", "system-ui", "sans-serif"],
+        sans: ["'Inter'", "var(--font-inter)", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "Helvetica", "Arial", "sans-serif"],
+        inter: ["'Inter'", "var(--font-inter)", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "Helvetica", "Arial", "sans-serif"],
         jost: ["var(--font-jost)", "'Jost'", "system-ui", "sans-serif"],
         heading: ["var(--font-playfair)", "var(--font-heading)", "Georgia", "serif"],
         mono: ["var(--font-mono)", "monospace"],
