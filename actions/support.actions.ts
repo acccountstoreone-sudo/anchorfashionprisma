@@ -7,12 +7,15 @@ import {
   SupportTicketRecord,
   TicketMessageRecord,
 } from "@/repositories/support.repository";
+import { verifyStaff, verifyAuthenticated } from "@/lib/security/roles";
 
 export async function getSupportTicketsAction(): Promise<{
   success: boolean;
   data?: SupportTicketRecord[];
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const tickets = await SupportRepository.getTickets();
     return { success: true, data: tickets };
@@ -26,6 +29,8 @@ export async function getTicketMessagesAction(ticketId: string): Promise<{
   data?: TicketMessageRecord[];
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!ticketId) return { success: false, error: "Ticket ID is required" };
     const messages = await SupportRepository.getTicketMessages(ticketId);
@@ -46,6 +51,8 @@ export async function sendAgentMessageAction(params: {
   data?: TicketMessageRecord;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = await createClient();
     const {
@@ -73,6 +80,8 @@ export async function updateTicketStatusAction(params: {
   success: boolean;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await SupportRepository.updateTicketStatus(params.ticketId, params.status);
     revalidatePath("/admin/support/chat");
@@ -86,6 +95,8 @@ export async function addTicketMessageAction(
   ticketId: string,
   data: { message?: string; body?: string; is_internal_note?: boolean; sender_id?: string; sender_type?: any }
 ): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const supabase = await createClient();
     const {

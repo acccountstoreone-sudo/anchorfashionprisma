@@ -162,7 +162,7 @@ export async function updateStoreInfo(info: StoreInfo) {
     if (error) throw error;
     
     try {
-      revalidateTag("settings");
+      revalidateTag("settings", "max");
       revalidatePath("/", "layout");
     } catch {}
     return { success: true };
@@ -191,7 +191,7 @@ export async function updateSocialLinks(links: SocialLinks) {
     if (error) throw error;
     
     try {
-      revalidateTag("settings");
+      revalidateTag("settings", "max");
       revalidatePath("/", "layout");
     } catch {}
     return { success: true };
@@ -224,7 +224,7 @@ export async function updateStoreConfig(config: StoreConfig) {
     if (error) throw error;
     
     try {
-      revalidateTag("settings");
+      revalidateTag("settings", "max");
       revalidatePath("/admin/settings/store");
       revalidatePath("/", "layout");
     } catch {}
@@ -258,7 +258,7 @@ export async function updateSeoSettings(settings: SeoSettings) {
     if (error) throw error;
 
     try {
-      revalidateTag("settings");
+      revalidateTag("settings", "max");
       revalidatePath("/", "layout");
       revalidatePath("/admin/settings/seo");
     } catch {}

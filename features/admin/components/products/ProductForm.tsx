@@ -691,7 +691,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
       alertQuantity: Number(alertQuantity || (rawValues as any).alertQuantity || 5),
       stockQuantity:
         productType === "VARIABLE" && (rawValues.variants || []).length > 0
-          ? rawValues.variants.reduce((acc, v) => acc + (Number(v.stockQuantity) || 0), 0)
+          ? (rawValues.variants ?? []).reduce((acc, v) => acc + (Number(v.stockQuantity) || 0), 0)
           : Number(rawValues.stockQuantity ?? 0),
       variants:
         productType === "VARIABLE" && (rawValues.variants || []).length > 0
@@ -855,8 +855,8 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
           refreshTrigger={intakeRefreshTrigger}
         />
 
-        {/* Sleek Form Section Stepper / Sticky Navigation Bar */}
-        <div className="sticky top-0 z-20 -mx-2 px-2 py-2.5 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between gap-3 overflow-x-auto scrollbar-none rounded-xl">
+        {/* Sleek Form Section Stepper / Navigation Bar */}
+        <div className="mb-2 px-3 py-2 bg-muted/30 border border-border/60 flex items-center justify-between gap-3 overflow-x-auto scrollbar-none rounded-xl">
           <div className="flex items-center gap-1.5 min-w-max">
             <a
               href="#section-basics"
@@ -2374,7 +2374,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
 
           {/* Right Sidebar Column */}
           <div className="space-y-6 md:col-span-1">
-            <div className="sticky top-16 space-y-6">
+            <div className="space-y-6">
               {/* Real-time Storefront Live Preview Card */}
               <StorefrontLivePreview
                 name={form.watch("name") || ""}
@@ -2568,7 +2568,7 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
         </div>
 
         {/* Bottom Actions Bar */}
-        <div className="sticky bottom-3 z-30 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card/95 shadow-xl backdrop-blur-md">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl border border-border bg-card shadow-sm">
           <div className="text-xs text-muted-foreground flex items-center gap-2">
             {!isEditMode && !hasLinkedInventory ? (
               <span className="text-muted-foreground font-medium flex items-center gap-1.5">
@@ -2676,9 +2676,9 @@ export function ProductForm({ initialData, returnPath = "/admin/products" }: Pro
 
       {/* Barcode Sticker Sheet / Label Generator Modal */}
       <PrintBarcodeModal
-        isOpen={printModalOpen}
-        onClose={() => setPrintModalOpen(false)}
-        items={barcodePrintItems}
+        open={printModalOpen}
+        onOpenChange={setPrintModalOpen}
+        labels={barcodePrintItems}
       />
     </Form>
   );

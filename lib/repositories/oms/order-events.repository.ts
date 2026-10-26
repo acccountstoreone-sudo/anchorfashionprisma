@@ -11,12 +11,12 @@ export class OrderEventsRepository {
 
   async getStatusHistory(orderId: string): Promise<OrderStatusHistory[]> {
     try {
-      const history = await prisma.statusHistory.findMany({
+      const history = await prisma.orderStatusHistory.findMany({
         where: { orderId },
         orderBy: { createdAt: "desc" },
       });
 
-      return history.map(h => ({
+      return history.map((h: any) => ({
         id: h.id,
         order_id: h.orderId,
         status: h.status,

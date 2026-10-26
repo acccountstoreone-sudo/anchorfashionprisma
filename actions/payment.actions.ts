@@ -9,6 +9,7 @@ import {
 } from "@/validations/payment.schema";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { verifyManager, verifyAdmin } from "@/lib/security/roles";
 
 export async function initializePaymentAction(formData: FormData) {
   const data = Object.fromEntries(formData.entries());
@@ -31,6 +32,8 @@ export async function initializePaymentAction(formData: FormData) {
 }
 
 export async function requestRefundAction(formData: FormData) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   const data = Object.fromEntries(formData.entries());
 
   const validation = refundRequestSchema.safeParse({
@@ -55,6 +58,8 @@ export async function toggleProviderStatusAction(
   providerId: string,
   status: "active" | "inactive"
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAdmin();
   const supabase = await createAdminClient();
   const { error } = await supabase
     .from("payment_providers")

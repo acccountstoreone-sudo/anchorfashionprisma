@@ -11,6 +11,7 @@ import {
   DashboardType,
 } from "@/types/operations.types";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function trackEvent(
   data: unknown
@@ -47,6 +48,8 @@ export async function getDashboardSnapshot(
   type: DashboardType,
   timeframe: string = "daily"
 ): Promise<{ data?: DashboardSnapshot | null; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const supabase = await createClient();
   try {
     const { data, error } = await supabase
@@ -70,6 +73,8 @@ export async function getDashboardSnapshot(
 export async function saveDashboardSnapshot(
   data: unknown
 ): Promise<{ error?: string; success?: boolean }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const parsedData = DashboardSnapshotSchema.parse(data);
     const supabase = await createClient();
@@ -95,6 +100,8 @@ export async function getAnalyticsEvents(
   category?: string,
   limit: number = 100
 ): Promise<{ data?: AnalyticsEvent[]; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const supabase = await createClient();
   try {
     let query = supabase

@@ -3,12 +3,15 @@
 import { ProcurementRepository } from "@/repositories/procurement.repository";
 import { Supplier, PurchaseOrder, PurchaseOrderItem } from "@/types/inventory.types";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 const procurementRepo = new ProcurementRepository();
 
 // --- Suppliers ---
 
 export async function getSuppliersAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await procurementRepo.getSuppliers();
     return { success: true, data };
@@ -19,6 +22,8 @@ export async function getSuppliersAction() {
 }
 
 export async function getWarehousesAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await procurementRepo.getWarehouses();
     return { success: true, data };
@@ -29,6 +34,8 @@ export async function getWarehousesAction() {
 }
 
 export async function getSupplierByIdAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await procurementRepo.getSupplierById(id);
     return { success: true, data };
@@ -39,6 +46,8 @@ export async function getSupplierByIdAction(id: string) {
 }
 
 export async function createSupplierAction(supplier: Omit<Supplier, "id" | "created_at" | "updated_at">) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await procurementRepo.createSupplier(supplier);
     revalidatePath("/manager/inventory/suppliers");
@@ -50,6 +59,8 @@ export async function createSupplierAction(supplier: Omit<Supplier, "id" | "crea
 }
 
 export async function updateSupplierAction(id: string, updates: Partial<Supplier>) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await procurementRepo.updateSupplier(id, updates);
     revalidatePath("/manager/inventory/suppliers");
@@ -64,6 +75,8 @@ export async function updateSupplierAction(id: string, updates: Partial<Supplier
 // --- Purchase Orders ---
 
 export async function getPurchaseOrdersAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await procurementRepo.getPurchaseOrders();
     return { success: true, data };
@@ -74,6 +87,8 @@ export async function getPurchaseOrdersAction() {
 }
 
 export async function getPurchaseOrderByIdAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await procurementRepo.getPurchaseOrderById(id);
     return { success: true, data };
@@ -87,6 +102,8 @@ export async function createPurchaseOrderAction(
   poData: Omit<PurchaseOrder, "id" | "created_at" | "updated_at">,
   items: Omit<PurchaseOrderItem, "id" | "po_id" | "created_at" | "updated_at">[]
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await procurementRepo.createPurchaseOrder(poData, items);
     revalidatePath("/manager/inventory/purchase-orders");
@@ -98,6 +115,8 @@ export async function createPurchaseOrderAction(
 }
 
 export async function updatePurchaseOrderStatusAction(id: string, status: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await procurementRepo.updatePurchaseOrderStatus(id, status);
     revalidatePath("/manager/inventory/purchase-orders");

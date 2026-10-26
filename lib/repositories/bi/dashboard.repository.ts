@@ -133,17 +133,19 @@ export class DashboardRepository {
     > = {};
 
     for (const item of orderItems) {
-      if (!statsByProduct[item.productId]) {
-        statsByProduct[item.productId] = {
-          product_id: item.productId,
+      if (!item.productId) continue;
+      const pid = item.productId;
+      if (!statsByProduct[pid]) {
+        statsByProduct[pid] = {
+          product_id: pid,
           product_name: item.productName || "Unknown Product",
           sold: 0,
           earnings: 0,
           price: Number(item.unitPrice) || 0,
         };
       }
-      statsByProduct[item.productId].sold += Number(item.quantity) || 1;
-      statsByProduct[item.productId].earnings += Number(item.totalPrice) || 0;
+      statsByProduct[pid].sold += Number(item.quantity) || 1;
+      statsByProduct[pid].earnings += Number(item.totalPrice) || 0;
     }
 
     const sortedSales = Object.values(statsByProduct)
@@ -202,7 +204,7 @@ export class DashboardRepository {
     });
 
     if (orderItems.length > 0) {
-      const pIds = [...new Set(orderItems.map(oi => oi.productId))];
+      const pIds = [...new Set(orderItems.map(oi => oi.productId).filter((id): id is string => Boolean(id)))];
       const products = await prisma.product.findMany({
         where: { id: { in: pIds } },
         select: { id: true, category: { select: { name: true } } }
@@ -210,7 +212,7 @@ export class DashboardRepository {
       const pMap = new Map(products.map(p => [p.id, p.category?.name || "Apparel"]));
 
       for (const it of orderItems) {
-        const catName = pMap.get(it.productId) || "Apparel";
+        const catName = (it.productId ? pMap.get(it.productId) : null) || "Apparel";
         categoryRev[catName] = (categoryRev[catName] || 0) + (Number(it.totalPrice) || 0);
       }
     }

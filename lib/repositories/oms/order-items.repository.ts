@@ -44,7 +44,7 @@ export class OrderItemsRepository {
             variantName: item.variant_name,
             quantity: item.quantity,
             unitPrice: item.unit_price,
-            totalPrice: item.line_total || item.total_price || 0,
+            totalPrice: item.line_total || (item as any).total_price || 0,
           },
         });
       })

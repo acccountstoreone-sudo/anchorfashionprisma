@@ -2,8 +2,17 @@
 
 import { createClient } from "../supabase/server";
 import { createAdminClient } from "../supabase/admin-client";
-import { verifySuperAdmin } from "../security/roles";
+import { verifyAdmin, verifyManager, verifyStaff } from "../security/roles";
 import { revalidatePath } from "next/cache";
+
+const SECRET_CONFIG_KEYS = ["store_id", "store_password", "store_pass", "store_passwd"] as const;
+
+/** Removes gateway credentials so a config can safely be sent to the browser. */
+function stripPaymentSecrets(cfg: PaymentGatewayConfig): PaymentGatewayConfig {
+  const clean: Record<string, any> = { ...cfg };
+  for (const k of SECRET_CONFIG_KEYS) delete clean[k];
+  return clean as PaymentGatewayConfig;
+}
 
 export type PaymentGatewayType =
   | "sslcommerz"
@@ -79,6 +88,10 @@ const DEFAULTS: AllPaymentConfigs = {
 export async function getPaymentConfig(
   gateway: PaymentGatewayType
 ): Promise<PaymentGatewayConfig> {
+  // Public reader: never returns gateway credentials.
+  if (!Object.prototype.hasOwnProperty.call(DEFAULTS, gateway)) {
+    throw new Error("Unknown payment gateway");
+  }
   const supabase = await createClient();
   try {
     const { data } = await supabase
@@ -87,13 +100,34 @@ export async function getPaymentConfig(
       .eq("key", `payment_${gateway}`)
       .single();
 
-    return (data?.value as PaymentGatewayConfig) ?? DEFAULTS[gateway];
+    return stripPaymentSecrets(
+      (data?.value as PaymentGatewayConfig) ?? DEFAULTS[gateway]
+    );
   } catch {
-    return DEFAULTS[gateway];
+    return stripPaymentSecrets(DEFAULTS[gateway]);
   }
 }
 
+/**
+ * Storefront-safe payment configuration (no gateway credentials).
+ * Use this for anything rendered to customers.
+ */
+export async function getPublicPaymentConfigs(): Promise<AllPaymentConfigs> {
+  const all = await loadAllPaymentConfigs();
+  const safe = {} as AllPaymentConfigs;
+  for (const key of Object.keys(all) as PaymentGatewayType[]) {
+    safe[key] = stripPaymentSecrets(all[key]);
+  }
+  return safe;
+}
+
+/** Full configuration INCLUDING credentials. Administrators only. */
 export async function getAllPaymentConfigs(): Promise<AllPaymentConfigs> {
+  await verifyAdmin();
+  return loadAllPaymentConfigs();
+}
+
+async function loadAllPaymentConfigs(): Promise<AllPaymentConfigs> {
   const supabase = await createClient();
   const result: AllPaymentConfigs = { ...DEFAULTS };
 
@@ -149,7 +183,7 @@ export async function updatePaymentConfig(
   config: PaymentGatewayConfig
 ) {
   try {
-    await verifySuperAdmin().catch(() => null); // Enforce role access if configured
+    await verifyAdmin(); // Enforced: unauthorized callers must NOT reach the write below
     const supabase = createAdminClient();
 
     let normalizedConfig: Record<string, any> = { ...config };
@@ -220,6 +254,42 @@ export async function recordManualPaymentTransaction(
 ) {
   const supabase = createAdminClient();
   try {
+    // SECURITY: never trust client-supplied amount / customer. Resolve from the order.
+    const orderId = String(submission.order_id || "");
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) {
+      return { success: false, error: "Invalid order" };
+    }
+    const { data: order } = await supabase
+      .from("orders")
+      .select("id, customer_id, grand_total, payment_status")
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!order) {
+      return { success: false, error: "Order not found" };
+    }
+    if (String(order.payment_status || "").toLowerCase() === "paid") {
+      return { success: false, error: "Order is already paid" };
+    }
+    const clip = (v: unknown, n: number) =>
+      typeof v === "string" ? v.slice(0, n) : v == null ? undefined : String(v).slice(0, n);
+    submission = {
+      order_id: order.id,
+      payment_method: String(clip(submission.payment_method, 30) || ""),
+      amount:
+        Number(
+          (order as any).grand_total ??
+            (order as any).total_amount ??
+            submission.amount
+        ) || 0,
+      sender_number: clip(submission.sender_number, 40),
+      transaction_id: clip(submission.transaction_id, 80),
+      bank_name: clip(submission.bank_name, 120),
+      branch_name: clip(submission.branch_name, 120),
+      account_holder_name: clip(submission.account_holder_name, 120),
+      notes: clip(submission.notes, 500),
+      customer_id: order.customer_id || null,
+    };
+
     const rawMethod = (submission.payment_method || "").toLowerCase();
     const { data: prov } = await supabase
       .from("payment_providers")
@@ -288,6 +358,7 @@ export async function recordManualPaymentTransaction(
  * Get manual payment details for a specific order
  */
 export async function getManualPaymentForOrder(orderId: string) {
+  await verifyStaff();
   const supabase = await createClient();
   try {
     const { data, error } = await supabase
@@ -314,6 +385,7 @@ export async function approveManualPaymentAction(
   transactionId?: string,
   approvalNote?: string
 ) {
+  await verifyManager();
   const supabase = createAdminClient();
   try {
     // 0. Verify order has items before approving payment
@@ -460,6 +532,7 @@ export async function rejectManualPaymentAction(
   reason: string,
   transactionId?: string
 ) {
+  await verifyManager();
   const supabase = createAdminClient();
   try {
     // 1. Update or create payment_transactions
@@ -563,6 +636,7 @@ export async function rejectManualPaymentAction(
  * Fetch all pending manual payments for Admin Finance verification queue
  */
 export async function getPendingManualPaymentsAction() {
+  await verifyManager();
   const supabase = createAdminClient();
   try {
     // 1. Fetch manual payment providers (bKash, Nagad, Rocket)
@@ -572,7 +646,7 @@ export async function getPendingManualPaymentsAction() {
       .in("code", ["bkash", "nagad", "rocket"]);
 
     const providerMap = new Map<string, { id: string; code: string; name: string }>();
-    const providerIds = (providers || []).map((p) => {
+    const providerIds = (providers || []).map((p: any) => {
       providerMap.set(p.id, p);
       return p.id;
     });
@@ -595,8 +669,8 @@ export async function getPendingManualPaymentsAction() {
     }
 
     // 3. Collect related order IDs from transactions
-    const orderIds = Array.from(
-      new Set((txs || []).map((t) => t.order_id).filter(Boolean))
+    const orderIds: string[] = Array.from(
+      new Set((txs || []).map((t: any) => t.order_id).filter(Boolean))
     );
 
     // Also look up orders placed with manual payment methods
@@ -617,24 +691,24 @@ export async function getPendingManualPaymentsAction() {
       ]);
 
     const orderMap = new Map<string, any>();
-    (manualOrders || []).forEach((o) => orderMap.set(o.id, o));
+    (manualOrders || []).forEach((o: any) => orderMap.set(o.id, o));
 
     // Fetch any missing orders referenced by existing transactions
-    const missingOrderIds = orderIds.filter((id) => !orderMap.has(id));
+    const missingOrderIds = orderIds.filter((id: string) => !orderMap.has(id));
     if (missingOrderIds.length > 0) {
       const { data: moreOrders } = await supabase
         .from("orders")
         .select("id, order_number, grand_total, status, payment_status, payment_method, created_at, customer_id")
         .in("id", missingOrderIds);
 
-      (moreOrders || []).forEach((o) => orderMap.set(o.id, o));
+      (moreOrders || []).forEach((o: any) => orderMap.set(o.id, o));
     }
 
-    const existingTxOrderIds = new Set((txs || []).map((t) => t.order_id));
+    const existingTxOrderIds = new Set((txs || []).map((t: any) => t.order_id));
 
     // Query order_items count for all relevant orders
-    const allOrderIds = Array.from(
-      new Set([...orderIds, ...(manualOrders || []).map((o) => o.id)])
+    const allOrderIds: string[] = Array.from(
+      new Set([...orderIds, ...(manualOrders || []).map((o: any) => o.id)])
     );
     const { data: itemRows } = await supabase
       .from("order_items")
@@ -642,14 +716,14 @@ export async function getPendingManualPaymentsAction() {
       .in("order_id", allOrderIds);
 
     const itemsCountMap = new Map<string, number>();
-    (itemRows || []).forEach((row) => {
+    (itemRows || []).forEach((row: any) => {
       itemsCountMap.set(row.order_id, (itemsCountMap.get(row.order_id) || 0) + 1);
     });
 
     // 4. Enrich transactions with order details and canonical provider_id
     const enrichedList: any[] = (txs || [])
-      .filter((t) => t.order_id && orderMap.has(t.order_id))
-      .map((t) => {
+      .filter((t: any) => t.order_id && orderMap.has(t.order_id))
+      .map((t: any) => {
         const order = orderMap.get(t.order_id) || null;
         const matchedProvider = t.provider_id ? providerMap.get(t.provider_id) : null;
         const method = (

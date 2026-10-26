@@ -21,6 +21,7 @@ import {
   CancelShipmentData,
 } from "@/schemas/shipping.schema";
 import { createClient } from "@/lib/supabase/server-client";
+import { verifyStaff } from "@/lib/security/roles";
 
 // ---------------------------------------------------------------------------
 // Shared response type
@@ -50,6 +51,8 @@ async function getCurrentUserId(): Promise<string | undefined> {
 export async function createShipmentAction(
   raw: CreateShipmentData
 ): Promise<ActionResponse<{ shipmentId: string; shipmentNumber: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = createShipmentSchema.safeParse(raw);
   if (!parse.success) {
     return {
@@ -82,6 +85,8 @@ export async function updateShipmentAction(
   shipmentId: string,
   raw: UpdateShipmentData
 ): Promise<ActionResponse<{ shipmentId: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = updateShipmentSchema.safeParse(raw);
   if (!parse.success) {
     return {
@@ -111,6 +116,8 @@ export async function updateShipmentAction(
 export async function cancelShipmentAction(
   raw: CancelShipmentData
 ): Promise<ActionResponse<{ shipmentId: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = cancelShipmentSchema.safeParse(raw);
   if (!parse.success) {
     return {
@@ -142,6 +149,8 @@ export async function assignCourierAction(
 ): Promise<
   ActionResponse<{ shipmentId: string; trackingNumber: string | null }>
 > {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = assignCourierSchema.safeParse(raw);
   if (!parse.success) {
     return {
@@ -178,6 +187,8 @@ export async function reassignCourierAction(
 ): Promise<
   ActionResponse<{ shipmentId: string; trackingNumber: string | null }>
 > {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = assignCourierSchema.safeParse({
     shipmentId,
     courierProviderCode,
@@ -214,6 +225,8 @@ export async function reassignCourierAction(
 export async function generateLabelAction(
   shipmentId: string
 ): Promise<ActionResponse<{ labelUrl: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const userId = await getCurrentUserId();
     const service = new ShippingService();
@@ -244,6 +257,8 @@ export async function printManifestAction(
     }>
   >
 > {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const labelService = new LabelService();
     const manifest = await labelService.generateManifest(shipmentIds);
@@ -264,6 +279,8 @@ export async function printManifestAction(
 export async function syncTrackingAction(
   shipmentId: string
 ): Promise<ActionResponse<{ status: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new ShippingService();
     const updated = await service.syncTrackingStatus(shipmentId);
@@ -278,6 +295,8 @@ export async function syncTrackingAction(
 export async function fetchShipmentsAction(
   rawFilters: Record<string, any> = {}
 ): Promise<ActionResponse<any>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = shipmentFiltersSchema.safeParse(rawFilters);
   if (!parse.success) {
     return { success: false, error: "Invalid filters" };
@@ -295,6 +314,8 @@ export async function fetchShipmentsAction(
 export async function fetchShipmentByIdAction(
   shipmentId: string
 ): Promise<ActionResponse<any>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new ShippingService();
     const shipment = await service.getShipmentWithDetails(shipmentId);
@@ -335,6 +356,8 @@ export async function getTrackingTimelineAction(
 export async function refreshTrackingAction(
   shipmentId: string
 ): Promise<ActionResponse<any>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const trackingService = new TrackingService();
     const timeline = await trackingService.refreshTracking(shipmentId);

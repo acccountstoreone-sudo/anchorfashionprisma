@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateContent } from "@/lib/ai/gemini";
+import { verifyStaff } from "@/lib/security/roles";
 
 const SYSTEM_PROMPT = `
 You are an expert AI Business Assistant for the Executive and Manager teams of Anchor Fashion.
@@ -11,6 +12,7 @@ Use markdown to format tables, bold important metrics, and create structured lis
 
 export async function POST(req: Request) {
   try {
+    await verifyStaff();
     const body = await req.json();
     const { contextData, query } = body;
 

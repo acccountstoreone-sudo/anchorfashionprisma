@@ -398,7 +398,7 @@ export function CategoriesClientPage({
       parent_id: category.parent_id ?? "",
       icon_url: category.icon_url ?? "",
       is_active: category.is_active,
-      display_order: category.display_order,
+      display_order: category.display_order ?? 0,
     });
     setSheetOpen(true);
   };

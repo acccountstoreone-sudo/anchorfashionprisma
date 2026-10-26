@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { verifyManager } from "@/lib/security/roles";
 
 export interface OperationsMetrics {
   revenue: {
@@ -46,6 +47,8 @@ export interface OperationsMetrics {
 }
 
 export async function getOperationsAnalyticsAction(timeRange: "7d" | "30d" | "90d" | "365d" | "all" = "30d") {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const supabase = createAdminClient();
 
@@ -75,7 +78,7 @@ export async function getOperationsAnalyticsAction(timeRange: "7d" | "30d" | "90
     const { data: orders = [] } = await ordersQuery;
 
     const safeOrders = orders || [];
-    const totalRevenue = safeOrders.reduce((sum, o) => sum + (Number(o.grand_total) || 0), 0);
+    const totalRevenue = safeOrders.reduce((sum: number, o: any) => sum + (Number(o.grand_total) || 0), 0);
     const orderCount = safeOrders.length;
     const averageOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
 
@@ -85,11 +88,11 @@ export async function getOperationsAnalyticsAction(timeRange: "7d" | "30d" | "90
       .select("quantity_available, quantity_reserved, reorder_point, warehouse_id");
 
     const safeLevels = levels || [];
-    const totalUnits = safeLevels.reduce((sum, l) => sum + (l.quantity_available || 0), 0);
+    const totalUnits = safeLevels.reduce((sum: number, l: any) => sum + (l.quantity_available || 0), 0);
     const lowStockCount = safeLevels.filter(
-      (l) => (l.quantity_available || 0) <= (l.reorder_point || 5) && (l.quantity_available || 0) > 0
+      (l: any) => (l.quantity_available || 0) <= (l.reorder_point || 5) && (l.quantity_available || 0) > 0
     ).length;
-    const outOfStockCount = safeLevels.filter((l) => (l.quantity_available || 0) === 0).length;
+    const outOfStockCount = safeLevels.filter((l: any) => (l.quantity_available || 0) === 0).length;
     const totalVariants = safeLevels.length;
 
     // 3. Procurement (Purchase Orders) aggregation
@@ -103,8 +106,8 @@ export async function getOperationsAnalyticsAction(timeRange: "7d" | "30d" | "90
 
     const safePOs = pos || [];
     const totalPOs = safePOs.length;
-    const totalSpend = safePOs.reduce((sum, po) => sum + (parseFloat(po.total_amount) || 0), 0);
-    const pendingPOs = safePOs.filter((po) =>
+    const totalSpend = safePOs.reduce((sum: number, po: any) => sum + (parseFloat(po.total_amount) || 0), 0);
+    const pendingPOs = safePOs.filter((po: any) =>
       ["DRAFT", "PENDING", "ORDERED"].includes((po.status || "").toUpperCase())
     ).length;
 
@@ -120,7 +123,7 @@ export async function getOperationsAnalyticsAction(timeRange: "7d" | "30d" | "90
     const safePickLists = pickLists || [];
     const totalPickLists = safePickLists.length;
     const completedPickLists = safePickLists.filter(
-      (pl) => (pl.status || "").toUpperCase() === "COMPLETED"
+      (pl: any) => (pl.status || "").toUpperCase() === "COMPLETED"
     ).length;
     const fulfillmentRate =
       totalPickLists > 0 ? Math.round((completedPickLists / totalPickLists) * 100) : 100;
@@ -138,7 +141,7 @@ export async function getOperationsAnalyticsAction(timeRange: "7d" | "30d" | "90
     const totalReturns = safeReturns.length;
     const returnRate = orderCount > 0 ? Number(((totalReturns / orderCount) * 100).toFixed(1)) : 0;
     const totalRefundAmount = safeReturns.reduce(
-      (sum, r) => sum + (parseFloat(r.refund_amount) || 0),
+      (sum: number, r: any) => sum + (parseFloat(r.refund_amount) || 0),
       0
     );
 
@@ -147,19 +150,19 @@ export async function getOperationsAnalyticsAction(timeRange: "7d" | "30d" | "90
       .from("warehouses")
       .select("id, name, warehouse_code, is_active");
 
-    const warehouseBreakdown = (warehouses || []).map((wh) => {
+    const warehouseBreakdown = (warehouses || []).map((wh: any) => {
       const whUnits = safeLevels
-        .filter((l) => l.warehouse_id === wh.id)
-        .reduce((sum, l) => sum + (l.quantity_available || 0), 0);
+        .filter((l: any) => l.warehouse_id === wh.id)
+        .reduce((sum: number, l: any) => sum + (l.quantity_available || 0), 0);
 
       const whActivePOs = safePOs.filter(
-        (po) =>
+        (po: any) =>
           po.warehouse_id === wh.id &&
           ["DRAFT", "PENDING", "ORDERED"].includes((po.status || "").toUpperCase())
       ).length;
 
       const whActivePickLists = safePickLists.filter(
-        (pl) =>
+        (pl: any) =>
           pl.warehouse_id === wh.id &&
           ["PENDING", "ASSIGNED", "PICKING"].includes((pl.status || "").toUpperCase())
       ).length;
@@ -177,7 +180,7 @@ export async function getOperationsAnalyticsAction(timeRange: "7d" | "30d" | "90
     // 7. Recent Daily/Monthly Trends (grouped by last 7 intervals)
     const trendsMap: Record<string, { orders: number; returns: number; revenue: number }> = {};
 
-    safeOrders.forEach((o) => {
+    safeOrders.forEach((o: any) => {
       const day = new Date(o.created_at).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -187,7 +190,7 @@ export async function getOperationsAnalyticsAction(timeRange: "7d" | "30d" | "90
       trendsMap[day].revenue += Number(o.grand_total) || 0;
     });
 
-    safeReturns.forEach((r) => {
+    safeReturns.forEach((r: any) => {
       const day = new Date(r.created_at).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",

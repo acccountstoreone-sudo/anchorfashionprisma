@@ -2,8 +2,11 @@
 
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function lookupBarcodeAction(query: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const trimmed = query.trim();
     if (!trimmed) {
@@ -130,6 +133,8 @@ export async function adjustScannedStockAction({
   movementType?: "IN" | "OUT" | "ADJUSTMENT";
   note?: string;
 }) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!variantId || !warehouseId) {
       return { success: false, error: "Variant and warehouse must be specified." };

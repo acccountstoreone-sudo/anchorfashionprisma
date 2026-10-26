@@ -90,6 +90,7 @@ export class CollectionRepository {
       id: randomUUID(),
       name: input.name,
       slug: input.slug,
+      banner_url: input.banner_url || null,
       description: input.description || null,
       image_url: input.image_url || null,
       is_active: input.is_active ?? true,
@@ -97,7 +98,7 @@ export class CollectionRepository {
       updated_at: new Date().toISOString(),
       product_count: input.product_ids?.length ?? 0,
       product_ids: input.product_ids ?? [],
-    } as Collection;
+    };
 
     collections.unshift(newCollection);
     await this.saveCollections(collections);

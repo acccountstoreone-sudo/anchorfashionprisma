@@ -122,7 +122,7 @@ export default async function AdminProfilePage() {
                   <span>•</span>
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3.5 w-3.5" />
-                    Joined: {new Date(profile?.created_at || user.created_at).toLocaleDateString()}
+                    Joined: {new Date(profile?.created_at || (user as any).created_at || (user as any).createdAt || Date.now()).toLocaleDateString()}
                   </span>
                 </div>
               </div>

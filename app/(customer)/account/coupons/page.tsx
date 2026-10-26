@@ -19,11 +19,11 @@ export default async function CouponsPage() {
       .select("coupon_id")
       .eq("customer_id", user.id);
     if (usages) {
-      usages.forEach(u => usedCouponIds.add(u.coupon_id));
+      usages.forEach((u: any) => usedCouponIds.add(u.coupon_id));
     }
   }
 
-  const mappedCoupons = allCoupons.map(c => {
+  const mappedCoupons = allCoupons.map((c: any) => {
     const isUsed = usedCouponIds.has(c.id);
     let type = isUsed ? "Used" : (c.is_active ? "Available" : "Expired");
     

@@ -19,6 +19,7 @@ import {
 } from "@/validators/marketing.schema";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { verifyStaff } from "@/lib/security/roles";
 
 // ============================================================================
 // COUPONS ACTIONS
@@ -29,6 +30,8 @@ export async function getCouponsAction(): Promise<{
   data?: CouponRecord[];
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const coupons = await CouponRepository.getCoupons();
     return { success: true, data: coupons };
@@ -41,6 +44,8 @@ export async function getCouponsAction(): Promise<{
 export async function createCouponAction(
   data: CreateCouponInput
 ): Promise<{ success: boolean; data?: CouponRecord; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!data.code || !data.discount_type || !data.value) {
       return { success: false, error: "Code, discount type, and value are required" };
@@ -62,6 +67,8 @@ export async function toggleCouponStatusAction(
   id: string,
   is_active: boolean
 ): Promise<{ success: boolean; data?: CouponRecord; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!id) return { success: false, error: "Coupon ID is required" };
     const coupon = await CouponRepository.toggleCouponStatus(id, is_active);
@@ -80,6 +87,8 @@ export async function toggleCouponStatusAction(
 export async function deleteCouponAction(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!id) return { success: false, error: "Coupon ID is required" };
     await CouponRepository.deleteCoupon(id);
@@ -102,6 +111,8 @@ export async function deleteCouponAction(
 export async function createPromotionAction(
   data: PromotionFormValues
 ): Promise<{ success: boolean; data?: PromotionRecord; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const validated = promotionSchema.parse(data);
     const promo = await PromotionRepository.createPromotion(validated);
@@ -121,6 +132,8 @@ export async function updatePromotionAction(
   id: string,
   data: Partial<PromotionFormValues>
 ): Promise<{ success: boolean; data?: PromotionRecord; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!id) return { success: false, error: "Promotion ID is required" };
     const promo = await PromotionRepository.updatePromotion(id, data);
@@ -137,6 +150,8 @@ export async function updatePromotionAction(
 export async function deletePromotionAction(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!id) return { success: false, error: "Promotion ID is required" };
     await PromotionRepository.deletePromotion(id);
@@ -154,6 +169,8 @@ export async function togglePromotionStatusAction(
   id: string,
   is_active: boolean
 ): Promise<{ success: boolean; data?: PromotionRecord; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!id) return { success: false, error: "Promotion ID is required" };
     const promo = await PromotionRepository.togglePromotionStatus(id, is_active);
@@ -190,6 +207,8 @@ export async function getCampaignsAction(): Promise<{
   data?: Campaign[];
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const campaigns = await marketingService.getCampaigns();
     return { success: true, data: campaigns };
@@ -200,10 +219,14 @@ export async function getCampaignsAction(): Promise<{
 }
 
 export async function getCampaigns(): Promise<Campaign[]> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   return await marketingService.getCampaigns();
 }
 
 export async function getCampaignById(id: string): Promise<Campaign | null> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   return await marketingService.getCampaignById(id);
 }
 
@@ -231,6 +254,8 @@ async function resolveCurrentAdminUserId(): Promise<string> {
 }
 
 export async function createCampaign(data: any): Promise<Campaign> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const payload = { ...data };
   if (!payload.created_by) {
     payload.created_by = await resolveCurrentAdminUserId();
@@ -244,6 +269,8 @@ export async function updateCampaign(
   id: string,
   data: unknown
 ): Promise<Campaign> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const campaign = await marketingService.updateCampaign(id, data);
   revalidatePath("/admin/marketing/campaigns");
   return campaign;
@@ -252,6 +279,8 @@ export async function updateCampaign(
 export async function deleteCampaignAction(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!id) return { success: false, error: "Campaign ID is required" };
     await marketingService.deleteCampaign(id);
@@ -267,10 +296,14 @@ export async function deleteCampaignAction(
 }
 
 export async function getAudiences(): Promise<CampaignAudience[]> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   return await marketingService.getAudiences();
 }
 
 export async function createAudience(data: unknown): Promise<CampaignAudience> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const audience = await marketingService.createAudience(data);
   revalidatePath("/admin/marketing/campaigns");
   return audience;
@@ -291,6 +324,8 @@ export async function createAndSendCampaignAction(payload: {
   sentCount?: number;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const createdBy = await resolveCurrentAdminUserId();
 
@@ -339,6 +374,8 @@ export async function createAndScheduleCampaignAction(payload: {
   campaign?: Campaign;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const createdBy = await resolveCurrentAdminUserId();
 

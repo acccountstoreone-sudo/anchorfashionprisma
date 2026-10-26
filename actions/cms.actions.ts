@@ -7,6 +7,7 @@ import { invalidateHomepageCache } from "@/lib/cache/invalidate-catalog";
 import { CMSRepository } from "@/lib/repositories/cms.repository";
 import fs from "fs";
 import path from "path";
+import { verifyStaff } from "@/lib/security/roles";
 
 function saveBase64ImageLocally(dataUrl: string | null | undefined, id: string): string | null {
   if (!dataUrl) return null;
@@ -40,10 +41,14 @@ const cmsRepo = new CMSRepository();
 // ============================================================================
 
 export async function getPages(): Promise<CMSPage[]> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   return await cmsService.getPages();
 }
 
 export async function getPageById(id: string): Promise<CMSPage | null> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   return await cmsService.getPageById(id);
 }
 
@@ -52,12 +57,16 @@ export async function getPageBySlug(slug: string): Promise<CMSPage | null> {
 }
 
 export async function createPage(data: unknown): Promise<CMSPage> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const page = await cmsService.createPage(data);
   try { revalidatePath("/admin/cms"); } catch {}
   return page;
 }
 
 export async function updatePage(id: string, data: unknown): Promise<CMSPage> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const page = await cmsService.updatePage(id, data);
   try {
     revalidatePath("/admin/cms");
@@ -67,6 +76,8 @@ export async function updatePage(id: string, data: unknown): Promise<CMSPage> {
 }
 
 export async function deletePage(id: string): Promise<void> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   await cmsService.deletePage(id);
   try { revalidatePath("/admin/cms"); } catch {}
 }
@@ -76,6 +87,8 @@ export async function getPageBlocks(pageId: string): Promise<CMSPageBlock[]> {
 }
 
 export async function savePageBlocks(pageId: string, blocks: Partial<CMSPageBlock>[]): Promise<void> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   await cmsService.savePageBlocks(pageId, blocks);
   try { revalidatePath("/admin/cms"); } catch {}
 }
@@ -96,6 +109,8 @@ export async function upsertGlobalSection(data: {
   isActive?: boolean;
   displayOrder?: number;
 }): Promise<{ success: boolean; data?: CMSSection; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const section = await cmsRepo.upsertSection(data);
     try { revalidatePath("/admin/cms/sections"); } catch {}
@@ -106,6 +121,8 @@ export async function upsertGlobalSection(data: {
 }
 
 export async function deleteGlobalSection(id: string): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await cmsRepo.deleteSection(id);
     try { revalidatePath("/admin/cms/sections"); } catch {}
@@ -124,6 +141,8 @@ export async function getNavigation(location: string): Promise<CMSNavigation | n
 }
 
 export async function getAllNavigations(): Promise<CMSNavigation[]> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   return await cmsRepo.getAllNavigations();
 }
 
@@ -132,6 +151,8 @@ export async function saveNavigation(
   name: string,
   items: any[]
 ): Promise<CMSNavigation> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const nav = await cmsRepo.saveNavigation({ location, name, items });
     try {
@@ -146,6 +167,8 @@ export async function saveNavigation(
 }
 
 export async function deleteNavigation(id: string): Promise<void> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await cmsRepo.deleteNavigation(id);
     try { revalidatePath("/admin/cms/navigation"); } catch {}
@@ -160,6 +183,8 @@ export async function deleteNavigation(id: string): Promise<void> {
 // ============================================================================
 
 export async function getMedia(): Promise<CMSMediaItem[]> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     return await cmsRepo.getMedia();
   } catch (err) {
@@ -169,6 +194,8 @@ export async function getMedia(): Promise<CMSMediaItem[]> {
 }
 
 export async function uploadMedia(formData: FormData) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const fileEntries = formData.getAll("files").concat(formData.getAll("file")) as File[];
   const validFiles = fileEntries.filter(
     (f): f is File => f && typeof f !== "string" && typeof f.size === "number" && f.size > 0
@@ -243,6 +270,8 @@ export async function uploadMedia(formData: FormData) {
 }
 
 export async function deleteMedia(id: string, fileUrl?: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     // Try to remove from Supabase storage if it's not a data URI
     if (fileUrl && !fileUrl.startsWith("data:") && !fileUrl.startsWith("blob:")) {
@@ -271,6 +300,8 @@ export async function deleteMedia(id: string, fileUrl?: string) {
 }
 
 export async function seedSampleMedia() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const sampleAssets = [
       {
@@ -521,6 +552,8 @@ export async function getFeaturedPromoBanner(): Promise<FeaturedPromoBannerData>
 
 // Admin: get ALL banners (hero + promo, active + inactive)
 export async function getAdminHeroSlides(): Promise<HeroSlide[]> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const [heroBanners, promoBanners] = await Promise.all([
       cmsRepo.getBanners("hero"),
@@ -556,6 +589,8 @@ export async function getPromoSections(): Promise<PromoBanner[]> {
 export async function upsertHeroSlide(
   slide: Partial<HeroSlide> & { image_url: string; link_url: string }
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const result = await cmsRepo.upsertBanner({
       id: typeof slide.id === "string" ? slide.id : undefined,
@@ -590,6 +625,8 @@ export async function upsertHeroSlide(
 
 // Upsert a hero/promo slide WITH file upload (FormData)
 export async function upsertHeroSlideWithUpload(formData: FormData) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const id = formData.get("id") as string | null;
     const link_url = (formData.get("link_url") as string) || "/products";
@@ -685,6 +722,8 @@ export async function upsertHeroSlideWithUpload(formData: FormData) {
 
 // Delete a single banner by ID
 export async function deleteHeroSlide(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     // Optionally remove local file from disk if under /uploads/banners/
     try {
@@ -716,6 +755,8 @@ export async function deleteHeroSlide(id: string) {
 
 // Delete all hero + promo banners
 export async function deleteAllHeroSlides() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await cmsRepo.deleteAllBanners();
 
@@ -759,6 +800,8 @@ export async function getSeoSettings() {
 }
 
 export async function updateSeoSettings(data: any) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const { prisma } = await import("@/lib/prisma");
     await prisma.setting.upsert({

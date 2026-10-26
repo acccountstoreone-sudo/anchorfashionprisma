@@ -2,8 +2,11 @@
 
 import { AnalyticsService } from "@/services/analytics.service";
 import { DateRange } from "@/repositories/analytics.repository";
+import { verifyManager } from "@/lib/security/roles";
 
 export async function getExecutiveSummaryAction(dateRange?: DateRange) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const data = await AnalyticsService.getExecutiveSummary(dateRange);
     return { success: true, data };
@@ -13,6 +16,8 @@ export async function getExecutiveSummaryAction(dateRange?: DateRange) {
 }
 
 export async function getSalesAnalyticsAction(dateRange?: DateRange) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const data = await AnalyticsService.getSalesAnalytics(dateRange);
     return { success: true, data };
@@ -22,6 +27,8 @@ export async function getSalesAnalyticsAction(dateRange?: DateRange) {
 }
 
 export async function getOrderAnalyticsAction(dateRange?: DateRange) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const data = await AnalyticsService.getOrderAnalytics(dateRange);
     return { success: true, data };
@@ -31,6 +38,8 @@ export async function getOrderAnalyticsAction(dateRange?: DateRange) {
 }
 
 export async function getCustomerAnalyticsAction(dateRange?: DateRange) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const data = await AnalyticsService.getCustomerAnalytics(dateRange);
     return { success: true, data };
@@ -40,6 +49,8 @@ export async function getCustomerAnalyticsAction(dateRange?: DateRange) {
 }
 
 export async function getProductAnalyticsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const data = await AnalyticsService.getProductAnalytics();
     return { success: true, data };
@@ -49,6 +60,8 @@ export async function getProductAnalyticsAction() {
 }
 
 export async function getInventoryAnalyticsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const data = await AnalyticsService.getInventoryAnalytics();
     return { success: true, data };
@@ -58,6 +71,8 @@ export async function getInventoryAnalyticsAction() {
 }
 
 export async function getMarketingAnalyticsAction(dateRange?: DateRange) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const data = await AnalyticsService.getMarketingAnalytics(dateRange);
     return { success: true, data };
@@ -67,6 +82,8 @@ export async function getMarketingAnalyticsAction(dateRange?: DateRange) {
 }
 
 export async function getAiInsightsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const data = await AnalyticsService.getExecutiveSummary();
     
@@ -115,6 +132,8 @@ export async function getAiInsightsAction() {
 }
 
 export async function getCustomReportAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const salesData = await AnalyticsService.getSalesAnalytics();
     

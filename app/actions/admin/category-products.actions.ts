@@ -5,6 +5,7 @@ import { createAdminAction } from "@/lib/actions/safe-action";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { invalidateCategoryCache } from "@/lib/cache/invalidate-catalog";
+import { verifyStaff } from "@/lib/security/roles";
 
 // Add products to category (Many-to-Many)
 export const addProductsToCategoryAction = createAdminAction(
@@ -71,6 +72,8 @@ export async function syncProductPrices(
   salePrice?: number | null,
   costPrice?: number | null
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   await prisma.$transaction(async (tx) => {
     await tx.product.update({
       where: { id: productId },

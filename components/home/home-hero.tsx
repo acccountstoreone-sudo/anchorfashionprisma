@@ -145,15 +145,37 @@ export function HomeHero({ slides: propSlides }: { slides?: HeroSlide[] }) {
               className="absolute inset-0 h-full w-full transition-transform duration-1000 ease-in-out"
               style={{ transform: `translateX(${(index - current) * 100}%)` }}
             >
-              <Link
-                href={ctaHref}
-                className="absolute inset-0 z-10 block"
-                aria-label={headline || "View Promotion"}
-              >
-                <span className="sr-only">{headline || "View Promotion"}</span>
-              </Link>
-
               <HeroSlideMedia slide={slide} index={index} isActive={isActive} />
+
+              {/* Luxury Vignette Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent md:bg-gradient-to-r md:from-black/85 md:via-black/40 md:to-transparent z-10 pointer-events-none" />
+
+              {/* Editorial Fashion Content */}
+              <div className="absolute inset-0 z-20 flex items-end md:items-center px-6 pb-12 sm:pb-16 md:pb-0 md:px-16 lg:px-24">
+                <div className="max-w-xl text-left">
+                  {subheadline && (
+                    <span className="inline-block text-[10px] sm:text-xs md:text-sm font-semibold uppercase tracking-[0.25em] text-[#C9A86A] mb-2 sm:mb-3">
+                      {subheadline}
+                    </span>
+                  )}
+                  {headline && (
+                    <h2 className="font-serif text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-normal text-white leading-tight mb-4 sm:mb-6 drop-shadow-sm">
+                      {headline}
+                    </h2>
+                  )}
+                  <div>
+                    <Link
+                      href={ctaHref}
+                      className="group inline-flex items-center gap-2.5 bg-white text-zinc-950 hover:bg-[#C9A86A] hover:text-white px-6 py-3 sm:px-8 sm:py-3.5 text-xs sm:text-sm font-medium tracking-[0.15em] uppercase transition-all duration-300 shadow-xl rounded-sm"
+                    >
+                      <span>{ctaText}</span>
+                      <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
           );
         })}

@@ -1,8 +1,11 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { verifyAdmin } from "@/lib/security/roles";
 
 export async function getAuditLogsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAdmin();
   try {
     const logs = await prisma.auditLog.findMany({
       select: {

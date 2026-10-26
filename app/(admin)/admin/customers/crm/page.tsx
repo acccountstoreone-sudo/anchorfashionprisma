@@ -52,7 +52,7 @@ export default async function CRMDashboardPage() {
           <CardContent>
             {segments && segments.length > 0 ? (
               <div className="space-y-4">
-                {segments.map((seg) => (
+                {segments.map((seg: any) => (
                   <div key={seg.id} className="flex items-center justify-between border-b pb-2">
                     <div>
                       <p className="font-medium">{seg.name}</p>

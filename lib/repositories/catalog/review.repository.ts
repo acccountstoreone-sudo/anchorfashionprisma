@@ -92,7 +92,10 @@ export class ReviewRepository {
       
       const prod = await prisma.product.update({
         where: { id: productId },
-        data: { averageRating: Number(stats?.average_rating || 0) },
+        data: {
+          rating: Number(stats?.average_rating || 0),
+          reviewCount: stats?.total_reviews || 0,
+        },
         select: { slug: true }
       });
 

@@ -14,6 +14,7 @@ import {
   StockTransferPayload,
 } from "@/types/inventory.types";
 import { WarehouseQueryFilters } from "@/repositories/warehouse.repository";
+import { verifyStaff } from "@/lib/security/roles";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WAREHOUSE ACTIONS
@@ -26,6 +27,8 @@ export async function getAllWarehouses(filters?: WarehouseQueryFilters): Promise
   totalPages?: number;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const result = await service.getAllWarehouses(filters);
@@ -43,6 +46,8 @@ export async function getAllWarehouses(filters?: WarehouseQueryFilters): Promise
 export async function getWarehouseById(
   id: string
 ): Promise<{ data?: Warehouse | null; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const data = await service.getWarehouseById(id);
@@ -55,6 +60,8 @@ export async function getWarehouseById(
 export async function createWarehouse(
   input: Partial<Warehouse> & { code?: string }
 ): Promise<{ data?: Warehouse; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const data = await service.createWarehouse(input);
@@ -70,6 +77,8 @@ export async function updateWarehouse(
   id: string,
   input: Partial<Warehouse>
 ): Promise<{ data?: Warehouse; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const data = await service.updateWarehouse(id, input);
@@ -84,6 +93,8 @@ export async function updateWarehouse(
 export async function deleteWarehouse(
   id: string
 ): Promise<{ success: boolean; message?: string; action?: string; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const res = await service.deleteWarehouse(id);
@@ -98,6 +109,8 @@ export async function toggleWarehouseStatus(
   id: string,
   isActive: boolean
 ): Promise<{ success: boolean; data?: Warehouse; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const data = await service.setWarehouseStatus(id, isActive);
@@ -110,6 +123,8 @@ export async function toggleWarehouseStatus(
 }
 
 export async function getWarehouseStatsAction(warehouseId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const data = await service.getWarehouseStats(warehouseId);
@@ -120,6 +135,8 @@ export async function getWarehouseStatsAction(warehouseId: string) {
 }
 
 export async function getOverallWarehouseStatsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const data = await service.getOverallStats();
@@ -130,6 +147,8 @@ export async function getOverallWarehouseStatsAction() {
 }
 
 export async function getWarehouseInventoryAction(warehouseId: string, filters?: any) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const data = await service.getWarehouseInventory(warehouseId, filters);
@@ -146,6 +165,8 @@ export async function getWarehouseInventoryAction(warehouseId: string, filters?:
 export async function getWarehouseZones(
   warehouseId: string
 ): Promise<{ data?: WarehouseZone[]; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const data = await service.getZones(warehouseId);
@@ -161,6 +182,8 @@ export async function createWarehouseZoneAction(data: {
   type?: string;
   description?: string;
 }): Promise<{ data?: WarehouseZone; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const zone = await service.createZone({
@@ -182,6 +205,8 @@ export async function updateWarehouseZoneAction(
   warehouseId: string,
   data: Partial<WarehouseZone>
 ): Promise<{ data?: WarehouseZone; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const zone = await service.updateZone(id, data);
@@ -196,6 +221,8 @@ export async function deleteWarehouseZoneAction(
   id: string,
   warehouseId: string
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     await service.deleteZone(id);
@@ -213,6 +240,8 @@ export async function deleteWarehouseZoneAction(
 export async function getRacksAction(
   zoneId: string
 ): Promise<{ data?: WarehouseRack[]; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const data = await service.getRacksByZone(zoneId);
@@ -233,6 +262,8 @@ export async function createRackAction(
     description?: string;
   }
 ): Promise<{ data?: WarehouseRack; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const rack = await service.createRack(zoneId, rackData);
@@ -248,6 +279,8 @@ export async function deleteRackAction(
   rackCode: string,
   warehouseId: string
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     await service.deleteRack(zoneId, rackCode);
@@ -265,6 +298,8 @@ export async function deleteRackAction(
 export async function getZoneBins(
   zoneId: string
 ): Promise<{ data?: WarehouseBin[]; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const data = await service.getBins(zoneId);
@@ -285,6 +320,8 @@ export async function createWarehouseBinAction(
   },
   warehouseId?: string
 ): Promise<{ data?: WarehouseBin; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const bin = await service.createBin(data);
@@ -303,6 +340,8 @@ export async function updateWarehouseBinAction(
   data: Partial<WarehouseBin>,
   warehouseId?: string
 ): Promise<{ data?: WarehouseBin; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     const bin = await service.updateBin(id, data);
@@ -319,6 +358,8 @@ export async function deleteWarehouseBinAction(
   id: string,
   warehouseId?: string
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new WarehouseService();
     await service.deleteBin(id);
@@ -336,6 +377,8 @@ export async function deleteWarehouseBinAction(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function stockInAction(payload: StockInPayload): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const repo = new InventoryRepository();
     const result = await repo.stockIn(payload);
@@ -352,6 +395,8 @@ export async function stockInAction(payload: StockInPayload): Promise<{ success:
 }
 
 export async function stockOutAction(payload: StockOutPayload): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const repo = new InventoryRepository();
     const result = await repo.stockOut(payload);
@@ -368,6 +413,8 @@ export async function stockOutAction(payload: StockOutPayload): Promise<{ succes
 }
 
 export async function stockAdjustmentAction(payload: StockAdjustmentPayload): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const repo = new InventoryRepository();
     const result = await repo.stockAdjustment(payload);
@@ -384,6 +431,8 @@ export async function stockAdjustmentAction(payload: StockAdjustmentPayload): Pr
 }
 
 export async function stockTransferAction(payload: StockTransferPayload): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const repo = new InventoryRepository();
     await repo.transferStock(
@@ -414,6 +463,8 @@ export async function getDetailedMovementsAction(options?: {
   type?: string;
   search?: string;
 }) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const repo = new InventoryRepository();
     const result = await repo.getDetailedMovements(options);

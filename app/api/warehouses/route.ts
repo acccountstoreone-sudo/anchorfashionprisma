@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { WarehouseService } from "@/services/warehouse.service";
+import { verifyStaff, verifyManager } from "@/lib/security/roles";
 
 export async function GET(request: NextRequest) {
   try {
+    await verifyStaff();
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || undefined;
     const status = (searchParams.get("status") as any) || undefined;
@@ -27,17 +29,18 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: error.message?.includes("Forbidden") ? 403 : 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    await verifyManager();
     const body = await request.json();
     const service = new WarehouseService();
     const warehouse = await service.createWarehouse(body);
     return NextResponse.json(warehouse, { status: 201 });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: error.message }, { status: error.message?.includes("Forbidden") ? 403 : 400 });
   }
 }

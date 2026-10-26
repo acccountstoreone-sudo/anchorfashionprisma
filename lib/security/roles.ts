@@ -1,33 +1,30 @@
-import { getServerSession } from "@/lib/auth/server";
-import { AUTH_ROLES, ADMIN_ROLES, MARKETING_ROLES, STAFF_ROLES } from "@/lib/constants/auth";
+import { getServerSession, resolveUserRole } from "@/lib/auth/server";
+import {
+  AUTH_ROLES,
+  ADMIN_ROLES,
+  MANAGER_ROLES,
+  MARKETING_ROLES,
+  STAFF_ROLES,
+} from "@/lib/constants/auth";
+
+const normalizeRoleName = (r: string) => String(r).replace(/[\s_-]+/g, "").toUpperCase();
+
+/** Compares roles ignoring case and space/underscore/hyphen differences. */
+function roleIn(role: string, allowed: readonly string[]): boolean {
+  const n = normalizeRoleName(role);
+  return allowed.some((a) => normalizeRoleName(a) === n);
+}
 
 export async function getRoleForUser(user: any): Promise<string> {
   if (!user) return "CUSTOMER";
-  let role = user.role || user.user_metadata?.role || user.app_metadata?.role;
-  if (!role || String(role).toUpperCase() === "CUSTOMER") {
-    try {
-      const { prisma } = await import("@/lib/prisma");
-      const isUuid =
-        user.id &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          user.id
-        );
-      const profile = await prisma.profile.findFirst({
-        where: {
-          OR: [
-            ...(isUuid ? [{ id: user.id }] : []),
-            ...(user.email ? [{ email: user.email }] : []),
-          ],
-        },
-        include: { role: true },
-      });
-      if (profile?.role?.name) {
-        role = profile.role.name;
-      }
-    } catch {
-      role = "CUSTOMER";
-    }
-  }
+  // Single source of truth: resolveUserRole enforces that an elevated role is only
+  // granted to an identity bound to the profile (or with a verified email).
+  const role = await resolveUserRole({
+    id: user.id,
+    email: user.email,
+    role: user.role || user.app_metadata?.role,
+    emailVerified: user.emailVerified,
+  });
   return String(role || "CUSTOMER").toUpperCase();
 }
 
@@ -108,8 +105,8 @@ export async function verifyStaff() {
   }
 
   const role = await getRoleForUser(user);
-  
-  if (!(STAFF_ROLES as readonly string[]).includes(role)) {
+
+  if (!roleIn(role, STAFF_ROLES)) {
     throw new Error("Forbidden: Staff access required");
   }
 
@@ -143,5 +140,65 @@ export async function verifyStaffOrManager() {
   }
 
   return user;
+}
+
+/** Any signed-in user (customers included). Throws when there is no valid session. */
+export async function verifyAuthenticated() {
+  const { user } = await getServerSession();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  return user;
+}
+
+/** Manager-level roles and above. */
+export async function verifyManager() {
+  const { user } = await getServerSession();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const role = await getRoleForUser(user);
+
+  if (!roleIn(role, MANAGER_ROLES)) {
+    throw new Error("Forbidden: Manager access required");
+  }
+
+  return user;
+}
+
+/**
+ * Authorizes the caller as the owner of `ownerId` OR as staff.
+ * Prevents IDOR where a client-supplied user id is trusted.
+ */
+export async function verifySelfOrStaff(ownerId: string | null | undefined) {
+  const { user } = await getServerSession();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  if (ownerId && user.id === ownerId) {
+    return user;
+  }
+
+  const role = await getRoleForUser(user);
+  if (!roleIn(role, STAFF_ROLES)) {
+    throw new Error("Forbidden");
+  }
+
+  return user;
+}
+
+/** Non-throwing variant for route handlers: returns the user or null. */
+export async function getStaffUserOrNull() {
+  try {
+    return await verifyStaff();
+  } catch {
+    return null;
+  }
 }
 

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 export interface AdminMessage {
   id: string;
@@ -29,6 +30,8 @@ export async function getAdminHeaderMessagesAction(): Promise<{
   unreadCount: number;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const logs = await prisma.communicationLog.findMany({
       where: { direction: "INBOUND" },
@@ -74,6 +77,8 @@ export async function getAdminHeaderMessagesAction(): Promise<{
  * Marks a single message as READ.
  */
 export async function markMessageAsReadAction(id: string): Promise<{ error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await prisma.communicationLog.update({
       where: { id },
@@ -100,6 +105,8 @@ export async function createMessageAction(payload: {
   subject?: string;
   content: string;
 }): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await prisma.communicationLog.create({
       data: {
@@ -135,6 +142,8 @@ export async function updateMessageAction(
     status?: string;
   }
 ): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await prisma.communicationLog.update({
       where: { id },
@@ -162,6 +171,8 @@ export async function updateMessageAction(
 export async function deleteMessageAction(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await prisma.communicationLog.delete({ where: { id } });
 
@@ -178,6 +189,8 @@ export async function deleteMessageAction(
  * Marks all recent unread inbound communications as READ.
  */
 export async function markAllMessagesAsReadAction(): Promise<{ error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await prisma.communicationLog.updateMany({
       where: { direction: "INBOUND", status: { not: "READ" } },
@@ -197,6 +210,8 @@ export async function markAllMessagesAsReadAction(): Promise<{ error?: string }>
  * Deletes all communication messages/logs.
  */
 export async function deleteAllMessagesAction(): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await prisma.communicationLog.deleteMany({});
     revalidatePath("/admin", "layout");
@@ -212,6 +227,8 @@ export async function deleteAllMessagesAction(): Promise<{ success: boolean; err
  * Cleans up fake messages (no-op now that fake seeding is disabled).
  */
 export async function cleanupFakeMessages(): Promise<void> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   // No-op
 }
 
@@ -219,5 +236,7 @@ export async function cleanupFakeMessages(): Promise<void> {
  * No-op: Do not seed fake messages. Only real messages are preserved.
  */
 export async function seedInitialMessagesIfEmptyAction(): Promise<void> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   // Intentionally empty — strictly real data only
 }

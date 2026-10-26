@@ -46,7 +46,7 @@ export default async function RefundsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {refunds?.map((refund) => (
+            {refunds?.map((refund: any) => (
               <TableRow key={refund.id}>
                 <TableCell className="font-mono text-xs">
                   {refund.payment_transactions?.reference_number}

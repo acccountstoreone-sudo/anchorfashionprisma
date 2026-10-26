@@ -1,6 +1,42 @@
 import prisma from "@/lib/prisma";
 import { randomUUID } from "crypto";
 
+/**
+ * SECURITY: this layer assembles SQL text. Values are always bound as
+ * parameters, but identifiers cannot be, so every identifier must pass this
+ * strict allow-pattern before being interpolated.
+ */
+const SAFE_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
+function assertIdent(name: string, kind = "identifier"): string {
+  if (typeof name !== "string" || !SAFE_IDENT.test(name)) {
+    throw new Error(`Invalid SQL ${kind}`);
+  }
+  return name;
+}
+
+function safeJsonKey(key: string): string {
+  // JSON path keys are string literals: double any single quote.
+  return `'${String(key).replace(/'/g, "''")}'`;
+}
+
+function safeNonNegInt(n: unknown, kind: string): number {
+  const v = Number(n);
+  if (!Number.isInteger(v) || v < 0) throw new Error(`Invalid ${kind}`);
+  return v;
+}
+
+const ALLOWED_UPLOAD_EXT = new Set([
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".gif",
+  ".avif",
+  ".mp4",
+  ".webm",
+  ".pdf",
+]);
+
 function serializePlain(val: any): any {
   if (val === null || val === undefined) return val;
   if (val instanceof Date) return val.toISOString();
@@ -22,7 +58,7 @@ function serializePlain(val: any): any {
 }
 
 function formatCol(col: string): string {
-  if (!col) return '""';
+  if (!col) throw new Error("Invalid SQL column");
   let trimmed = col.trim();
 
   // Alias compatibility
@@ -51,10 +87,13 @@ function formatCol(col: string): string {
   // Handle PostgreSQL JSON text accessor: metadata->>key
   if (trimmed.includes("->>")) {
     const parts = trimmed.split("->>");
-    const mainCol = parts[0].trim().replace(/^"|"$/g, "");
+    const mainCol = assertIdent(
+      parts[0].trim().replace(/^"|"$/g, ""),
+      "column"
+    );
     const jsonKey = parts
       .slice(1)
-      .map((k) => `'${k.trim().replace(/^['"]|['"]$/g, "")}'`)
+      .map((k) => safeJsonKey(k.trim().replace(/^['"]|['"]$/g, "")))
       .join("->>");
     return `("${mainCol}"->>${jsonKey})`;
   }
@@ -62,10 +101,13 @@ function formatCol(col: string): string {
   // Handle PostgreSQL JSON object accessor: metadata->key
   if (trimmed.includes("->")) {
     const parts = trimmed.split("->");
-    const mainCol = parts[0].trim().replace(/^"|"$/g, "");
+    const mainCol = assertIdent(
+      parts[0].trim().replace(/^"|"$/g, ""),
+      "column"
+    );
     const jsonKey = parts
       .slice(1)
-      .map((k) => `'${k.trim().replace(/^['"]|['"]$/g, "")}'`)
+      .map((k) => safeJsonKey(k.trim().replace(/^['"]|['"]$/g, "")))
       .join("->");
     return `("${mainCol}"->${jsonKey})`;
   }
@@ -74,11 +116,11 @@ function formatCol(col: string): string {
   if (trimmed.includes(".")) {
     return trimmed
       .split(".")
-      .map((part) => `"${part.trim().replace(/^"|"$/g, "")}"`)
+      .map((part) => `"${assertIdent(part.trim().replace(/^"|"$/g, ""), "column")}"`)
       .join(".");
   }
 
-  return `"${trimmed.replace(/^"|"$/g, "")}"`;
+  return `"${assertIdent(trimmed.replace(/^"|"$/g, ""), "column")}"`;
 }
 
 class QueryBuilder implements PromiseLike<any> {
@@ -99,7 +141,7 @@ class QueryBuilder implements PromiseLike<any> {
   private onConflictCols?: string;
 
   constructor(tableName: string) {
-    let clean = tableName;
+    let clean = assertIdent(tableName, "table");
     if (clean === "order_shipments") {
       clean = "shipments";
     }
@@ -569,12 +611,14 @@ class QueryBuilder implements PromiseLike<any> {
           query += ` ORDER BY ${this.orderClauses.join(", ")}`;
         }
         if (this.limitCount) {
-          query += ` LIMIT ${this.limitCount}`;
+          query += ` LIMIT ${safeNonNegInt(this.limitCount, "limit")}`;
         } else if (
           this.rangeStart !== undefined &&
           this.rangeEnd !== undefined
         ) {
-          query += ` LIMIT ${this.rangeEnd - this.rangeStart + 1} OFFSET ${this.rangeStart}`;
+          const start = safeNonNegInt(this.rangeStart, "range start");
+          const end = safeNonNegInt(this.rangeEnd, "range end");
+          query += ` LIMIT ${end - start + 1} OFFSET ${start}`;
         }
       } else if (this.action === "insert" || this.action === "upsert") {
         const dataArray = Array.isArray(this.payload)
@@ -677,7 +721,7 @@ class QueryBuilder implements PromiseLike<any> {
           }
         }
 
-        const keys = Object.keys(dataArray[0]);
+        const keys = Object.keys(dataArray[0]).map((k) => assertIdent(k, "column"));
         const cols = keys.map((k) => `"${k}"`).join(", ");
 
         const values = [];
@@ -715,11 +759,10 @@ class QueryBuilder implements PromiseLike<any> {
         query = `INSERT INTO "${this.tableName}" (${cols}) VALUES ${values.join(", ")}`;
         if (this.action === "upsert") {
           if (this.onConflictCols) {
-            const conflictCols = this.onConflictCols
+            const conflictColNames = this.onConflictCols
               .split(",")
-              .map((c: string) => `"${c.trim()}"`)
-              .join(", ");
-            const conflictColNames = this.onConflictCols.split(",").map((c: string) => c.trim());
+              .map((c: string) => assertIdent(c.trim(), "column"));
+            const conflictCols = conflictColNames.map((c: string) => `"${c}"`).join(", ");
             const updateCols = keys
               .filter((k) => !conflictColNames.includes(k) && k !== "id")
               .map((k) => `"${k}" = EXCLUDED."${k}"`)
@@ -784,7 +827,7 @@ class QueryBuilder implements PromiseLike<any> {
           delete this.payload.coupon_id;
         }
 
-        const keys = Object.keys(this.payload);
+        const keys = Object.keys(this.payload).map((k) => assertIdent(k, "column"));
         const sets = [];
         for (const key of keys) {
           let val = this.payload[key];
@@ -904,6 +947,8 @@ export function createClient() {
     rpc: (fnName: string, args?: any) => {
       const p = (async () => {
       try {
+        assertIdent(fnName, "function name");
+        if (args) Object.keys(args).forEach((k) => assertIdent(k, "argument"));
         if (!args || Object.keys(args).length === 0) {
           const res = (await prisma.$queryRawUnsafe(
             `SELECT * FROM "${fnName}"()`
@@ -1178,10 +1223,25 @@ export function createClient() {
             if (typeof window === "undefined" && file) {
               const fs = await import("fs/promises");
               const pathModule = await import("path");
-              const cleanPath = path.replace(/^\/+/, "").replace(/\\/g, "/");
-              const uploadDir = pathModule.join(process.cwd(), "public", "uploads", pathModule.dirname(cleanPath));
-              await fs.mkdir(uploadDir, { recursive: true });
-              const dest = pathModule.join(process.cwd(), "public", "uploads", cleanPath);
+              // SECURITY: confine writes to public/uploads and allow only safe extensions.
+              const uploadsRoot = pathModule.resolve(process.cwd(), "public", "uploads");
+              const cleanSegments = String(path)
+                .replace(/\\/g, "/")
+                .split("/")
+                .map((seg) => seg.replace(/[^a-zA-Z0-9._-]/g, ""))
+                .filter((seg) => seg && seg !== "." && seg !== "..");
+              if (cleanSegments.length === 0) {
+                throw new Error("Invalid upload path");
+              }
+              const dest = pathModule.resolve(uploadsRoot, ...cleanSegments);
+              if (!dest.startsWith(uploadsRoot + pathModule.sep)) {
+                throw new Error("Invalid upload path");
+              }
+              const ext = pathModule.extname(dest).toLowerCase();
+              if (!ALLOWED_UPLOAD_EXT.has(ext)) {
+                throw new Error("File type not allowed");
+              }
+              await fs.mkdir(pathModule.dirname(dest), { recursive: true });
 
               let buffer: Buffer;
               if (Buffer.isBuffer(file)) {
@@ -1274,25 +1334,10 @@ export function createClient() {
             const { getServerSession } = await import("@/lib/auth/server");
             const { user: u } = await getServerSession();
             if (u) {
-              let resolvedRole = (u as any).role;
-              if (!resolvedRole || resolvedRole === "CUSTOMER") {
-                try {
-                  const { prisma } = await import("@/lib/prisma");
-                  const isUuid = u.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(u.id);
-                  const profile = await prisma.profile.findFirst({
-                    where: {
-                      OR: [
-                        ...(isUuid ? [{ id: u.id }] : []),
-                        ...(u.email ? [{ email: u.email }] : []),
-                      ],
-                    },
-                    include: { role: true },
-                  });
-                  if (profile?.role?.name) {
-                    resolvedRole = profile.role.name.toUpperCase();
-                  }
-                } catch {}
-              }
+              // getServerSession() already resolved the role through the guarded
+              // resolveUserRole (identity-bound / verified-email only). Do not re-query
+              // the profile by email here.
+              const resolvedRole = (u as any).role;
               const finalRole = resolvedRole || "CUSTOMER";
               return {
                 data: {
@@ -1447,14 +1492,17 @@ export function createClient() {
             return { data: null, error: { message: e.message } };
           }
         },
-        createUser: async (userData: any) => {
+        createUser: async (
+          userData: any
+        ): Promise<{ data: { user: any }; error: { message: string } | null }> => {
           try {
             // 1. Synchronize credentials with Neon Auth if password provided
             if (userData.password) {
               try {
-                const baseUrl =
-                  process.env.NEON_AUTH_BASE_URL ||
-                  "https://ep-autumn-cake-b45phh1c.neonauth.c-6.us-east-2.aws.neon.tech/neondb/auth";
+                const baseUrl = process.env.NEON_AUTH_BASE_URL;
+                if (!baseUrl) {
+                  throw new Error("NEON_AUTH_BASE_URL is not configured");
+                }
                 const fullName = `${
                   userData.user_metadata?.first_name ||
                   userData.first_name ||
@@ -1545,11 +1593,14 @@ export function createClient() {
                   email: userData?.email,
                 },
               },
-              error: null,
+              error: { message: e?.message || "Failed to create user" },
             };
           }
         },
-        updateUserById: async (id: string, updates: any) => {
+        updateUserById: async (
+          id: string,
+          updates: any
+        ): Promise<{ data: { user: any }; error: { message: string } | null }> => {
           try {
             const meta = updates.user_metadata || {};
             const isUuid =
@@ -1580,7 +1631,10 @@ export function createClient() {
             }
             return { data: { user: { id, ...updates } }, error: null };
           } catch (e: any) {
-            return { data: { user: { id, ...updates } }, error: null };
+            return {
+              data: { user: { id, ...updates } },
+              error: { message: e?.message || "Failed to update user" },
+            };
           }
         },
       },

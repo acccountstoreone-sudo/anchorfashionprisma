@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { InventoryRepository } from "@/repositories/inventory.repository";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function GET(request: NextRequest) {
   try {
+    await verifyStaff();
     const { searchParams } = new URL(request.url);
     const page = searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1;
     const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 50;

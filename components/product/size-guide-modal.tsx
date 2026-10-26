@@ -179,7 +179,8 @@ export function SizeGuideModal({
             </thead>
             <tbody className="divide-y divide-zinc-100">
               {rows.map((row, i) => {
-                const sizeValue = String(row["Size"] || row[columns[0]]);
+                const r = row as Record<string, any>;
+                const sizeValue = String(r["Size"] || r[columns[0]]);
                 const isAvailable = availableSizes.length === 0 || availableSizes.includes(sizeValue);
                 const isSelected = selectedSize === sizeValue;
 
@@ -204,7 +205,7 @@ export function SizeGuideModal({
                             : ""
                         }`}
                       >
-                        {convertValue(row[col], col)}
+                        {convertValue(r[col], col)}
                       </td>
                     ))}
                   </tr>

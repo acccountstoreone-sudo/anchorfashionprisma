@@ -105,6 +105,10 @@ async function runAudit() {
     costPrice: 700,
     salePrice: 990,
     status: "DRAFT",
+    isFeatured: false,
+    stockQuantity: 0,
+    soldCount: 0,
+    totalSold: 0,
     warehouseId,
     alertQuantity: 8,
     variants: [

@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { WarehouseService } from "@/services/warehouse.service";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await verifyStaff();
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || undefined;
@@ -18,6 +20,6 @@ export async function GET(
     const inventory = await service.getWarehouseInventory(id, { search, category, status, page, limit });
     return NextResponse.json(inventory);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: error.message?.includes("Forbidden") ? 403 : 500 });
   }
 }

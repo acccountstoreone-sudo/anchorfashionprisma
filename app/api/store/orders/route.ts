@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { getServerSession } from '@/lib/auth/server';
 import { v4 as uuidv4 } from 'uuid';
 import { AlphaSmsService } from '@/lib/services/sms/alpha-sms.service';
 import { InventoryService } from '@/services/inventory.service';
@@ -34,6 +35,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required order fields' }, { status: 400 });
     }
 
+    // Verify authenticated session to prevent unauthorized spoofing of user_id
+    let effectiveCustomerId: string | null = null;
+    try {
+      const session = await getServerSession();
+      if (session?.user?.id) {
+        // Authenticated customer: use their verified ID
+        effectiveCustomerId = session.user.id;
+      }
+    } catch {
+      effectiveCustomerId = null;
+    }
+
     const supabase = await createAdminClient();
 
     // Generate unique order ID and human-friendly Order Number
@@ -54,7 +67,7 @@ export async function POST(request: Request) {
       .insert({
         id: orderId,
         order_number: orderNumber,
-        customer_id: user_id || null,
+        customer_id: effectiveCustomerId,
         status: 'confirmed',
         payment_status: payment_method === 'COD' ? 'PENDING' : 'PENDING_VERIFICATION',
         payment_method: payment_method,

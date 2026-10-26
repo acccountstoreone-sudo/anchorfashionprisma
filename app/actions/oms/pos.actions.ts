@@ -2,10 +2,13 @@
 
 import { PosService, PosOrderPayload } from "@/lib/services/oms/pos.service";
 import { createClient } from "@/lib/supabase/server";
+import { verifyStaff } from "@/lib/security/roles";
 
 const posService = new PosService();
 
 export async function posSearchCustomersAction(query: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await posService.searchCustomers(query);
     return { success: true, data };
@@ -15,6 +18,8 @@ export async function posSearchCustomersAction(query: string) {
 }
 
 export async function posCreateCustomerAction(data: { firstName: string; lastName: string; phone: string; email?: string }) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const result = await posService.createCustomer(data);
     return { success: true, data: result };
@@ -24,6 +29,8 @@ export async function posCreateCustomerAction(data: { firstName: string; lastNam
 }
 
 export async function posSearchProductsAction(query: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await posService.searchProducts(query);
     return { success: true, data };
@@ -33,6 +40,8 @@ export async function posSearchProductsAction(query: string) {
 }
 
 export async function placePosOrderAction(payload: PosOrderPayload) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

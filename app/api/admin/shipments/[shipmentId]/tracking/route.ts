@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { CourierFactory } from "@/lib/couriers/courier.factory";
+import { verifyStaff } from "@/lib/security/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -10,15 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ shipmentId: string }> }
 ) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
+    await verifyStaff();
 
     const { shipmentId } = await params;
     const adminSupabase = createAdminClient();

@@ -5,6 +5,7 @@ import { BlogPost, BlogCategory, BlogTag } from "@/types/blog.types";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function getPosts(status?: string): Promise<BlogPost[]> {
   try {
@@ -34,6 +35,8 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
 }
 
 export async function createPost(data: unknown): Promise<BlogPost> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   let authorId = (data as any)?.author_id;
 
   try {
@@ -77,6 +80,8 @@ export async function createPost(data: unknown): Promise<BlogPost> {
 }
 
 export async function updatePost(id: string, data: unknown): Promise<BlogPost> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const post = await blogService.updatePost(id, data);
   try {
     revalidatePath("/admin/cms/blogs");
@@ -89,6 +94,8 @@ export async function updatePost(id: string, data: unknown): Promise<BlogPost> {
 }
 
 export async function deletePost(id: string): Promise<void> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   await blogService.deletePost(id);
   try {
     revalidatePath("/admin/cms/blogs");

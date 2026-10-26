@@ -2,8 +2,11 @@
 
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function getPickListsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
     const { data: lists, error } = await supabase
@@ -62,6 +65,8 @@ export async function getPickListsAction() {
 }
 
 export async function getPickersAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -85,6 +90,8 @@ export async function getPickersAction() {
 }
 
 export async function generatePickListFromOrdersAction(warehouseId?: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -141,7 +148,7 @@ export async function generatePickListFromOrdersAction(warehouseId?: string) {
     if (itemsToInsert.length === 0) {
       const { data: sampleVariants } = await supabase.from("variants").select("id").limit(3);
       if (sampleVariants && sampleVariants.length > 0) {
-        itemsToInsert = sampleVariants.map((v) => ({
+        itemsToInsert = sampleVariants.map((v: any) => ({
           variant_id: v.id,
           quantity: 2,
           is_picked: false,
@@ -196,6 +203,8 @@ export async function generatePickListFromOrdersAction(warehouseId?: string) {
 }
 
 export async function assignPickerAction(pickListId: string, pickerId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
     const { error } = await supabase
@@ -221,6 +230,8 @@ export async function updatePickListStatusAction(
   pickListId: string,
   status: "PENDING" | "ASSIGNED" | "PICKING" | "PARTIALLY_PICKED" | "COMPLETED" | "CANCELLED" | "IN_PROGRESS"
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 

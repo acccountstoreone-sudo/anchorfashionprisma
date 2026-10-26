@@ -38,7 +38,7 @@ export function InAppNotificationCenter() {
 
     if (data) {
       setNotifications(data);
-      setUnreadCount(data.filter((n) => !n.is_read).length);
+      setUnreadCount(data.filter((n: any) => !n.is_read).length);
     }
   };
 
@@ -58,7 +58,7 @@ export function InAppNotificationCenter() {
           table: "notifications",
           filter: `user_id=eq.${session.user.id}`,
         },
-        (payload) => {
+        (payload: any) => {
           setNotifications((prev) =>
             [payload.new as Notification, ...prev].slice(0, 20)
           );

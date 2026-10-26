@@ -5,12 +5,15 @@ import { createClient } from "@/lib/supabase/server";
 import { ExpenseRepository } from "@/repositories/expense.repository";
 import { ExpenseFormSchema, ExpenseFormValues } from "@/schemas/finance.schema";
 import { Expense, ExpenseFilters, ExpenseSummary } from "@/types/finance.types";
+import { verifyManager } from "@/lib/security/roles";
 
 const expenseRepository = new ExpenseRepository();
 
 export async function getExpensesAction(
   filters?: ExpenseFilters
 ): Promise<{ success: boolean; data?: Expense[]; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const expenses = await expenseRepository.getExpenses(filters);
     return { success: true, data: expenses };
@@ -28,6 +31,8 @@ export async function getExpenseSummaryAction(): Promise<{
   data?: ExpenseSummary;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const summary = await expenseRepository.getExpenseSummary();
     return { success: true, data: summary };
@@ -43,6 +48,8 @@ export async function getExpenseSummaryAction(): Promise<{
 export async function createExpenseAction(
   formData: ExpenseFormValues
 ): Promise<{ success: boolean; data?: Expense; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const supabase = await createClient();
     const userRes = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
@@ -68,6 +75,8 @@ export async function updateExpenseAction(
   id: string,
   formData: Partial<ExpenseFormValues>
 ): Promise<{ success: boolean; data?: Expense; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     if (!id) {
       return { success: false, error: "Expense ID is required for updates" };
@@ -93,6 +102,8 @@ export async function updateExpenseAction(
 export async function deleteExpenseAction(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     if (!id) {
       return { success: false, error: "Expense ID is required" };

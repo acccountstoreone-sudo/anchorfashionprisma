@@ -1,10 +1,13 @@
 "use server";
 
 import { CustomerRepository } from "@/lib/repositories/crm/customer.repository";
+import { verifyStaff } from "@/lib/security/roles";
 
 const customerRepo = new CustomerRepository();
 
 export async function fetchCustomersAction(limit?: number, search?: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await customerRepo.getCustomerProfiles(limit, search);
     return { success: true, data };
@@ -15,6 +18,8 @@ export async function fetchCustomersAction(limit?: number, search?: string) {
 }
 
 export async function fetchCustomerSegmentsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await customerRepo.getCustomerSegments();
     return { success: true, data };
@@ -25,6 +30,8 @@ export async function fetchCustomerSegmentsAction() {
 }
 
 export async function fetchLoyaltyStatsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await customerRepo.getLoyaltyStats();
     return { success: true, data };
@@ -35,6 +42,8 @@ export async function fetchLoyaltyStatsAction() {
 }
 
 export async function fetchCRMSummaryAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await customerRepo.getCRMSummary();
     return { success: true, data };
@@ -55,6 +64,8 @@ export async function fetchCRMSummaryAction() {
 }
 
 export async function fetchCustomerDetailsAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const profile = await customerRepo.getProfile(id);
     if (!profile) return { success: false, error: "Customer not found" };

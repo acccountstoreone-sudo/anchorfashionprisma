@@ -64,8 +64,8 @@ export default async function SupportTicketDetailsPage({
               {getStatusBadge(ticket.status || "open")}
             </div>
             <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
-              {ticket.ticket_number && (
-                <span className="font-mono font-medium">#{ticket.ticket_number}</span>
+              {((ticket as any).ticketNumber || (ticket as any).ticket_number) && (
+                <span className="font-mono font-medium">#{((ticket as any).ticketNumber || (ticket as any).ticket_number)}</span>
               )}
               {ticket.category && (
                 <span className="flex items-center gap-1">
@@ -73,7 +73,7 @@ export default async function SupportTicketDetailsPage({
                 </span>
               )}
               <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" /> {new Date(ticket.created_at).toLocaleDateString()}
+                <Calendar className="h-3 w-3" /> {new Date((ticket as any).createdAt || (ticket as any).created_at).toLocaleDateString()}
               </span>
             </div>
           </div>
@@ -83,9 +83,15 @@ export default async function SupportTicketDetailsPage({
       <SupportTicketThread
         ticketId={ticket.id}
         initialDescription={ticket.description}
-        ticketCreatedAt={ticket.created_at}
+        ticketCreatedAt={new Date((ticket as any).createdAt || (ticket as any).created_at).toISOString()}
         status={ticket.status || "open"}
-        messages={ticket.messages || []}
+        messages={(ticket.messages || []).map((m: any) => ({
+          id: m.id,
+          sender_type: (m.senderType || m.sender_type || "CUSTOMER") as any,
+          message: m.body || m.message || "",
+          created_at: new Date(m.createdAt || m.created_at).toISOString(),
+          is_internal_note: m.isInternal ?? m.is_internal_note ?? false,
+        }))}
       />
     </div>
   );

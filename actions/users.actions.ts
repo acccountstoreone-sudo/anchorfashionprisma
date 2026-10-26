@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { createClient } from "@/lib/supabase/server";
+import { verifyAdmin, verifySelfOrStaff } from "@/lib/security/roles";
 import { revalidatePath } from "next/cache";
 
 export type UserData = {
@@ -16,6 +17,7 @@ export type UserData = {
 
 export async function getUsersByRoleAction(roleNames: string[]) {
   try {
+    await verifyAdmin();
     const supabase = createAdminClient();
 
     // 1. Get roles
@@ -27,7 +29,7 @@ export async function getUsersByRoleAction(roleNames: string[]) {
     if (rolesError) throw rolesError;
     if (!roles || roles.length === 0) return { success: true, data: [] };
 
-    const roleIds = roles.map((r) => r.id);
+    const roleIds = roles.map((r: any) => r.id);
 
     // 2. Get profiles
     const { data: profiles, error: profilesError } = await supabase
@@ -43,7 +45,7 @@ export async function getUsersByRoleAction(roleNames: string[]) {
 
     // Merge data
     const mappedUsers: UserData[] = (profiles || []).map((profile: any) => {
-      const authUser = users.find((u: any) => u.id === profile.id);
+      const authUser: any = users.find((u: any) => u.id === profile.id);
       
       const roleName = Array.isArray(profile.roles) 
         ? profile.roles[0]?.name 
@@ -87,6 +89,7 @@ export async function createUserAction(data: {
   password?: string;
 }) {
   try {
+    await verifyAdmin();
     const supabase = createAdminClient();
 
     // 1. Find role or create fallback if missing
@@ -197,6 +200,10 @@ export async function createUserAction(data: {
 
 export async function toggleUserStatusAction(userId: string, currentStatus: string) {
   try {
+    const adminUser = await verifyAdmin();
+    if (adminUser.id === userId) {
+      return { success: false, error: "You cannot change your own status." };
+    }
     const supabase = createAdminClient();
     const newActiveState = currentStatus !== "Active";
 
@@ -229,6 +236,7 @@ export async function toggleUserStatusAction(userId: string, currentStatus: stri
 
 export async function assignUserRoleAction(userId: string, roleName: string) {
   try {
+    await verifyAdmin();
     const supabase = createAdminClient();
 
     // 1. Find role by name
@@ -273,6 +281,7 @@ export async function updateUserProfileAction(
   data: { firstName: string; lastName: string; phone?: string }
 ) {
   try {
+    await verifySelfOrStaff(userId);
     const supabase = createAdminClient();
 
     const { error: profErr } = await supabase
@@ -309,6 +318,7 @@ export async function updateUserProfileAction(
 
 export async function getAllAvailableRolesAction() {
   try {
+    await verifyAdmin();
     const supabase = createAdminClient();
     const { data: roles, error } = await supabase
       .from("roles")
@@ -331,7 +341,8 @@ export async function updateUserPasswordAction(
     let newPassword = "";
 
     if (arg2 !== undefined) {
-      // Called as updateUserPasswordAction(userId, newPassword)
+      // Called as updateUserPasswordAction(userId, newPassword) - requires admin
+      await verifyAdmin();
       targetUserId = arg1;
       newPassword = arg2;
     } else {
@@ -370,7 +381,7 @@ export async function updateUserPasswordAction(
         if (updateError) throw updateError;
       }
     } else {
-      // Admin updating a user's password directly
+      // Admin updating a user's password directly (already authorized above)
       const { error: updateError } = await adminClient.auth.admin.updateUserById(targetUserId, {
         password: newPassword.trim(),
       });
@@ -391,48 +402,11 @@ export async function updateUserPasswordAction(
 }
 
 export async function adminUpdateUserPasswordAction(userId: string, newPassword: string) {
+  await verifyAdmin();
   return updateUserPasswordAction(userId, newPassword);
 }
 
-export async function syncUserAuthAction(credentials: { email: string; password: string }) {
-  try {
-    const email = credentials.email.trim().toLowerCase();
-    const password = credentials.password.trim();
-
-    if (!email || !password || password.length < 6) {
-      return { success: false, error: "Invalid credentials" };
-    }
-
-    const adminClient = createAdminClient();
-    const {
-      data: { users },
-      error: listErr,
-    } = await adminClient.auth.admin.listUsers();
-
-    if (listErr || !users) {
-      return { success: false, error: "Unable to verify user" };
-    }
-
-    const targetUser = users.find((u) => u.email?.toLowerCase() === email);
-    if (!targetUser) {
-      return { success: false, error: "Invalid login credentials." };
-    }
-
-    // Ensure email is confirmed and update password to allow seamless authentication
-    const { error: updateErr } = await adminClient.auth.admin.updateUserById(targetUser.id, {
-      email_confirm: true,
-      password: password,
-    });
-
-    if (updateErr) {
-      console.error("[syncUserAuthAction] update error:", updateErr);
-      return { success: false, error: updateErr.message };
-    }
-
-    return { success: true };
-  } catch (error: any) {
-    console.error("[syncUserAuthAction]", error);
-    return { success: false, error: error.message || "Sync failed" };
-  }
+export async function syncUserAuthAction(_credentials: { email: string; password: string }) {
+  return { success: false, error: "This operation has been disabled for security reasons." };
 }
 

@@ -181,7 +181,7 @@ export function CategoryHierarchySelector({
   const handleToggleCategory = (catId: string) => {
     const isCurrentlySelected = selectedCategoryIds.includes(catId);
     let nextSelected: string[];
-    let nextPrimary = primaryCategoryId;
+    let nextPrimary: string | null = primaryCategoryId ?? null;
 
     if (isCurrentlySelected) {
       nextSelected = selectedCategoryIds.filter((id) => id !== catId);

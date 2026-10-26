@@ -32,9 +32,11 @@ export default async function AdminCustomerDetailPage({
 
   try {
     const { data: authData } = await adminClient.auth.admin.getUserById(id);
-    if (authData?.user?.email) email = authData.user.email;
-    if (authData?.user?.created_at) {
-      createdAt = new Date(authData.user.created_at).toLocaleDateString("en-US", {
+    const authUser: any = authData?.user;
+    if (authUser?.email) email = authUser.email;
+    const userCreatedAt = authUser?.created_at || authUser?.createdAt;
+    if (userCreatedAt) {
+      createdAt = new Date(userCreatedAt).toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -140,7 +142,7 @@ export default async function AdminCustomerDetailPage({
             <div>
               <p className="text-sm text-muted-foreground">Lifetime Total</p>
               <p className="text-xl font-semibold">
-                BDT {(orders?.reduce((sum, o) => sum + (Number(o.total) || 0), 0) || 0).toLocaleString()}
+                BDT {(orders?.reduce((sum: number, o: any) => sum + (Number(o.total || o.grand_total || 0)), 0) || 0).toLocaleString()}
               </p>
             </div>
           </CardContent>
@@ -179,7 +181,7 @@ export default async function AdminCustomerDetailPage({
             </div>
           ) : (
             <div className="space-y-4">
-              {orders.map((order) => (
+              {orders.map((order: any) => (
                 <div key={order.id} className="flex items-center justify-between border-b pb-3 last:border-0">
                   <div className="flex items-center gap-3">
                     <Package className="h-5 w-5 text-primary" />

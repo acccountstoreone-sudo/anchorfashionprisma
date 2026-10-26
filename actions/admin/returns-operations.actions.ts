@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 export interface ReturnItemInput {
   orderItemId?: string;
@@ -28,6 +29,8 @@ export async function getOperationsReturnsAction(filters: {
   status?: string;
   search?: string;
 } = {}) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -78,6 +81,8 @@ export async function getOperationsReturnsAction(filters: {
 }
 
 export async function createOperationsReturnAction(payload: CreateReturnPayload) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -137,6 +142,8 @@ export async function updateOperationsReturnStatusAction(
   newStatus: "REQUESTED" | "APPROVED" | "REJECTED" | "RECEIVED" | "REFUNDED" | "COMPLETED",
   notes?: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -234,6 +241,8 @@ export async function updateOperationsReturnStatusAction(
 }
 
 export async function getOrdersForReturnAction(search: string = "") {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 

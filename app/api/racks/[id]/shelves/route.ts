@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { WarehouseService } from "@/services/warehouse.service";
+import { verifyStaff, verifyManager } from "@/lib/security/roles";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await verifyStaff();
     const { id } = await params;
     // id can be formatted as zoneId-rackCode or rackId
     const parts = id.split("-");
@@ -17,7 +19,7 @@ export async function GET(
     const filtered = rackCode ? bins.filter((b) => b.code.startsWith(rackCode)) : bins;
     return NextResponse.json(filtered);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: error.message?.includes("Forbidden") ? 403 : 500 });
   }
 }
 
@@ -26,6 +28,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await verifyManager();
     const { id } = await params;
     const parts = id.split("-");
     const zoneId = parts[0];
@@ -35,6 +38,6 @@ export async function POST(
     const bin = await service.createBin({ ...body, zone_id: zoneId });
     return NextResponse.json(bin, { status: 201 });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: error.message }, { status: error.message?.includes("Forbidden") ? 403 : 400 });
   }
 }

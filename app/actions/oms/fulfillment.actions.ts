@@ -6,10 +6,13 @@ import {
   fulfillShipmentSchema,
 } from "@/lib/validations/oms";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 const fulfillmentService = new FulfillmentService();
 
 export async function assignTrackingAction(input: FulfillShipmentInput) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const validatedData = fulfillShipmentSchema.parse(input);
     await fulfillmentService.assignShipmentTracking(validatedData);
@@ -21,6 +24,8 @@ export async function assignTrackingAction(input: FulfillShipmentInput) {
 }
 
 export async function reserveInventoryAction(orderId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     // Confirms (consumes) reserved stock — stock has physically shipped.
     await fulfillmentService.confirmInventoryForShipment(orderId);

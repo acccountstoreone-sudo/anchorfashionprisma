@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 function safeRevalidate() {
   try {
@@ -31,6 +32,8 @@ export async function getAdminHeaderNotificationsAction(): Promise<{
   unreadCount: number;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const list = await prisma.notification.findMany({
       orderBy: { createdAt: "desc" },
@@ -69,6 +72,8 @@ export async function getAllAdminNotificationsAction(filters?: {
   unreadCount: number;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const where: any = {};
     if (filters?.type && filters.type !== "all") {
@@ -121,6 +126,8 @@ export async function createAdminNotificationAction(payload: {
   type?: string;
   user_id?: string | null;
 }): Promise<{ success: boolean; data?: AdminNotification; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!payload.title?.trim() || !payload.message?.trim()) {
       return { success: false, error: "Title and message are required" };
@@ -165,6 +172,8 @@ export async function updateAdminNotificationAction(
     type?: string;
   }
 ): Promise<{ success: boolean; data?: AdminNotification; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!id) return { success: false, error: "Notification ID is required" };
     if (!payload.title?.trim() || !payload.message?.trim()) {
@@ -204,6 +213,8 @@ export async function updateAdminNotificationAction(
 export async function deleteAdminNotificationAction(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!id) return { success: false, error: "Notification ID is required" };
     await prisma.notification.delete({ where: { id } });
@@ -219,6 +230,8 @@ export async function deleteAdminNotificationAction(
  * Marks a single notification as read.
  */
 export async function markNotificationAsReadAction(id: string): Promise<{ error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await prisma.notification.update({
       where: { id },
@@ -236,6 +249,8 @@ export async function markNotificationAsReadAction(id: string): Promise<{ error?
  * Marks ALL unread notifications as read.
  */
 export async function markAllNotificationsAsReadAction(): Promise<{ error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await prisma.notification.updateMany({
       where: { readAt: null },
@@ -256,6 +271,8 @@ export async function toggleNotificationStatusAction(
   id: string,
   currentlyRead: boolean
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await prisma.notification.update({
       where: { id },
@@ -275,6 +292,8 @@ export async function deleteAllAdminNotificationsAction(): Promise<{
   success: boolean;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await prisma.notification.deleteMany({});
     safeRevalidate();
@@ -288,6 +307,8 @@ export async function deleteAllAdminNotificationsAction(): Promise<{
  * No-op: Do not seed fake notifications. Only real system/user notifications are shown.
  */
 export async function seedInitialNotificationsIfEmptyAction(): Promise<void> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   // Intentionally empty — strictly real notifications only
 }
 

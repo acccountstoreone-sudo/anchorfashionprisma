@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { verifyStaff, verifyAdmin } from "@/lib/security/roles";
 
 // GET all prompts
 export async function GET(req: NextRequest) {
   try {
+    await verifyStaff();
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
 
@@ -22,13 +24,14 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: error.message?.includes("Forbidden") ? 403 : 500 });
   }
 }
 
 // POST a new prompt
 export async function POST(req: NextRequest) {
   try {
+    await verifyAdmin();
     const body = await req.json();
 
     // Minimal validation

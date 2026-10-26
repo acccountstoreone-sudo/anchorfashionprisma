@@ -17,7 +17,7 @@ export class AIRecommendationEngine {
       return [];
     }
 
-    return data.map((d) => ({
+    return data.map((d: any) => ({
       id: d.id,
       name: d.name,
       strategy: d.strategy,

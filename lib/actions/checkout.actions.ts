@@ -11,6 +11,7 @@ import {
 import { CheckoutStep } from "@/types/checkout.types";
 import { CodRiskService, CodRiskEvaluation } from "../services/fraud/cod-risk.service";
 import { CodOtpService } from "../services/fraud/cod-otp.service";
+import { prisma } from "@/lib/prisma";
 
 async function getSessionIdentifiers() {
   const { user } = await getServerSession();

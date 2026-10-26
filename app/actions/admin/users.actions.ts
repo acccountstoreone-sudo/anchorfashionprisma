@@ -21,8 +21,8 @@ export async function fetchAdminUsersAction() {
     const { data: authData, error: authErr } = await supabase.auth.admin.listUsers();
     if (authErr) throw authErr;
 
-    const usersList = profiles.map((p) => {
-      const authUser = authData.users.find((u) => u.id === p.id);
+    const usersList = (profiles || []).map((p: any) => {
+      const authUser: any = authData.users.find((u: any) => u.id === p.id);
       return {
         id: p.id,
         name: `${p.first_name || ""} ${p.last_name || ""}`.trim() || "Unknown",

@@ -2,10 +2,13 @@
 
 import { WarehouseRepository } from "@/repositories/warehouse.repository";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 const warehouseRepo = new WarehouseRepository();
 
 export async function getWarehousesAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const result = await warehouseRepo.getAllWarehouses();
     const list = Array.isArray(result) ? result : result.data;
@@ -16,6 +19,8 @@ export async function getWarehousesAction() {
 }
 
 export async function getWarehouseByIdAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await warehouseRepo.getWarehouseById(id);
     return { success: true, data };
@@ -25,6 +30,8 @@ export async function getWarehouseByIdAction(id: string) {
 }
 
 export async function createWarehouseAction(data: any) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const result = await warehouseRepo.createWarehouse(data);
     revalidatePath("/admin/shipping/warehouses");
@@ -35,6 +42,8 @@ export async function createWarehouseAction(data: any) {
 }
 
 export async function updateWarehouseAction(id: string, data: any) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const result = await warehouseRepo.updateWarehouse(id, data);
     revalidatePath("/admin/shipping/warehouses");
@@ -46,6 +55,8 @@ export async function updateWarehouseAction(id: string, data: any) {
 }
 
 export async function getZonesByWarehouseAction(warehouseId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await warehouseRepo.getZonesByWarehouse(warehouseId);
     return { success: true, data };
@@ -55,6 +66,8 @@ export async function getZonesByWarehouseAction(warehouseId: string) {
 }
 
 export async function createZoneAction(data: any) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const result = await warehouseRepo.createZone(data);
     revalidatePath(`/admin/shipping/warehouses/${data.warehouse_id}`);
@@ -65,6 +78,8 @@ export async function createZoneAction(data: any) {
 }
 
 export async function updateZoneAction(id: string, data: any) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const result = await warehouseRepo.updateZone(id, data);
     if (result) {
@@ -77,6 +92,8 @@ export async function updateZoneAction(id: string, data: any) {
 }
 
 export async function deleteZoneAction(id: string, warehouseId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await warehouseRepo.deleteZone(id);
     revalidatePath(`/admin/shipping/warehouses/${warehouseId}`);
@@ -87,6 +104,8 @@ export async function deleteZoneAction(id: string, warehouseId: string) {
 }
 
 export async function getBinsByZoneAction(zoneId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await warehouseRepo.getBinsByZone(zoneId);
     return { success: true, data };
@@ -96,6 +115,8 @@ export async function getBinsByZoneAction(zoneId: string) {
 }
 
 export async function createBinAction(data: any, warehouseId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const result = await warehouseRepo.createBin(data);
     revalidatePath(`/admin/shipping/warehouses/${warehouseId}`);
@@ -106,6 +127,8 @@ export async function createBinAction(data: any, warehouseId: string) {
 }
 
 export async function updateBinAction(id: string, data: any, warehouseId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const result = await warehouseRepo.updateBin(id, data);
     revalidatePath(`/admin/shipping/warehouses/${warehouseId}`);
@@ -116,6 +139,8 @@ export async function updateBinAction(id: string, data: any, warehouseId: string
 }
 
 export async function deleteBinAction(id: string, warehouseId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await warehouseRepo.deleteBin(id);
     revalidatePath(`/admin/shipping/warehouses/${warehouseId}`);

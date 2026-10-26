@@ -11,7 +11,7 @@ import {
 } from "@/lib/validations/oms";
 import { revalidatePath } from "next/cache";
 import { auth, getServerSession } from "@/lib/auth/server";
-import { isStaffOrManager, getRoleForUser } from "@/lib/security/roles";
+import { isStaffOrManager, getRoleForUser, verifyAuthenticated, verifyStaff } from "@/lib/security/roles";
 import { InventoryService } from "@/services/inventory.service";
 import { PaymentService } from "@/services/payment/payment.service";
 
@@ -19,6 +19,8 @@ const orderService = new OrderService();
 const orderRepo = new OrderRepository();
 
 export async function createOrderAction(input: CreateOrderInput) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const validatedData = createOrderSchema.parse(input);
     const newOrder = await orderService.createOrder(validatedData);
@@ -30,6 +32,8 @@ export async function createOrderAction(input: CreateOrderInput) {
 }
 
 export async function updateOrderStatusAction(input: UpdateOrderStatusInput) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const validatedData = updateOrderStatusSchema.parse(input);
     const { user } = await getServerSession();
@@ -101,6 +105,8 @@ export async function updateOrderStatusAction(input: UpdateOrderStatusInput) {
 }
 
 export async function getOrderDetailsAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const { user } = await getServerSession();
     const isStaff = await isStaffOrManager(user);
@@ -130,6 +136,8 @@ export async function fetchOrdersAction(params: {
   page?: number;
   limit?: number;
 }) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const { user } = await getServerSession();
     const isStaff = await isStaffOrManager(user);
@@ -147,6 +155,8 @@ export async function fetchOrdersAction(params: {
 }
 
 export async function fetchOrderMetricsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const metrics = await orderRepo.getOrderMetrics(null);
     return { success: true, data: metrics };
@@ -157,6 +167,8 @@ export async function fetchOrderMetricsAction() {
 }
 
 export async function fetchOrdersForFulfillmentAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const orders = await orderRepo.getOrdersForFulfillment();
     return { success: true, data: orders };
@@ -170,6 +182,8 @@ export async function cancelCustomerOrderAction(
   reason: string,
   note?: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const { user } = await getServerSession();
     if (!user) {

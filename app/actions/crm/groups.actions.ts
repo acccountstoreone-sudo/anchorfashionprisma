@@ -2,12 +2,15 @@
 
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function createGroupAction(data: {
   name: string;
   description?: string;
   isDynamic?: boolean;
 }): Promise<{ success?: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -44,6 +47,8 @@ export async function createGroupAction(data: {
 export async function deleteGroupAction(
   id: string
 ): Promise<{ success?: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -69,6 +74,8 @@ export async function updateGroupAction(
   id: string,
   data: { name: string; description?: string; isDynamic?: boolean }
 ): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -103,6 +110,8 @@ export async function getGroupMembersAction(groupId: string): Promise<{
   };
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -243,6 +252,8 @@ export async function addMemberToGroupAction(
   groupId: string,
   customerId: string
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -280,6 +291,8 @@ export async function removeMemberFromGroupAction(
   groupId: string,
   customerId: string
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -303,6 +316,8 @@ export async function searchAvailableCustomersAction(
   query: string,
   excludeIds: string[] = []
 ): Promise<{ success: boolean; data: any[]; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
     const clean = query.trim().replace(/,/g, "");

@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { WalletService } from "@/services/wallet.service";
 import { LoyaltyService } from "@/services/loyalty.service";
+import { verifyAuthenticated } from "@/lib/security/roles";
 
 const customerService = new CustomerService();
 
@@ -20,6 +21,8 @@ async function getUserId() {
 }
 
 export async function updateProfileAction(formData: FormData) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   const { user } = await getServerSession();
 
   if (!user) {
@@ -44,6 +47,8 @@ export async function updateProfileAction(formData: FormData) {
 }
 
 export async function uploadAvatarAction(formData: FormData) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const { user } = await getServerSession();
 
@@ -109,6 +114,8 @@ export async function uploadAvatarAction(formData: FormData) {
 }
 
 export async function createAddressAction(formData: FormData) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   const userId = await getUserId();
 
   await customerService.createAddress(userId, {
@@ -131,6 +138,8 @@ export async function createAddressAction(formData: FormData) {
 }
 
 export async function markNotificationAsReadAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   const userId = await getUserId();
   await customerService.markNotificationAsRead(id, userId);
   revalidatePath("/account/notifications");
@@ -138,6 +147,8 @@ export async function markNotificationAsReadAction(id: string) {
 }
 
 export async function fetchWalletAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const wallet = await WalletService.getWallet(userId);
@@ -153,6 +164,8 @@ export async function fetchWalletAction() {
 }
 
 export async function fetchLoyaltyAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const supabase = await createClient();
@@ -176,6 +189,8 @@ export async function fetchLoyaltyAction() {
 }
 
 export async function fetchRewardCatalogAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const catalog = await LoyaltyService.getCatalog();
     return { success: true, data: catalog };
@@ -185,6 +200,8 @@ export async function fetchRewardCatalogAction() {
 }
 
 export async function fetchAccountSummaryAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const supabase = await createClient();
@@ -219,6 +236,8 @@ export async function fetchAccountSummaryAction() {
 }
 
 export async function deleteAddressAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     await customerService.deleteAddress(id, userId);
@@ -232,6 +251,8 @@ export async function deleteAddressAction(id: string) {
 // --- Customer Portal Actions ---
 
 export async function fetchReviewsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const reviews = await customerService.getReviews(userId);
@@ -242,6 +263,8 @@ export async function fetchReviewsAction() {
 }
 
 export async function fetchTicketsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const tickets = await customerService.getTickets(userId);
@@ -252,6 +275,8 @@ export async function fetchTicketsAction() {
 }
 
 export async function createTicketAction(formData: FormData) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const subject = formData.get("subject") as string;
@@ -272,6 +297,8 @@ export async function createTicketAction(formData: FormData) {
 }
 
 export async function fetchTicketDetailsAction(ticketId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const ticket = await customerService.getTicketDetails(ticketId, userId);
@@ -285,6 +312,8 @@ export async function replyTicketAction(data: {
   ticketId: string;
   message: string;
 }): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     if (!data.message || !data.message.trim()) {
@@ -300,6 +329,8 @@ export async function replyTicketAction(data: {
 }
 
 export async function fetchLoginHistoryAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const history = await customerService.getLoginHistory(userId);
@@ -310,6 +341,8 @@ export async function fetchLoginHistoryAction() {
 }
 
 export async function fetchActiveSessionsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const sessions = await customerService.getActiveSessions(userId);
@@ -329,6 +362,8 @@ export async function fetchPurchasedProductsAction(): Promise<{
   }>;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const supabase = await createClient();
@@ -347,14 +382,14 @@ export async function fetchPurchasedProductsAction(): Promise<{
       };
     }
 
-    const orderIds = orders.map((o) => o.id);
+    const orderIds = (orders || []).map((o: any) => o.id);
     const { data: items } = await supabase
       .from("order_items")
       .select("product_id, product_name, order_id")
       .in("order_id", orderIds)
       .not("product_id", "is", null);
 
-    const orderMap = orders.reduce((acc, o) => {
+    const orderMap = (orders || []).reduce((acc: any, o: any) => {
       acc[o.id] = o.order_number;
       return acc;
     }, {} as Record<string, string>);
@@ -388,7 +423,7 @@ export async function fetchPurchasedProductsAction(): Promise<{
 
       return {
         success: true,
-        data: (catalogProducts || []).map((p) => ({
+        data: (catalogProducts || []).map((p: any) => ({
           productId: p.id,
           productName: p.name,
           orderId: "",
@@ -413,6 +448,8 @@ export async function createReviewAction(data: {
   review_text?: string;
   images?: string[];
 }): Promise<{ success?: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const supabase = await createClient();
@@ -456,7 +493,7 @@ export async function createReviewAction(data: {
         first_name:
           staffProfile?.first_name ||
           user?.user_metadata?.first_name ||
-          user?.user_metadata?.name ||
+          (user?.user_metadata as any)?.name ||
           "Customer",
         last_name:
           staffProfile?.last_name ||
@@ -479,7 +516,7 @@ export async function createReviewAction(data: {
         .eq("customer_id", userId);
 
       if (userOrders && userOrders.length > 0) {
-        const orderIds = userOrders.map((o) => o.id);
+        const orderIds = userOrders.map((o: any) => o.id);
         const { data: matchingItem } = await adminClient
           .from("order_items")
           .select("order_id")
@@ -521,7 +558,7 @@ export async function createReviewAction(data: {
 
     if (prodReviews && prodReviews.length > 0) {
       const avg =
-        prodReviews.reduce((sum, r) => sum + (r.rating || 0), 0) /
+        prodReviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) /
         prodReviews.length;
       await adminClient
         .from("products")
@@ -553,6 +590,8 @@ export async function topUpWalletAction(data: {
   paymentMethod: string;
   paymentRef: string;
 }): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     if (!data.amount || data.amount <= 0) {
@@ -582,6 +621,8 @@ export async function withdrawWalletAction(data: {
   destinationMethod: string;
   destinationAccount: string;
 }): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     if (!data.amount || data.amount <= 0) {
@@ -611,6 +652,8 @@ export async function transferWalletAction(data: {
   amount: number;
   note?: string;
 }): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     if (!data.amount || data.amount <= 0) {
@@ -638,6 +681,8 @@ export async function transferWalletAction(data: {
 export async function redeemLoyaltyPointsAction(data: {
   rewardId: string;
 }): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     if (!data.rewardId) {
@@ -660,6 +705,8 @@ export async function redeemLoyaltyPointsAction(data: {
 }
 
 export async function deleteCustomerReviewAction(reviewId: string): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const userId = await getUserId();
     const supabase = await createClient();
@@ -684,6 +731,8 @@ export async function voteReviewHelpfulAction(
   reviewId: string,
   increment: boolean = true
 ): Promise<{ success: boolean; helpful_votes?: number; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const adminClient = createAdminClient();
 

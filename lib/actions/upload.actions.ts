@@ -18,6 +18,30 @@ const ALLOWED_BUCKETS = [
   "collections",
 ] as const;
 
+// SECURITY: only raster images are accepted. SVG/HTML are excluded on purpose (script execution).
+const ALLOWED_IMAGE_TYPES: Record<string, string[]> = {
+  jpg: ["image/jpeg"],
+  jpeg: ["image/jpeg"],
+  png: ["image/png"],
+  webp: ["image/webp"],
+  gif: ["image/gif"],
+  avif: ["image/avif"],
+};
+
+function sanitizeSegment(seg: string): string {
+  return seg.replace(/[^a-zA-Z0-9_-]/g, "");
+}
+
+function sanitizeFolder(folder: string): string {
+  const cleaned = String(folder || "uploads")
+    .split(/[\\/]+/)
+    .map(sanitizeSegment)
+    .filter(Boolean)
+    .slice(0, 4)
+    .join("/");
+  return cleaned || "uploads";
+}
+
 export async function uploadImageAction(formData: FormData): Promise<{
   success: boolean;
   url?: string;
@@ -25,12 +49,8 @@ export async function uploadImageAction(formData: FormData): Promise<{
   error?: string;
 }> {
   try {
-    // 1. Verify staff or admin access
-    try {
-      await verifyStaff();
-    } catch {
-      // Allow fallback if session is active
-    }
+    // 1. Verify staff or admin access (hard failure - no fallback)
+    await verifyStaff();
 
     const file = formData.get("file") as File | null;
     if (!file) {
@@ -38,7 +58,7 @@ export async function uploadImageAction(formData: FormData): Promise<{
     }
 
     const bucket = (formData.get("bucket") as string) || "products";
-    const folder = (formData.get("folder") as string) || "uploads";
+    const folder = sanitizeFolder((formData.get("folder") as string) || "uploads");
 
     if (!ALLOWED_BUCKETS.includes(bucket as any)) {
       return { success: false, error: `Invalid bucket: ${bucket}` };
@@ -50,20 +70,31 @@ export async function uploadImageAction(formData: FormData): Promise<{
       return { success: false, error: "File size exceeds maximum allowed (8MB)" };
     }
 
-    // 3. Generate secure file path & Data URI
-    const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    // 3. Validate extension + declared MIME type, then generate secure file path & Data URI
+    const fileExt = (file.name.split(".").pop() || "").toLowerCase();
+    const allowedMimes = ALLOWED_IMAGE_TYPES[fileExt];
+    if (!allowedMimes || !allowedMimes.includes(file.type)) {
+      return {
+        success: false,
+        error: "Unsupported file type. Allowed: JPG, PNG, WEBP, GIF, AVIF.",
+      };
+    }
     const uniqueId = crypto.randomUUID();
     const filePath = `${folder}/${uniqueId}.${fileExt}`;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const mimeType = file.type || "image/jpeg";
+    const mimeType = file.type;
     const dataUri = `data:${mimeType};base64,${buffer.toString("base64")}`;
 
     // 4. Try local disk save (works on local development / self-hosted)
     let localPublicUrl: string | null = null;
     try {
-      const uploadDir = path.join(process.cwd(), "public", "uploads", bucket, folder);
+      const uploadsRoot = path.resolve(process.cwd(), "public", "uploads");
+      const uploadDir = path.resolve(uploadsRoot, bucket, folder);
+      if (!uploadDir.startsWith(uploadsRoot + path.sep)) {
+        throw new Error("Invalid upload directory");
+      }
       await fs.mkdir(uploadDir, { recursive: true });
       const localFilePath = path.join(uploadDir, `${uniqueId}.${fileExt}`);
       await fs.writeFile(localFilePath, buffer);
@@ -110,9 +141,19 @@ export async function deleteImageAction(
   bucket: string = "products"
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    try {
-      await verifyStaff();
-    } catch {}
+    await verifyStaff();
+
+    if (!ALLOWED_BUCKETS.includes(bucket as any)) {
+      return { success: false, error: `Invalid bucket: ${bucket}` };
+    }
+    // Reject traversal / odd characters in the storage path.
+    if (
+      typeof storagePath !== "string" ||
+      storagePath.includes("..") ||
+      !/^[a-zA-Z0-9_\-./]+$/.test(storagePath)
+    ) {
+      return { success: false, error: "Invalid storage path" };
+    }
 
     const supabase = createAdminClient();
     await supabase.storage.from(bucket).remove([storagePath]);

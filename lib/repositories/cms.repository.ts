@@ -11,13 +11,14 @@ function mapPrismaPage(data: any): CMSPage {
     id: data.id,
     title: data.title,
     slug: data.slug,
+    status: (data.isPublished ? "PUBLISHED" : "DRAFT"),
     content: data.content,
     meta_title: data.metaTitle,
     meta_description: data.metaDescription,
     is_published: data.isPublished,
-    published_at: data.publishedAt ? new Date(data.publishedAt).toISOString() : undefined,
-    created_at: data.createdAt ? new Date(data.createdAt).toISOString() : new Date().toISOString(),
-    updated_at: data.updatedAt ? new Date(data.updatedAt).toISOString() : new Date().toISOString(),
+    published_at: data.publishedAt ? new Date(data.publishedAt) : null,
+    created_at: data.createdAt ? new Date(data.createdAt) : new Date(),
+    updated_at: data.updatedAt ? new Date(data.updatedAt) : new Date(),
   } as CMSPage;
 }
 
@@ -65,12 +66,12 @@ function mapPrismaSection(data: any): CMSSection {
 function mapPrismaMedia(data: any): CMSMediaItem {
   return {
     id: data.id,
-    file_name: data.fileName,
-    file_url: data.fileUrl,
-    file_type: data.fileType ?? "application/octet-stream",
-    file_size_bytes: data.fileSizeBytes ?? 0,
+    file_name: data.filename || data.fileName || "",
+    file_url: data.publicUrl || data.fileUrl || "",
+    file_type: data.mimeType || data.fileType || "application/octet-stream",
+    file_size_bytes: data.size || data.fileSizeBytes || 0,
     alt_text: data.altText ?? null,
-    folder_path: data.folderPath ?? null,
+    folder_path: data.storagePath || data.folderPath || null,
     uploaded_by: data.uploadedBy ?? null,
     created_at: data.createdAt ? new Date(data.createdAt).toISOString() : new Date().toISOString(),
     updated_at: data.updatedAt ? new Date(data.updatedAt).toISOString() : undefined,
@@ -223,7 +224,7 @@ export class CMSRepository {
     try {
       const sections = await prisma.cmsSection.findMany({
         where: { isActive: true },
-        orderBy: { displayOrder: "asc" },
+        orderBy: { createdAt: "asc" },
       });
       return sections.map(mapPrismaSection);
     } catch {
@@ -247,7 +248,6 @@ export class CMSRepository {
             type: data.type,
             content: (data.content || {}) as any,
             isActive: data.isActive ?? true,
-            displayOrder: data.displayOrder ?? 0,
           },
         })
       : await prisma.cmsSection.create({
@@ -256,7 +256,6 @@ export class CMSRepository {
             type: data.type,
             content: (data.content || {}) as any,
             isActive: data.isActive ?? true,
-            displayOrder: data.displayOrder ?? 0,
           },
         });
     return mapPrismaSection(section);
@@ -273,15 +272,14 @@ export class CMSRepository {
   async getNavigation(location?: string): Promise<CMSNavigation | null> {
     try {
       const menu = location
-        ? await prisma.cmsMenu.findUnique({
-            where: { location },
-            include: { items: { orderBy: { sortOrder: "asc" } } },
-          })
-        : await prisma.cmsMenu.findFirst({
-            include: { items: { orderBy: { sortOrder: "asc" } } },
-          });
+        ? await prisma.cmsMenu.findFirst({ where: { location } })
+        : await prisma.cmsMenu.findFirst();
       if (!menu) return null;
-      return mapPrismaNavigation(menu);
+      const items = await prisma.cmsMenuItem.findMany({
+        where: { menuId: menu.id },
+        orderBy: { sortOrder: "asc" },
+      });
+      return mapPrismaNavigation({ ...menu, items });
     } catch {
       return null;
     }
@@ -290,10 +288,17 @@ export class CMSRepository {
   async getAllNavigations(): Promise<CMSNavigation[]> {
     try {
       const menus = await prisma.cmsMenu.findMany({
-        include: { items: { orderBy: { sortOrder: "asc" } } },
         orderBy: { createdAt: "asc" },
       });
-      return menus.map(mapPrismaNavigation);
+      const results: CMSNavigation[] = [];
+      for (const menu of menus) {
+        const items = await prisma.cmsMenuItem.findMany({
+          where: { menuId: menu.id },
+          orderBy: { sortOrder: "asc" },
+        });
+        results.push(mapPrismaNavigation({ ...menu, items }));
+      }
+      return results;
     } catch {
       return [];
     }
@@ -318,23 +323,28 @@ export class CMSRepository {
             title: data.name,
             isActive: data.isActive ?? true,
           },
-          include: { items: true },
         });
       } else {
-        // Upsert by location
-        menu = await prisma.cmsMenu.upsert({
+        const existing = await prisma.cmsMenu.findFirst({
           where: { location: data.location },
-          update: {
-            title: data.name,
-            isActive: data.isActive ?? true,
-          },
-          create: {
-            location: data.location,
-            title: data.name,
-            isActive: data.isActive ?? true,
-          },
-          include: { items: true },
         });
+        if (existing) {
+          menu = await prisma.cmsMenu.update({
+            where: { id: existing.id },
+            data: {
+              title: data.name,
+              isActive: data.isActive ?? true,
+            },
+          });
+        } else {
+          menu = await prisma.cmsMenu.create({
+            data: {
+              location: data.location,
+              title: data.name,
+              isActive: data.isActive ?? true,
+            },
+          });
+        }
       }
 
       // Replace all items
@@ -346,18 +356,17 @@ export class CMSRepository {
             menuId: menu.id,
             label: item.label,
             url: item.url,
-            target: item.target ?? "_self",
             sortOrder: item.sort_order ?? idx,
           })),
         });
       }
 
       // Re-fetch with items
-      const freshMenu = await prisma.cmsMenu.findUnique({
-        where: { id: menu.id },
-        include: { items: { orderBy: { sortOrder: "asc" } } },
+      const items = await prisma.cmsMenuItem.findMany({
+        where: { menuId: menu.id },
+        orderBy: { sortOrder: "asc" },
       });
-      return mapPrismaNavigation(freshMenu!);
+      return mapPrismaNavigation({ ...menu, items });
     } catch (err: any) {
       throw new Error(`Failed to save navigation: ${err.message}`);
     }
@@ -368,12 +377,12 @@ export class CMSRepository {
   }
 
   // --------------------------------------------------------------------------
-  // CMS Media Library — now via Prisma CmsMediaLibrary model
+  // CMS Media Library — via Prisma Media model
   // --------------------------------------------------------------------------
 
   async getMedia(): Promise<CMSMediaItem[]> {
     try {
-      const items = await prisma.cmsMediaLibrary.findMany({
+      const items = await prisma.media.findMany({
         orderBy: { createdAt: "desc" },
       });
       return items.map(mapPrismaMedia);
@@ -391,14 +400,13 @@ export class CMSRepository {
     folderPath?: string;
     uploadedBy?: string | null;
   }): Promise<CMSMediaItem> {
-    const item = await prisma.cmsMediaLibrary.create({
+    const item = await prisma.media.create({
       data: {
-        fileName: data.fileName,
-        fileUrl: data.fileUrl,
-        fileType: data.fileType,
-        fileSizeBytes: data.fileSizeBytes,
-        altText: data.altText,
-        folderPath: data.folderPath,
+        filename: data.fileName,
+        publicUrl: data.fileUrl,
+        storagePath: data.folderPath || data.fileName,
+        mimeType: data.fileType,
+        size: data.fileSizeBytes,
         uploadedBy: data.uploadedBy,
       },
     });
@@ -406,7 +414,7 @@ export class CMSRepository {
   }
 
   async deleteMedia(id: string): Promise<void> {
-    await prisma.cmsMediaLibrary.delete({ where: { id } }).catch(() => {});
+    await prisma.media.delete({ where: { id } }).catch(() => {});
   }
 
   // --------------------------------------------------------------------------
@@ -465,10 +473,10 @@ export class CMSRepository {
     const updated = await prisma.blogPost.update({
       where: { id },
       data: {
-        title: post.title,
-        slug: post.slug,
+        title: post.title ?? undefined,
+        slug: post.slug ?? undefined,
         excerpt: post.excerpt,
-        content: post.content,
+        content: post.content ?? undefined,
         coverImage: post.featured_image,
         categoryId: post.category_id,
         authorId: post.author_id,

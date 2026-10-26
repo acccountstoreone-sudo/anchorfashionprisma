@@ -8,6 +8,7 @@ import {
   WhyChooseUsSettings,
   DEFAULT_WHY_CHOOSE_US,
 } from "@/types/why-choose-us.types";
+import { verifyStaff } from "@/lib/security/roles";
 
 const SETTINGS_KEY = "why_choose_us_settings";
 
@@ -59,6 +60,8 @@ export async function getWhyChooseUsSettings(): Promise<WhyChooseUsSettings> {
 export async function updateWhyChooseUsSettings(
   settings: WhyChooseUsSettings
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -122,6 +125,8 @@ export async function resetWhyChooseUsSettings(): Promise<{
   data: WhyChooseUsSettings;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const res = await updateWhyChooseUsSettings(DEFAULT_WHY_CHOOSE_US);
     if (!res.success) {

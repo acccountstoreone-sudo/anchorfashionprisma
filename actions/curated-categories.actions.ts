@@ -10,6 +10,7 @@ import {
   CuratedCategoryItem,
   DEFAULT_CURATED_CATEGORIES,
 } from "@/types/curated-categories.types";
+import { verifyStaff } from "@/lib/security/roles";
 
 const SETTINGS_KEY = "curated_categories_settings";
 
@@ -25,34 +26,24 @@ const DEFAULT_SUBTITLES = [
  */
 async function verifyStaffSession(): Promise<{ authorized: boolean; error?: string }> {
   try {
-    const { getServerSession } = await import("@/lib/auth/server");
+    const { getServerSession, resolveUserRole } = await import("@/lib/auth/server");
     const { user } = await getServerSession();
 
     if (!user) {
       return { authorized: false, error: "Authentication required. Please log in." };
     }
 
-    let role = String((user as any).role || (user as any).user_metadata?.role || "").trim().toUpperCase();
-
-    if (!role || role === "USER" || role === "CUSTOMER") {
-      const isUuid =
-        user.id &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id);
-
-      const profile = await prisma.profile.findFirst({
-        where: {
-          OR: [
-            ...(isUuid ? [{ id: user.id }] : []),
-            ...(user.email ? [{ email: user.email }] : []),
-          ],
-        },
-        include: { role: true },
-      });
-
-      if (profile?.role?.name) {
-        role = profile.role.name.trim().toUpperCase();
-      }
-    }
+    // Guarded resolver: elevated roles require a bound identity or verified email.
+    const role = String(
+      await resolveUserRole({
+        id: user.id,
+        email: user.email,
+        role: (user as any).role,
+        emailVerified: (user as any).emailVerified,
+      })
+    )
+      .trim()
+      .toUpperCase();
 
     const normalizedRole = role.replace(/[\s_-]+/g, "");
     const allowedRoles = [
@@ -196,6 +187,8 @@ export async function getStorefrontCuratedCategories(): Promise<CuratedCategorie
 export async function updateCuratedCategoriesSettings(
   settings: CuratedCategoriesSettings
 ): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     // 1. Authorize user
     const authCheck = await verifyStaffSession();
@@ -261,6 +254,8 @@ export async function updateCuratedCategoriesSettings(
  * Resets Curated Categories settings to default auto configuration.
  */
 export async function resetCuratedCategoriesSettings(): Promise<{ success: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const authCheck = await verifyStaffSession();
     if (!authCheck.authorized) {

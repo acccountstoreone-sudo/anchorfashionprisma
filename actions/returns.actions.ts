@@ -19,6 +19,7 @@ import {
   ReturnEligibilityResult,
   ReturnWithItems,
 } from "@/types/shipping.types";
+import { verifyAuthenticated, verifyStaff } from "@/lib/security/roles";
 
 type ActionResponse<T = void> =
   | { success: true; data: T }
@@ -97,6 +98,8 @@ async function requireBranchAccess(returnId: string) {
 export async function checkReturnEligibilityAction(
   orderId: string
 ): Promise<ActionResponse<ReturnEligibilityResult>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -117,6 +120,8 @@ export async function checkReturnEligibilityAction(
 export async function submitCustomerReturnAction(
   raw: Record<string, any>
 ): Promise<ActionResponse<{ returnId: string; returnNumber: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   const parse = submitCustomerReturnSchema.safeParse(raw);
   if (!parse.success) {
     return {
@@ -159,6 +164,8 @@ export async function submitCustomerReturnAction(
 export async function fetchCustomerReturnsAction(): Promise<
   ActionResponse<ReturnWithItems[]>
 > {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -179,6 +186,8 @@ export async function fetchCustomerReturnsAction(): Promise<
 export async function fetchCustomerReturnDetailAction(
   returnId: string
 ): Promise<ActionResponse<ReturnWithItems>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -203,6 +212,8 @@ export async function fetchCustomerReturnDetailAction(
 export async function uploadReturnProofAction(
   formData: FormData
 ): Promise<ActionResponse<{ url: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -271,6 +282,8 @@ export async function uploadReturnProofAction(
 export async function createReturnRequestAction(
   raw: Record<string, any>
 ): Promise<ActionResponse<{ returnId: string; returnNumber: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = createReturnSchema.safeParse(raw);
   if (!parse.success) {
     return {
@@ -306,6 +319,8 @@ export async function createReturnRequestAction(
 export async function approveReturnAction(
   returnId: string
 ): Promise<ActionResponse<{ returnId: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = approveReturnSchema.safeParse({ returnId });
   if (!parse.success) {
     return { success: false, error: "Invalid return ID" };
@@ -333,6 +348,8 @@ export async function rejectReturnAction(
   returnId: string,
   reason: string
 ): Promise<ActionResponse<{ returnId: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = rejectReturnSchema.safeParse({ returnId, reason });
   if (!parse.success) {
     return {
@@ -361,6 +378,8 @@ export async function rejectReturnAction(
 export async function fetchReturnsAction(
   rawFilters: Record<string, any> = {}
 ): Promise<ActionResponse<any>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = returnFiltersSchema.safeParse(rawFilters);
   if (!parse.success) {
     return { success: false, error: "Invalid filters" };
@@ -401,6 +420,8 @@ export async function fetchReturnsAction(
 export async function fetchReturnByIdAction(
   returnId: string
 ): Promise<ActionResponse<any>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!returnId || returnId === "undefined") {
       return { success: false, error: "Return ID is required" };
@@ -419,6 +440,8 @@ export async function fetchReturnByIdAction(
 export async function markReturnReceivedAction(
   returnId: string
 ): Promise<ActionResponse<{ returnId: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await requireBranchAccess(returnId);
     const user = await getCurrentUser();
@@ -440,6 +463,8 @@ export async function syncReturnInventoryAction(
   returnId: string,
   itemConditions: Record<string, "good" | "damaged" | "defective"> = {}
 ): Promise<ActionResponse<{ returnId: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await requireBranchAccess(returnId);
     const user = await getCurrentUser();
@@ -460,6 +485,8 @@ export async function syncReturnInventoryAction(
 export async function completeReturnAction(
   returnId: string
 ): Promise<ActionResponse<{ returnId: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await requireBranchAccess(returnId);
     const user = await getCurrentUser();
@@ -480,6 +507,8 @@ export async function completeReturnAction(
 export async function processReturnRefundAction(
   returnId: string
 ): Promise<ActionResponse<{ success: boolean; method: string; refundRef?: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await requireBranchAccess(returnId);
     const user = await getCurrentUser();
@@ -503,6 +532,8 @@ export async function resolveReturnRefundAction(
     note?: string;
   }
 ): Promise<ActionResponse<{ returnId: string; refundStatus: string; status: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await requireBranchAccess(returnId);
     const user = await getCurrentUser();

@@ -7,10 +7,13 @@ import {
   SystemLogSchema,
 } from "@/schemas/operations.schemas";
 import { HealthCheck, SystemMetric, SystemLog } from "@/types/operations.types";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function logSystemEvent(
   data: unknown
 ): Promise<{ success?: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const parsedData = SystemLogSchema.parse(data);
     const supabase = await createClient();
@@ -35,6 +38,8 @@ export async function logSystemEvent(
 export async function recordMetric(
   data: unknown
 ): Promise<{ success?: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const parsedData = SystemMetricSchema.parse(data);
     const supabase = await createClient();
@@ -57,6 +62,8 @@ export async function recordMetric(
 export async function recordHealthCheck(
   data: unknown
 ): Promise<{ success?: boolean; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const parsedData = HealthCheckSchema.parse(data);
     const supabase = await createClient();
@@ -79,6 +86,8 @@ export async function recordHealthCheck(
 export async function getSystemAlerts(
   limit: number = 50
 ): Promise<{ data?: any[]; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const supabase = await createClient();
   try {
     const { data, error } = await supabase

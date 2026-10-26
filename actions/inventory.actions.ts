@@ -4,11 +4,14 @@ import { InventoryService } from "@/services/inventory.service";
 import { InventoryLevel, InventoryMovement } from "@/types/inventory.types";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function getAllInventory(
   page: number = 1,
   limit: number = 20
 ): Promise<{ data?: InventoryLevel[]; total?: number; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new InventoryService();
     const result = await service.getAllInventory(page, limit);
@@ -22,6 +25,8 @@ export async function getStockAvailability(
   variantId: string,
   warehouseId?: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new InventoryService();
     const data = await service.getStockAvailability(variantId, warehouseId);
@@ -37,6 +42,8 @@ export async function adjustStock(
   newReserved: number,
   reason: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new InventoryService();
     await service.adjustStock(inventoryId, newAvailable, newReserved, reason);
@@ -56,6 +63,8 @@ export async function transferStock(
   reason: string,
   notes?: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new InventoryService();
     await service.transferStock(
@@ -78,6 +87,8 @@ export async function getInventoryMovements(
   warehouseId?: string,
   variantId?: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new InventoryService();
     const result = await service.getMovements(
@@ -97,6 +108,8 @@ export async function receivePurchase(
   items: { variantId: string; warehouseId: string; quantity: number }[],
   notes?: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     // Basic implementation that just adjusts stock upwards for received items
     const service = new InventoryService();
@@ -194,6 +207,8 @@ export async function addStockAction(data: {
   reason: string;
   notes?: string;
 }): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!data.quantity || data.quantity <= 0) {
       return { success: false, error: "Quantity must be greater than zero" };
@@ -316,6 +331,8 @@ export async function createStockInwardAction(
   };
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!data.warehouseId) {
       return { success: false, error: "Destination warehouse is required" };
@@ -499,6 +516,8 @@ export async function recordManualMovementAction(data: {
   toWarehouseId?: string;
   notes?: string;
 }): Promise<{ success: boolean; data?: any; error?: string }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     if (!data.quantity || data.quantity === 0) {
       return { success: false, error: "Quantity cannot be zero" };
@@ -608,6 +627,8 @@ export async function createAuditAction(data: {
   notes?: string;
   zone_id?: string;
 }) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new InventoryService();
     const audit = await service.createAudit({
@@ -629,6 +650,8 @@ export async function updateAuditStatusAction(
   id: string,
   status: "PLANNED" | "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const service = new InventoryService();
     const dbStatus = status === "PLANNED" ? "SCHEDULED" : status;

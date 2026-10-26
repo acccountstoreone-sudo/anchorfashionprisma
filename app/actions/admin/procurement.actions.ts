@@ -2,8 +2,11 @@
 
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function getSupplierProfiles() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("supplier_profiles")
@@ -33,6 +36,8 @@ export async function createSupplierProfileAction(data: {
   performance_score?: number;
   status?: string;
 }) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
     const cleanCompany = data.company_name.trim();
@@ -115,6 +120,8 @@ export async function updateSupplierProfileAction(
     status: string;
   }>
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
     const cleanEmail =
@@ -190,6 +197,8 @@ export async function updateSupplierProfileAction(
 }
 
 export async function deleteSupplierProfileAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
     const { error } = await supabase
@@ -214,6 +223,8 @@ export async function deleteSupplierProfileAction(id: string) {
 }
 
 export async function getWarehouses() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("warehouses")
@@ -224,7 +235,7 @@ export async function getWarehouses() {
   return {
     success: true,
     data: (data || [])
-      .filter((w) => w.is_active !== false)
+      .filter((w: any) => w.is_active !== false)
       .map((w: any) => ({
         id: w.id,
         name: w.name,
@@ -236,6 +247,8 @@ export async function getWarehouses() {
 }
 
 export async function getVariants() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("variants")
@@ -280,6 +293,8 @@ export async function createProcurementOrder(
     unit_cost: number;
   }>
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 
@@ -372,6 +387,8 @@ export async function createProcurementOrder(
 }
 
 export async function getProcurementOrderDetails(poId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
     const { data: po, error: poErr } = await supabase
@@ -403,6 +420,8 @@ export async function updateProcurementOrderStatus(
   poId: string,
   status: "DRAFT" | "PENDING_APPROVAL" | "APPROVED" | "SENT" | "PARTIAL_RECEIPT" | "DELIVERED" | "CANCELLED"
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
     const { error } = await supabase
@@ -421,6 +440,8 @@ export async function updateProcurementOrderStatus(
 }
 
 export async function receiveProcurementOrderAction(poId: string, notes?: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
 

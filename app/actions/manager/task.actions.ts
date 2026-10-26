@@ -6,6 +6,7 @@ import {
 } from "@/lib/repositories/manager/task.repository";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { revalidatePath } from "next/cache";
+import { verifyStaff } from "@/lib/security/roles";
 
 const taskRepo = new TaskRepository();
 
@@ -66,6 +67,8 @@ async function resolveAssigneePayload(
 }
 
 export async function fetchTasksAction(status?: ManagerTask["status"]) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await taskRepo.getTasks(status);
     return { success: true, data };
@@ -76,6 +79,8 @@ export async function fetchTasksAction(status?: ManagerTask["status"]) {
 }
 
 export async function fetchStaffMembersAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const supabase = createAdminClient();
     const { data: profiles, error } = await supabase
@@ -107,6 +112,8 @@ export async function createTaskAction(data: {
   due_date?: string;
   assigned_to?: string;
 }) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const { assigned_to, description } = await resolveAssigneePayload(
       data.assigned_to,
@@ -173,6 +180,8 @@ export async function updateTaskAction(
   id: string,
   data: Partial<ManagerTask>
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     let updatePayload: Partial<ManagerTask> = { ...data };
 
@@ -206,6 +215,8 @@ export async function updateTaskAction(
 }
 
 export async function deleteTaskAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await taskRepo.deleteTask(id);
     try {

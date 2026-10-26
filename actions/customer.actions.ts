@@ -4,8 +4,11 @@ import { revalidatePath } from "next/cache";
 import { CustomerService } from "@/services/customer.service";
 import { updateProfileSchema, addressSchema } from "@/schemas/customer.schema";
 import { createClient } from "@/lib/supabase/server";
+import { verifySelfOrStaff } from "@/lib/security/roles";
 
 export async function updateProfileAction(userId: string, formData: FormData) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifySelfOrStaff(userId);
   try {
     const rawData = {
       first_name: formData.get("first_name") as string,
@@ -25,6 +28,8 @@ export async function updateProfileAction(userId: string, formData: FormData) {
 }
 
 export async function addAddressAction(userId: string, formData: FormData) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifySelfOrStaff(userId);
   try {
     const rawData = {
       title: formData.get("title") as string,

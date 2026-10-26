@@ -47,7 +47,7 @@ export default async function TransactionsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions?.map((txn) => (
+            {transactions?.map((txn: any) => (
               <TableRow key={txn.id}>
                 <TableCell className="font-mono text-xs">
                   {txn.reference_number}

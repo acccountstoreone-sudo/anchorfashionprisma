@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { InventoryRepository } from "@/repositories/inventory.repository";
-import { verifyStaffOrManager } from "@/lib/security/roles";
+import { verifyStaffOrManager, verifyStaff } from "@/lib/security/roles";
 
 const inventoryRepo = new InventoryRepository();
 
 export async function fetchInventoryAction(limit?: number, search?: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await inventoryRepo.getInventoryDashboard(limit, search);
     return { success: true, data };
@@ -22,6 +24,8 @@ export async function adjustStockAction(
   newReserved: number,
   reason: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await verifyStaffOrManager();
     await inventoryRepo.adjustStock(
@@ -40,6 +44,8 @@ export async function adjustStockAction(
 // --- Audits ---
 
 export async function getAuditsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await inventoryRepo.getAudits();
     return { success: true, data };
@@ -49,6 +55,8 @@ export async function getAuditsAction() {
 }
 
 export async function getAuditByIdAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await inventoryRepo.getAuditById(id);
     return { success: true, data };
@@ -58,6 +66,8 @@ export async function getAuditByIdAction(id: string) {
 }
 
 export async function createAuditAction(data: any) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const result = await inventoryRepo.createAudit(data);
     revalidatePath("/manager/inventory/audits");
@@ -68,6 +78,8 @@ export async function createAuditAction(data: any) {
 }
 
 export async function updateAuditStatusAction(id: string, status: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await inventoryRepo.updateAuditStatus(id, status);
     revalidatePath("/manager/inventory/audits");
@@ -79,6 +91,8 @@ export async function updateAuditStatusAction(id: string, status: string) {
 }
 
 export async function getAuditItemsAction(auditId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await inventoryRepo.getAuditItems(auditId);
     return { success: true, data };
@@ -88,6 +102,8 @@ export async function getAuditItemsAction(auditId: string) {
 }
 
 export async function createAuditItemsAction(items: any[], auditId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await inventoryRepo.createAuditItems(items);
     revalidatePath(`/manager/inventory/audits/${auditId}`);
@@ -98,6 +114,8 @@ export async function createAuditItemsAction(items: any[], auditId: string) {
 }
 
 export async function updateAuditItemCountAction(itemId: string, countedQuantity: number, auditId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await inventoryRepo.updateAuditItemCount(itemId, countedQuantity);
     revalidatePath(`/manager/inventory/audits/${auditId}`);
@@ -110,6 +128,8 @@ export async function updateAuditItemCountAction(itemId: string, countedQuantity
 // --- Movements ---
 
 export async function getMovementsAction(page = 1, limit = 50, warehouseId?: string, variantId?: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await inventoryRepo.getMovements(page, limit, warehouseId, variantId);
     return { success: true, data };

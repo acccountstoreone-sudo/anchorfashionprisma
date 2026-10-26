@@ -131,7 +131,7 @@ export default async function HomePage() {
 
         {/* 9. Brand Ethos / Story */}
         <FadeIn direction="right">
-          <WhyChooseUs data={whyChooseUsData?.data} />
+          <WhyChooseUs data={whyChooseUsData || undefined} />
         </FadeIn>
 
         {/* 10. Featured Products (New Arrivals) */}

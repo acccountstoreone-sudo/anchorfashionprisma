@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { fetchCheckoutSessionAction } from "@/lib/actions/checkout.actions";
 import { fetchCartAction as getCart } from "@/lib/actions/cart.actions";
-import { getAllPaymentConfigs } from "@/lib/actions/payment.actions";
+import { getPublicPaymentConfigs } from "@/lib/actions/payment.actions";
 import { CheckoutForm } from "@/components/checkout/checkout-form";
 import { OrderSummary } from "@/components/checkout/order-summary";
 import { CheckoutStoreInitializer } from "./initializer";
@@ -43,7 +43,7 @@ export default async function CheckoutPage() {
 
   const [sessionRes, paymentConfigs] = await Promise.all([
     fetchCheckoutSessionAction(cartRes.cart.id),
-    getAllPaymentConfigs(),
+    getPublicPaymentConfigs(),
   ]);
 
   if (!sessionRes.success || !sessionRes.session) {

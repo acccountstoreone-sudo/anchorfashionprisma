@@ -48,7 +48,7 @@ export default async function WebhooksPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {webhooks?.map((webhook) => (
+            {webhooks?.map((webhook: any) => (
               <TableRow key={webhook.id}>
                 <TableCell>{webhook.event_type}</TableCell>
                 <TableCell>{webhook.payment_providers?.name}</TableCell>

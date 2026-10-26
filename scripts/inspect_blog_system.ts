@@ -23,6 +23,7 @@ async function main() {
   `);
   console.log("\nblog_categories columns:\n", catCols.map((c) => `${c.column_name} (${c.data_type})`).join(", "));
 
+  const hasBlogPosts = tables.some((t) => t.table_name === 'blog_posts');
   if (hasBlogPosts) {
     const posts: any[] = await prisma.$queryRawUnsafe(`
       SELECT id, title, slug, status, published_at, category_id FROM blog_posts ORDER BY created_at DESC LIMIT 10;

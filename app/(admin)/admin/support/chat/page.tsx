@@ -112,7 +112,7 @@ export default function LiveChatInterfacePage() {
           table: "ticket_messages",
           filter: `ticket_id=eq.${activeTicket.id}`,
         },
-        (payload) => {
+        (payload: any) => {
           if (!isMounted) return;
           const newMsg = payload.new as TicketMessageRecord;
           setMessages((prev) => {

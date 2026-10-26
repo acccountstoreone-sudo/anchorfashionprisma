@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateContent } from "@/lib/ai/gemini";
+import { verifyStaff } from "@/lib/security/roles";
 
 const SYSTEM_PROMPT = `
 You are an expert Content Generation AI for Anchor Fashion.
@@ -10,6 +11,7 @@ Output the requested content directly, without conversational filler.
 
 export async function POST(req: Request) {
   try {
+    await verifyStaff();
     const body = await req.json();
     const { contentType, contextData, tone = "premium" } = body;
 

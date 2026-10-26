@@ -4,8 +4,11 @@ import { revalidatePath } from "next/cache";
 import { crmService } from "@/services/crm.service";
 import { CRMLead, CRMNote } from "@/types/crm.types";
 import { cleanupFakeMessages } from "@/actions/admin/messages.actions";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function getCustomersAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const customers = await crmService.getCustomers();
     return { data: customers };
@@ -15,6 +18,8 @@ export async function getCustomersAction() {
 }
 
 export async function getCustomerTimelineAction(profileId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const timeline = await crmService.getCustomerTimeline(profileId);
     return { data: timeline };
@@ -24,6 +29,8 @@ export async function getCustomerTimelineAction(profileId: string) {
 }
 
 export async function getLeadsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const leads = await crmService.getLeads();
     return { data: leads };
@@ -33,6 +40,8 @@ export async function getLeadsAction() {
 }
 
 export async function getLeadByIdAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const lead = await crmService.getLeadById(id);
     return { data: lead };
@@ -42,6 +51,8 @@ export async function getLeadByIdAction(id: string) {
 }
 
 export async function deleteLeadAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await crmService.deleteLead(id);
     revalidatePath("/admin/crm/leads");
@@ -52,6 +63,8 @@ export async function deleteLeadAction(id: string) {
 }
 
 export async function createLeadAction(data: unknown) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const lead = await crmService.createLead(data);
     revalidatePath("/admin/crm/leads");
@@ -65,6 +78,8 @@ export async function createLeadAction(data: unknown) {
 }
 
 export async function updateLeadAction(id: string, data: unknown) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const lead = await crmService.updateLead(id, data);
     revalidatePath("/admin/crm/leads");
@@ -78,6 +93,8 @@ export async function updateLeadAction(id: string, data: unknown) {
 }
 
 export async function convertLeadAction(id: string, profileId?: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const lead = await crmService.convertLead(id, profileId);
     try {
@@ -94,6 +111,8 @@ export async function convertLeadAction(id: string, profileId?: string) {
 }
 
 export async function getLeadNotesAction(leadId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const notes = await crmService.getLeadNotes(leadId);
     return { data: notes };
@@ -103,6 +122,8 @@ export async function getLeadNotesAction(leadId: string) {
 }
 
 export async function addLeadNoteAction(leadId: string, content: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const note = await crmService.addNoteToLead(leadId, content);
     revalidatePath("/admin/crm/leads");
@@ -113,6 +134,8 @@ export async function addLeadNoteAction(leadId: string, content: string) {
 }
 
 export async function getLeadCommunicationLogsAction(leadId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const logs = await crmService.getLeadCommunicationLogs(leadId);
     return { data: logs };
@@ -122,6 +145,8 @@ export async function getLeadCommunicationLogsAction(leadId: string) {
 }
 
 export async function addCustomerNoteAction(profileId: string, data: unknown) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const note = await crmService.addNoteToCustomer(profileId, data);
     try {
@@ -134,6 +159,8 @@ export async function addCustomerNoteAction(profileId: string, data: unknown) {
 }
 
 export async function getCommunicationLogsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await cleanupFakeMessages();
     const logs = await crmService.getCommunicationLogs();
@@ -152,6 +179,8 @@ export async function logCommunicationAction(data: {
   profile_id?: string;
   created_at?: string;
 }) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const log = await crmService.logCommunication(data);
     revalidatePath("/admin/crm/messages");
@@ -173,6 +202,8 @@ export async function updateCommunicationLogAction(
     created_at?: string;
   }
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const log = await crmService.updateCommunicationLog(id, data);
     revalidatePath("/admin/crm/messages");
@@ -183,6 +214,8 @@ export async function updateCommunicationLogAction(
 }
 
 export async function deleteCommunicationLogAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await crmService.deleteCommunicationLog(id);
     revalidatePath("/admin/crm/messages");

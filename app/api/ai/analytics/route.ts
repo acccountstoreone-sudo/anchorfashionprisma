@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { verifyStaff } from "@/lib/security/roles";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
+    await verifyStaff();
     // For a real dashboard, you'd aggregate this in SQL, but for MVP we fetch top logs
     const { data, error } = await supabase
       .from("ai_request_logs")
@@ -15,16 +17,17 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
 
     // Calculate quick aggregates
+    const safeData = data || [];
     const aggregates = {
-      totalRequests: data.length,
-      totalCost: data.reduce(
-        (acc, log) => acc + Number(log.cost_estimated_usd),
+      totalRequests: safeData.length,
+      totalCost: safeData.reduce(
+        (acc: number, log: any) => acc + Number(log.cost_estimated_usd || 0),
         0
       ),
-      avgLatency: data.length
-        ? data.reduce((acc, log) => acc + log.latency_ms, 0) / data.length
+      avgLatency: safeData.length
+        ? safeData.reduce((acc: number, log: any) => acc + (log.latency_ms || 0), 0) / safeData.length
         : 0,
-      errors: data.filter((log) => log.status === "error").length,
+      errors: safeData.filter((log: any) => log.status === "error").length,
     };
 
     return NextResponse.json({

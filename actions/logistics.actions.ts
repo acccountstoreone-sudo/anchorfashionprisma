@@ -13,6 +13,7 @@ import {
   maskCredentialsObject,
   isEncryptedValue,
 } from "@/utils/encryption.util";
+import { verifyManager } from "@/lib/security/roles";
 
 type ActionResponse<T = void> =
   | { success: true; data?: T }
@@ -32,6 +33,8 @@ export interface CourierMetrics {
 export async function getCourierProvidersAction(): Promise<
   ActionResponse<CourierProviderRecord[]>
 > {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const supabase = createAdminClient();
     const { data, error } = await supabase
@@ -60,6 +63,8 @@ export async function updateCourierProviderAction(
   id: string,
   updates: Partial<CourierProviderRecord>
 ): Promise<ActionResponse<void>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const adminSupabase = createAdminClient();
 
@@ -144,6 +149,8 @@ export async function testCourierConnectionAction(
   credentialsToTest?: Record<string, any>,
   isSandbox?: boolean
 ): Promise<ActionResponse<HealthCheckResult>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const { provider: dbProvider, record } = await CourierFactory.getProviderFromDatabase(courierId);
 
@@ -234,6 +241,8 @@ export async function testCourierConnectionAction(
 export async function getCourierMetricsAction(): Promise<
   ActionResponse<Record<string, CourierMetrics>>
 > {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const supabase = createAdminClient();
 
@@ -305,6 +314,8 @@ export async function getCourierLogsAction(
   courierCode?: string,
   limit = 50
 ): Promise<ActionResponse<any[]>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const supabase = createAdminClient();
     let query = supabase

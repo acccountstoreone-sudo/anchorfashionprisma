@@ -1,10 +1,13 @@
 "use server";
 
 import { MarketingRepository } from "@/repositories/marketing.repository";
+import { verifyStaff } from "@/lib/security/roles";
 
 const marketingRepo = new MarketingRepository();
 
 export async function fetchManagerMarketingStatsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await marketingRepo.getManagerMarketingStats();
     return { success: true, data };
@@ -15,6 +18,8 @@ export async function fetchManagerMarketingStatsAction() {
 }
 
 export async function fetchAdminMarketingStatsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await marketingRepo.getAdminMarketingStats();
     return { success: true, data };
@@ -25,6 +30,8 @@ export async function fetchAdminMarketingStatsAction() {
 }
 
 export async function fetchDashboardCampaignsAction(status?: string, limit = 5) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const data = await marketingRepo.getDashboardCampaigns(status, limit);
     return { success: true, data };

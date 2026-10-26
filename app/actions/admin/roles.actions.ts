@@ -25,16 +25,16 @@ export async function fetchRolesAction() {
     const { data: profiles, error: profErr } = await supabase.from("profiles").select("role_id");
     if (profErr) throw profErr;
 
-    const formattedRoles = roles.map((role) => {
-      const userCount = profiles.filter((p) => p.role_id === role.id).length;
+    const formattedRoles = (roles || []).map((role: any) => {
+      const userCount = (profiles || []).filter((p: any) => p.role_id === role.id).length;
       
-      const rolePermIds = rolePerms
-        .filter((rp) => rp.role_id === role.id)
-        .map((rp) => rp.permission_id);
+      const rolePermIds = (rolePerms || [])
+        .filter((rp: any) => rp.role_id === role.id)
+        .map((rp: any) => rp.permission_id);
 
       const permissionMap: Record<string, boolean> = {};
       
-      allPermissions.forEach((p) => {
+      allPermissions.forEach((p: any) => {
         permissionMap[p.action] = rolePermIds.includes(p.id);
       });
 

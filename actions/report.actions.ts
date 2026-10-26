@@ -10,6 +10,7 @@ import {
   ReportQueryRequestInput,
 } from "@/schemas/report.schema";
 import { CustomReportConfig, ReportQueryResult } from "@/types/report.types";
+import { verifyManager } from "@/lib/security/roles";
 
 const reportRepository = new ReportRepository();
 
@@ -18,6 +19,8 @@ export async function getSavedReportsAction(): Promise<{
   data?: CustomReportConfig[];
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const supabase = await createClient();
     const {
@@ -42,6 +45,8 @@ export async function getSavedReportByIdAction(
   data?: CustomReportConfig | null;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     if (!id) return { success: false, error: "Report ID is required" };
     const report = await reportRepository.getReportById(id);
@@ -62,6 +67,8 @@ export async function saveReportAction(
   data?: CustomReportConfig;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     const supabase = await createClient();
     const {
@@ -91,6 +98,8 @@ export async function deleteReportAction(
   success: boolean;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     if (!id) return { success: false, error: "Report ID is required" };
 
@@ -115,6 +124,8 @@ export async function runReportQueryAction(
   data?: ReportQueryResult;
   error?: string;
 }> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyManager();
   try {
     // Validate request parameters against safe whitelists
     const validated = ReportQueryRequestSchema.parse(params);

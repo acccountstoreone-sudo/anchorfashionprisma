@@ -35,16 +35,16 @@ export default async function InventoryDashboard() {
 
   const realInventory = inventory || [];
   
-  const totalItems = realInventory.reduce((sum, item) => sum + (item.quantity_available || 0), 0);
+  const totalItems = realInventory.reduce((sum: number, item: any) => sum + (item.quantity_available || 0), 0);
   
   const lowStockCount = realInventory.filter(
-    (item) => item.quantity_available <= (item.reorder_point || 0)
+    (item: any) => item.quantity_available <= (item.reorder_point || 0)
   ).length;
 
-  const totalIncoming = realInventory.reduce((sum, item) => sum + (item.quantity_incoming || 0), 0);
+  const totalIncoming = realInventory.reduce((sum: number, item: any) => sum + (item.quantity_incoming || 0), 0);
   
   // Calculate inventory value using quantity * price (or default to 0 if price is missing)
-  const inventoryValue = realInventory.reduce((sum, item) => {
+  const inventoryValue = realInventory.reduce((sum: number, item: any) => {
     const price = (item.variants as any)?.price_override || (item.variants as any)?.products?.base_price || 0;
     return sum + (item.quantity_available || 0) * price;
   }, 0);

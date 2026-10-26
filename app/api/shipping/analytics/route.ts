@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { verifyStaff } from "@/lib/security/roles";
 
 /**
  * GET /api/shipping/analytics
@@ -7,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin-client";
  */
 export async function GET(req: Request) {
   try {
+    await verifyStaff();
     const url = new URL(req.url);
     const days = parseInt(url.searchParams.get("days") ?? "30", 10);
     const dateFrom = new Date(Date.now() - days * 86400_000).toISOString();
@@ -76,7 +78,7 @@ export async function GET(req: Request) {
     // Delivery rate
     const terminalShipments = deliveryRate.data ?? [];
     const deliveredCount = terminalShipments.filter(
-      (s) => s.status === "delivered"
+      (s: any) => s.status === "delivered"
     ).length;
     const deliveryRatePercent =
       terminalShipments.length > 0

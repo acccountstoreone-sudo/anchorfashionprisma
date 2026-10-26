@@ -137,6 +137,20 @@ export class AnalyticsRepository {
       return Number((((curr - prev) / prev) * 100).toFixed(1));
     };
 
+    const revenueByDay: Record<string, number> = {};
+    if (orders && orders.length > 0) {
+      orders.forEach((o: any) => {
+        const s = (o.status || "").toLowerCase();
+        if (s !== "cancelled" && s !== "returned" && o.created_at) {
+          const d = new Date(o.created_at).toISOString().split("T")[0];
+          revenueByDay[d] = (revenueByDay[d] || 0) + (Number(o.grand_total) || 0);
+        }
+      });
+    }
+    const revenueHistoryData = Object.entries(revenueByDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, total]) => ({ name, total }));
+
     return {
       totalRevenue,
       revenueTrend: calcTrend(totalRevenue, prevTotalRevenue),
@@ -157,8 +171,7 @@ export class AnalyticsRepository {
       ordersPerCustomer: Number(ordersPerCustomerVal.toFixed(1)),
       opcTrend: calcTrend(ordersPerCustomerVal, prevOrdersPerCustomer),
       inventoryValue: totalInventoryValue,
-      revenueHistory:
-        rollups?.map((r: any) => ({ name: r.date, total: r.total_revenue })) || [],
+      revenueHistory: revenueHistoryData,
     };
   }
 

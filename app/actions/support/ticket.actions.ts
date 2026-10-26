@@ -3,9 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { supportService } from "@/services/support.service";
 import { supportRepository } from "@/repositories/support.repository";
+import { verifyStaff, verifyAuthenticated } from "@/lib/security/roles";
 
 // Support Dashboard & List Actions
 export async function getTicketsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const tickets = await supportService.getTickets();
     return { success: true, data: tickets };
@@ -15,6 +18,8 @@ export async function getTicketsAction() {
 }
 
 export async function getTicketDetailsAction(id: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const ticket = await supportService.getTicketDetails(id);
     return { success: true, data: ticket };
@@ -24,6 +29,8 @@ export async function getTicketDetailsAction(id: string) {
 }
 
 export async function getAvailableAgentsAction() {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const agents = await supportService.getAvailableAgents();
     return { success: true, data: agents };
@@ -34,6 +41,8 @@ export async function getAvailableAgentsAction() {
 
 // CRM Ticket Actions
 export async function createTicketAction(data: any) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const ticket = await supportService.createTicket(data);
     revalidatePath("/admin/support/tickets");
@@ -45,6 +54,8 @@ export async function createTicketAction(data: any) {
 }
 
 export async function updateTicketAction(id: string, data: any) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const ticket = await supportService.updateTicket(id, data);
     revalidatePath(`/admin/support/tickets/${id}`);
@@ -63,6 +74,8 @@ export async function replyTicketAction(
   senderId?: string,
   senderType: "CUSTOMER" | "AGENT" = "AGENT"
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const validSenderId =
       typeof senderId === "string" && UUID_REGEX.test(senderId.trim())
@@ -88,6 +101,8 @@ export async function addInternalNoteAction(
   body: string,
   agentId?: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const validAgentId =
       typeof agentId === "string" && UUID_REGEX.test(agentId.trim())
@@ -109,6 +124,8 @@ export async function addInternalNoteAction(
 }
 
 export async function assignTicketAction(ticketId: string, agentId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const ticket = await supportService.assignTicket(ticketId, agentId);
     revalidatePath(`/admin/support/tickets/${ticketId}`);
@@ -120,6 +137,8 @@ export async function assignTicketAction(ticketId: string, agentId: string) {
 }
 
 export async function closeTicketAction(ticketId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const ticket = await supportService.updateTicket(ticketId, {
       status: "closed",
@@ -133,6 +152,8 @@ export async function closeTicketAction(ticketId: string) {
 }
 
 export async function reopenTicketAction(ticketId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const ticket = await supportService.updateTicket(ticketId, {
       status: "open",
@@ -149,6 +170,8 @@ export async function changeTicketStatusAction(
   ticketId: string,
   status: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const ticket = await supportService.updateTicket(ticketId, {
       status: status as any,
@@ -165,6 +188,8 @@ export async function changeTicketPriorityAction(
   ticketId: string,
   priority: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const ticket = await supportService.updateTicket(ticketId, {
       priority: priority as any,
@@ -183,6 +208,8 @@ export async function addTicketAttachmentAction(
   fileType: string,
   fileName: string
 ) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyAuthenticated();
   try {
     const attachment = await supportRepository.createTicketAttachment({
       ticket_id: ticketId,
@@ -198,6 +225,8 @@ export async function addTicketAttachmentAction(
 }
 
 export async function deleteTicketAction(ticketId: string) {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     await supportService.deleteTicket(ticketId);
     revalidatePath("/admin/support/tickets");

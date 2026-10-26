@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AlphaSmsService } from "@/lib/services/sms/alpha-sms.service";
+import { verifyAdmin } from "@/lib/security/roles";
 
 /**
  * POST /api/sms/test
- * Test sending an SMS via Alpha SMS REST API
+ * Test sending an SMS via Alpha SMS REST API (Admin only)
  * Body: { phone: string, message?: string }
  */
 export async function POST(req: NextRequest) {
   try {
+    await verifyAdmin();
     const body = await req.json().catch(() => ({}));
     const phone = body.phone || body.to;
     const message =

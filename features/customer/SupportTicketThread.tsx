@@ -58,7 +58,7 @@ export function SupportTicketThread({
           table: "ticket_messages",
           filter: `ticket_id=eq.${ticketId}`,
         },
-        (payload) => {
+        (payload: any) => {
           const newMsg = payload.new as Message;
           // Never display internal staff notes to customer
           if (newMsg.is_internal_note) return;

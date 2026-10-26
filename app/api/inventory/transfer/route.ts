@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { InventoryRepository } from "@/repositories/inventory.repository";
+import { verifyStaff } from "@/lib/security/roles";
 
 export async function POST(request: NextRequest) {
   try {
+    await verifyStaff();
     const body = await request.json();
     if (!body.variant_id || !body.from_warehouse_id || !body.to_warehouse_id || !body.quantity) {
       return NextResponse.json(
@@ -22,6 +24,6 @@ export async function POST(request: NextRequest) {
     );
     return NextResponse.json({ success: true, message: "Stock transferred successfully." });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: error.message }, { status: error.message?.includes("Forbidden") ? 403 : 400 });
   }
 }

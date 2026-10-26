@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     // 1. Authenticate the request
     const authHeader = request.headers.get("authorization");
-    if (authHeader !== `Bearer ${process.env.ETL_SECRET_KEY}`) {
+    if (!process.env.ETL_SECRET_KEY || authHeader !== `Bearer ${process.env.ETL_SECRET_KEY}`) {
       return NextResponse.json(
         { error: "Unauthorized ETL trigger" },
         { status: 401 }

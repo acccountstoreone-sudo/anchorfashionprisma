@@ -171,7 +171,7 @@ export class OrderRepository {
   }
 
   async createOrder(
-    orderData: Partial<Order> & { order_number: string }
+    orderData: any
   ): Promise<Order> {
     const isProfileUuid =
       orderData.user_id &&
@@ -189,7 +189,6 @@ export class OrderRepository {
         shippingFee: orderData.shipping_fee || orderData.shipping_total || 0,
         discount: orderData.discount_amount || orderData.discount_total || 0,
         totalAmount: orderData.total_amount || orderData.grand_total || 0,
-        currency: orderData.currency || "BDT",
         paymentMethod: orderData.payment_method || "COD",
         paymentStatus: orderData.payment_status || "UNPAID",
         shippingAddress: (orderData.shipping_address as any) || {},
@@ -259,23 +258,34 @@ function mapPrismaOrderToOms(record: any): Order {
 
   return {
     id: record.id,
+    customer_id: record.customerId || record.profileId || null,
     user_id: record.profileId,
     order_number: record.orderNumber,
     status: (record.status || "confirmed").toLowerCase() as OrderStatus,
     subtotal: Number(record.subtotal || 0),
+    tax_total: 0,
+    shipping_total: Number(record.shippingFee || 0),
+    discount_total: Number(record.discount || 0),
+    grand_total: Number(record.totalAmount || 0),
+    currency: "BDT",
+    shipping_address_id: null,
+    billing_address_id: null,
+    payment_intent_id: null,
     shipping_fee: Number(record.shippingFee || 0),
     discount_amount: Number(record.discount || 0),
     total_amount: Number(record.totalAmount || 0),
-    grand_total: Number(record.totalAmount || 0),
-    shipping_total: Number(record.shippingFee || 0),
-    discount_total: Number(record.discount || 0),
-    currency: "BDT",
     payment_method: record.paymentMethod || "COD",
     payment_status: record.paymentStatus || "UNPAID",
     notes: record.notes,
     risk_level: "LOW",
     created_at: record.createdAt?.toISOString(),
     updated_at: record.updatedAt?.toISOString(),
+    placed_at: record.createdAt?.toISOString() || null,
+    paid_at: record.paidAt?.toISOString() || null,
+    shipped_at: record.shippedAt?.toISOString() || null,
+    delivered_at: record.deliveredAt?.toISOString() || null,
+    cancelled_at: record.cancelledAt?.toISOString() || null,
+    updated_by: null,
     items: (record.items || []).map((item: any) => ({
       id: item.id,
       order_id: item.orderId,

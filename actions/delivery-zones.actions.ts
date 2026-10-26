@@ -12,6 +12,7 @@ import {
   createDeliveryZoneSchema,
   createShippingRateSchema,
 } from "@/schemas/shipping.schema";
+import { verifyStaff } from "@/lib/security/roles";
 
 type ActionResponse<T = void> =
   { success: true; data: T } | { success: false; error: string };
@@ -91,6 +92,8 @@ export async function getDeliveryZoneAction(
 export async function createDeliveryZoneAction(
   raw: Record<string, any>
 ): Promise<ActionResponse<{ zoneId: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = createDeliveryZoneSchema.safeParse(raw);
   if (!parse.success) {
     return {
@@ -114,6 +117,8 @@ export async function updateDeliveryZoneAction(
   zoneId: string,
   raw: Record<string, any>
 ): Promise<ActionResponse<{ zoneId: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   try {
     const repo = new DeliveryZoneRepository();
     const zone = await repo.updateZone(zoneId, raw);
@@ -128,6 +133,8 @@ export async function updateDeliveryZoneAction(
 export async function createShippingRateAction(
   raw: Record<string, any>
 ): Promise<ActionResponse<{ rateId: string }>> {
+  // SECURITY: server actions are public endpoints; authorize every call.
+  await verifyStaff();
   const parse = createShippingRateSchema.safeParse(raw);
   if (!parse.success) {
     return {

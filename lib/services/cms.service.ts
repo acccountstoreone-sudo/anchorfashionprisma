@@ -14,7 +14,7 @@ export class CMSService {
     return this.repository.getPages();
   }
 
-  async getPageById(id: string): Promise<CMSPage> {
+  async getPageById(id: string): Promise<CMSPage | null> {
     return this.repository.getPageById(id);
   }
 
