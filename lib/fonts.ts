@@ -1,19 +1,22 @@
-// Robust, build-safe font definitions that don't block build time on network timeouts
-export const jost = {
-  className: "font-jost",
+import { Jost, Playfair_Display, Inter } from "next/font/google";
+
+export const jost = Jost({
+  subsets: ["latin"],
+  display: "swap",
   variable: "--font-jost",
-  style: { fontFamily: "'Jost', system-ui, sans-serif" },
-};
+  fallback: ["system-ui", "sans-serif"],
+});
 
-export const playfair = {
-  className: "font-playfair",
+export const playfair = Playfair_Display({
+  subsets: ["latin"],
+  display: "swap",
   variable: "--font-playfair",
-  style: { fontFamily: "'Playfair Display', Georgia, serif" },
-};
+  fallback: ["Georgia", "serif"],
+});
 
-export const inter = {
-  className: "font-inter",
+export const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
   variable: "--font-inter",
-  style: { fontFamily: "'Inter', system-ui, sans-serif" },
-};
-
+  fallback: ["system-ui", "sans-serif"],
+});
