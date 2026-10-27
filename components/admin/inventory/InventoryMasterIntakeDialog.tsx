@@ -310,7 +310,11 @@ export function InventoryMasterIntakeDialog({
       if (res.success && res.data) {
         toast.success(res.message);
 
-        // Prepare print labels
+        // Prepare print labels with stock counts, style codes, and category
+        const selectedCat = categories.find((c: any) => c.id === categoryId);
+        const catName = selectedCat?.name || "ND";
+        const catTag = catName.slice(0, 3).toUpperCase();
+
         const labels: BarcodeLabelData[] = res.data.variants.map((v: any) => ({
           productName: name.trim(),
           sku: v.sku,
@@ -318,6 +322,11 @@ export function InventoryMasterIntakeDialog({
           color: v.color,
           size: v.size,
           price: basePrice,
+          stock: v.quantity ?? 1,
+          styleCode: styleCode.trim() || res.data.product?.sku || undefined,
+          categoryName: catName,
+          brandName: "ANCHOR FASHION",
+          tag: catTag,
         }));
 
         setPrintLabels(labels);

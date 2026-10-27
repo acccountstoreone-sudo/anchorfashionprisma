@@ -450,9 +450,19 @@ export class InventoryService {
 
       if (order && order.items.length > 0) {
         for (const item of order.items) {
-          if (!item.variantId) continue;
+          let variantId = item.variantId;
+          if (!variantId && item.sku) {
+            const v = await prisma.variant.findUnique({ where: { sku: item.sku } });
+            if (v) variantId = v.id;
+          }
+          if (!variantId && item.productId) {
+            const v = await prisma.variant.findFirst({ where: { productId: item.productId, isActive: true } });
+            if (v) variantId = v.id;
+          }
+          if (!variantId) continue;
+
           const level = await prisma.inventoryLevel.findFirst({
-            where: { variantId: item.variantId },
+            where: { variantId },
           });
           if (level) {
             const prevAvail = level.quantityAvailable;
@@ -468,7 +478,7 @@ export class InventoryService {
             try {
               await prisma.stockMovement.create({
                 data: {
-                  variantId: item.variantId,
+                  variantId,
                   warehouseId: level.warehouseId,
                   movementType: "IN",
                   quantity: item.quantity,
@@ -502,9 +512,19 @@ export class InventoryService {
 
       if (order && order.items.length > 0) {
         for (const item of order.items) {
-          if (!item.variantId) continue;
+          let variantId = item.variantId;
+          if (!variantId && item.sku) {
+            const v = await prisma.variant.findUnique({ where: { sku: item.sku } });
+            if (v) variantId = v.id;
+          }
+          if (!variantId && item.productId) {
+            const v = await prisma.variant.findFirst({ where: { productId: item.productId, isActive: true } });
+            if (v) variantId = v.id;
+          }
+          if (!variantId) continue;
+
           const level = await prisma.inventoryLevel.findFirst({
-            where: { variantId: item.variantId },
+            where: { variantId },
           });
           if (level) {
             await prisma.inventoryLevel.update({
@@ -513,6 +533,34 @@ export class InventoryService {
                 quantityReserved: Math.max(0, level.quantityReserved - item.quantity),
               },
             });
+
+            // Log authoritative OUT stock movement on dispatch
+            try {
+              const existingSm = await prisma.stockMovement.findFirst({
+                where: {
+                  variantId,
+                  referenceId: orderId,
+                  movementType: "OUT",
+                },
+              });
+              if (!existingSm) {
+                await prisma.stockMovement.create({
+                  data: {
+                    variantId,
+                    warehouseId: level.warehouseId,
+                    movementType: "OUT",
+                    quantity: item.quantity,
+                    previousQuantity: level.quantityAvailable + item.quantity,
+                    newQuantity: level.quantityAvailable,
+                    referenceType: "ORDER",
+                    referenceId: orderId,
+                    notes: `Order fulfillment dispatch: ${item.productName || item.sku || "Order Item"}`,
+                  },
+                });
+              }
+            } catch (smErr) {
+              console.warn("Prisma confirmOrderInventory stock movement logging error:", smErr);
+            }
           }
         }
       }

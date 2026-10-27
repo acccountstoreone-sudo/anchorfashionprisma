@@ -191,6 +191,7 @@ async function runInventoryToProductAudit() {
         priceOverride: 2450,
         costPrice: 1250,
         stockQuantity: v.inventoryLevels[0]?.quantityAvailable || 0,
+        soldQuantity: 0,
         attributes: v.attributes as any,
         isActive: true,
       })),

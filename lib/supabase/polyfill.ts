@@ -312,13 +312,19 @@ class QueryBuilder implements PromiseLike<any> {
     return this;
   }
 
-  in(col: string, vals: any[]) {
+  in(col: string, vals: any) {
     const c = formatCol(col);
-    if (!vals || vals.length === 0) {
+    const items = Array.isArray(vals)
+      ? vals
+      : typeof vals === "string"
+      ? vals.trim().replace(/^\(|\)$/g, "").split(",").map((s) => s.trim().replace(/^['"]|['"]$/g, ""))
+      : [vals];
+
+    if (!items || items.length === 0) {
       this.whereClauses.push(`1 = 0`);
       return this;
     }
-    const placeholders = vals.map((v) => {
+    const placeholders = items.map((v) => {
       this.params.push(v);
       return `$${this.params.length}::text`;
     });
@@ -359,11 +365,17 @@ class QueryBuilder implements PromiseLike<any> {
     if (op === "is" && val === null) {
       this.whereClauses.push(`${c} IS NOT NULL`);
     } else if (op === "in") {
-      if (!val || val.length === 0) {
+      const items = Array.isArray(val)
+        ? val
+        : typeof val === "string"
+        ? val.trim().replace(/^\(|\)$/g, "").split(",").map((s) => s.trim().replace(/^['"]|['"]$/g, ""))
+        : [val];
+
+      if (!items || items.length === 0) {
         this.whereClauses.push(`1 = 1`);
         return this;
       }
-      const placeholders = val.map((v: any) => {
+      const placeholders = items.map((v: any) => {
         this.params.push(v);
         return `$${this.params.length}::text`;
       });
@@ -721,6 +733,35 @@ class QueryBuilder implements PromiseLike<any> {
           }
         }
 
+        if (this.tableName === "returns") {
+          const allowed = new Set([
+            "id", "return_number", "order_id", "customer_id", "status", "reason", "notes", "refund_amount", "created_at", "updated_at"
+          ]);
+          for (const item of dataArray) {
+            if (item.customer_note && !item.notes) {
+              item.notes = item.customer_note;
+            }
+            for (const k of Object.keys(item)) {
+              if (!allowed.has(k)) {
+                delete item[k];
+              }
+            }
+          }
+        }
+
+        if (this.tableName === "return_items") {
+          const allowed = new Set([
+            "id", "return_id", "order_item_id", "variant_id", "quantity", "reason", "condition", "restocked", "created_at"
+          ]);
+          for (const item of dataArray) {
+            for (const k of Object.keys(item)) {
+              if (!allowed.has(k)) {
+                delete item[k];
+              }
+            }
+          }
+        }
+
         const keys = Object.keys(dataArray[0]).map((k) => assertIdent(k, "column"));
         const cols = keys.map((k) => `"${k}"`).join(", ");
 
@@ -827,6 +868,34 @@ class QueryBuilder implements PromiseLike<any> {
           delete this.payload.coupon_id;
         }
 
+        if (this.tableName === "returns" && this.payload) {
+          const allowed = new Set([
+            "id", "return_number", "order_id", "customer_id", "status", "reason", "notes", "refund_amount", "created_at", "updated_at"
+          ]);
+          if (this.payload.customer_note && !this.payload.notes) {
+            this.payload.notes = this.payload.customer_note;
+          }
+          if (this.payload.internal_note && !this.payload.notes) {
+            this.payload.notes = this.payload.internal_note;
+          }
+          for (const k of Object.keys(this.payload)) {
+            if (!allowed.has(k)) {
+              delete this.payload[k];
+            }
+          }
+        }
+
+        if (this.tableName === "return_items" && this.payload) {
+          const allowed = new Set([
+            "id", "return_id", "order_item_id", "variant_id", "quantity", "reason", "condition", "restocked", "created_at"
+          ]);
+          for (const k of Object.keys(this.payload)) {
+            if (!allowed.has(k)) {
+              delete this.payload[k];
+            }
+          }
+        }
+
         const keys = Object.keys(this.payload).map((k) => assertIdent(k, "column"));
         const sets = [];
         for (const key of keys) {
@@ -881,6 +950,40 @@ class QueryBuilder implements PromiseLike<any> {
         for (const row of result) {
           if (row.code && !row.warehouse_code) {
             row.warehouse_code = row.code;
+          }
+        }
+      }
+
+      if (this.tableName === "orders" && result && result.length > 0) {
+        for (const row of result) {
+          if (row.total_amount !== undefined && row.grand_total === undefined) {
+            row.grand_total = row.total_amount;
+          }
+          if (row.grand_total !== undefined && row.total_amount === undefined) {
+            row.total_amount = row.grand_total;
+          }
+          if (row.discount !== undefined && row.discount_total === undefined) {
+            row.discount_total = row.discount;
+          }
+          if (row.shipping_fee !== undefined && row.shipping_total === undefined) {
+            row.shipping_total = row.shipping_fee;
+          }
+          if (row.profile_id && !row.customer_id) {
+            row.customer_id = row.profile_id;
+          }
+          if (row.customer_id && !row.profile_id) {
+            row.profile_id = row.customer_id;
+          }
+        }
+      }
+
+      if (this.tableName === "order_items" && result && result.length > 0) {
+        for (const row of result) {
+          if (row.total_price !== undefined && row.line_total === undefined) {
+            row.line_total = row.total_price;
+          }
+          if (row.line_total !== undefined && row.total_price === undefined) {
+            row.total_price = row.line_total;
           }
         }
       }

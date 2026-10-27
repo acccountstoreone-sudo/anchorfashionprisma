@@ -164,16 +164,34 @@ export function InventoryMasterHubClient({
 
   // Open Barcode Print for an item
   const handlePrintItemBarcodes = (item: any) => {
+    const catName = typeof item.category === "string" ? item.category : item.category?.name || "ND";
+    const catTag = catName.slice(0, 3).toUpperCase();
+
     const labels: BarcodeLabelData[] = (item.variants || []).map((v: any) => {
       const color = v.attributes?.Color || v.attributes?.color || "";
       const size = v.attributes?.Size || v.attributes?.size || "";
+      const variantStock =
+        typeof v.stock === "number"
+          ? v.stock
+          : typeof v.quantityAvailable === "number"
+          ? v.quantityAvailable
+          : v.inventoryLevels?.reduce(
+              (sum: number, lvl: any) => sum + (lvl.quantityAvailable || 0),
+              0
+            ) ?? 0;
+
       return {
         productName: item.name,
         sku: v.sku,
         barcode: v.barcode || item.barcode,
         color,
         size,
-        price: item.basePrice,
+        price: item.basePrice || item.price || 0,
+        stock: variantStock > 0 ? variantStock : 1,
+        styleCode: item.sku || v.sku,
+        categoryName: catName,
+        brandName: "ANCHOR FASHION",
+        tag: catTag,
       };
     });
 
@@ -182,7 +200,12 @@ export function InventoryMasterHubClient({
         productName: item.name,
         sku: item.sku,
         barcode: item.barcode,
-        price: item.basePrice,
+        price: item.basePrice || item.price || 0,
+        stock: item.totalStock > 0 ? item.totalStock : 1,
+        styleCode: item.sku,
+        categoryName: catName,
+        brandName: "ANCHOR FASHION",
+        tag: catTag,
       });
     }
 

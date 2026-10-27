@@ -6,6 +6,7 @@
 import { ReturnRepository } from "@/repositories/return.repository";
 import { ShipmentRepository } from "@/repositories/shipment.repository";
 import { createAdminClient } from "@/lib/supabase/admin-client";
+import { prisma } from "@/lib/prisma";
 import { EmailProvider } from "@/lib/notifications/EmailProvider";
 import { WalletService } from "@/services/wallet.service";
 import { BKashService } from "@/lib/services/payment/bkash.service";
@@ -299,6 +300,7 @@ export class ReturnsService {
     let totalCalculatedRefund = 0;
     const returnItemsPayload: Array<{
       orderItemId: string;
+      variantId?: string | null;
       sku: string;
       productName: string;
       quantity: number;
@@ -330,6 +332,7 @@ export class ReturnsService {
 
       returnItemsPayload.push({
         orderItemId: eligibleItem.orderItemId,
+        variantId: eligibleItem.variantId,
         sku: eligibleItem.sku,
         productName: eligibleItem.productName,
         quantity: reqQty,
@@ -367,6 +370,7 @@ export class ReturnsService {
       returnData as any,
       returnItemsPayload.map((it) => ({
         order_item_id: it.orderItemId,
+        variant_id: it.variantId || null,
         sku: it.sku,
         product_name: it.productName,
         quantity: it.quantity,
@@ -520,58 +524,81 @@ export class ReturnsService {
           
         if (updateErr) console.error("Atomic restock lock error:", updateErr);
 
-        if (updatedItem && item.order_item_id) {
-          const { data: orderItem } = await supabase
-            .from("order_items")
-            .select("variant_id, allocated_warehouse_id")
-            .eq("id", item.order_item_id)
-            .maybeSingle();
+        if (updatedItem && (item.order_item_id || (item as any).variant_id)) {
+          let variantId = (item as any).variant_id;
+          let warehouseId: string | null = null;
 
-          if (orderItem?.variant_id) {
-            // Find warehouse
-            let warehouseId = orderItem.allocated_warehouse_id;
-            if (!warehouseId) {
-              const { data: defaultWh } = await supabase
-                .from("warehouses")
-                .select("id")
-                .eq("is_active", true)
-                .order("priority", { ascending: false })
-                .limit(1)
-                .maybeSingle();
-              warehouseId = defaultWh?.id;
+          if (item.order_item_id) {
+            const orderItem = await prisma.orderItem.findUnique({
+              where: { id: item.order_item_id },
+              select: { variantId: true, sku: true, productId: true },
+            });
+
+            if (!variantId && orderItem?.variantId) {
+              variantId = orderItem.variantId;
             }
+            if (!variantId && orderItem?.sku) {
+              const v = await prisma.variant.findUnique({ where: { sku: orderItem.sku }, select: { id: true } });
+              if (v) variantId = v.id;
+            }
+            if (!variantId && orderItem?.productId) {
+              const v = await prisma.variant.findFirst({ where: { productId: orderItem.productId, isActive: true }, select: { id: true } });
+              if (v) variantId = v.id;
+            }
+          }
+
+          if (variantId) {
+            const defaultWh = await prisma.warehouse.findFirst({
+              where: { isActive: true },
+              select: { id: true },
+            });
+            warehouseId = defaultWh?.id || null;
 
             if (warehouseId) {
-              // Increment inventory_levels
-              const { data: currentInv } = await supabase
-                .from("inventory_levels")
-                .select("id, quantity_available")
-                .eq("variant_id", orderItem.variant_id)
-                .eq("warehouse_id", warehouseId)
-                .maybeSingle();
+              let level = await prisma.inventoryLevel.findFirst({
+                where: { variantId, warehouseId },
+              });
 
-              if (currentInv) {
-                await supabase
-                  .from("inventory_levels")
-                  .update({
-                    quantity_available: currentInv.quantity_available + item.quantity,
-                    updated_at: new Date().toISOString(),
-                  })
-                  .eq("id", currentInv.id);
+              if (!level) {
+                level = await prisma.inventoryLevel.create({
+                  data: {
+                    variantId,
+                    warehouseId,
+                    quantityAvailable: 0,
+                    quantityReserved: 0,
+                    reorderPoint: 5,
+                  },
+                });
+              }
 
-                // Log stock movement
-                try {
-                  await supabase.from("stock_movements").insert({
-                    variant_id: orderItem.variant_id,
-                    warehouse_id: warehouseId,
-                    quantity_change: item.quantity,
-                    reason: `Restocked ${item.quantity} units from return ${returnRecord.return_number}`,
-                    reason_code: "RETURN",
-                    reference_id: returnRecord.id,
-                  });
-                } catch (e: any) {
-                  console.warn("Could not insert stock_movements log:", e?.message);
-                }
+              const prevAvail = level.quantityAvailable;
+              const newAvail = prevAvail + item.quantity;
+
+              await prisma.inventoryLevel.update({
+                where: { id: level.id },
+                data: {
+                  quantityAvailable: newAvail,
+                },
+              });
+
+              // Log stock movement authoritative in Neon PostgreSQL
+              try {
+                await prisma.stockMovement.create({
+                  data: {
+                    variantId,
+                    warehouseId,
+                    movementType: "IN",
+                    quantity: item.quantity,
+                    previousQuantity: prevAvail,
+                    newQuantity: newAvail,
+                    referenceType: "RETURN",
+                    referenceId: returnRecord.id,
+                    notes: `Restocked ${item.quantity} units from return ${returnRecord.return_number}`,
+                    createdBy: adminUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(adminUserId) ? adminUserId : null,
+                  },
+                });
+              } catch (e: any) {
+                console.warn("Could not insert stock_movements log:", e?.message);
               }
             }
           }
@@ -579,7 +606,7 @@ export class ReturnsService {
       }
     }
 
-    return this.returnRepo.atomicUpdateStatus(returnId, ["received", "inventory_synced"], {
+    return this.returnRepo.atomicUpdateStatus(returnId, ["approved", "received", "inventory_synced"], {
       status: "inventory_synced",
       inventory_synced_at: new Date().toISOString(),
       inspected_at: new Date().toISOString(),

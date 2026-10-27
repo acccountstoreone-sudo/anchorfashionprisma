@@ -87,7 +87,7 @@ export class AnalyticsRepository {
           const createdAtStr = createdAt.toISOString().split("T")[0];
           const isCurrent = createdAt >= currentFrom && createdAt <= currentTo;
           const isPrevious = createdAt >= previousFrom && createdAt < currentFrom;
-          const amount = Number(o.grand_total) || 0;
+          const amount = Number(o.grand_total ?? o.total_amount) || 0;
 
           if (isCurrent) {
             totalRevenue += amount;
@@ -143,7 +143,7 @@ export class AnalyticsRepository {
         const s = (o.status || "").toLowerCase();
         if (s !== "cancelled" && s !== "returned" && o.created_at) {
           const d = new Date(o.created_at).toISOString().split("T")[0];
-          revenueByDay[d] = (revenueByDay[d] || 0) + (Number(o.grand_total) || 0);
+          revenueByDay[d] = (revenueByDay[d] || 0) + (Number(o.grand_total ?? o.total_amount) || 0);
         }
       });
     }
@@ -227,7 +227,7 @@ export class AnalyticsRepository {
       if (!salesByDate[date]) {
         salesByDate[date] = { revenue: 0, ordersCount: 0 };
       }
-      salesByDate[date].revenue += Number(order.grand_total) || 0;
+      salesByDate[date].revenue += Number(order.grand_total ?? order.total_amount) || 0;
       salesByDate[date].ordersCount += 1;
     });
 
@@ -249,13 +249,13 @@ export class AnalyticsRepository {
       else if (pm === "NAGAD") pm = "Nagad";
 
       paymentMethods[pm] =
-        (paymentMethods[pm] || 0) + (Number(order.grand_total) || 0);
+        (paymentMethods[pm] || 0) + (Number(order.grand_total ?? order.total_amount) || 0);
     });
 
     // Shipping methods breakdown
     const shippingMethods: Record<string, number> = {};
     validOrders.forEach((order: any) => {
-      const st = Number(order.shipping_total) || 0;
+      const st = Number(order.shipping_total ?? order.shipping_fee) || 0;
       let sm = "Standard Delivery";
       if (st === 0) sm = "Free Shipping";
       else if (st === 60) sm = "Inside Dhaka";
@@ -264,7 +264,7 @@ export class AnalyticsRepository {
       else sm = `Standard (৳${st})`;
 
       shippingMethods[sm] =
-        (shippingMethods[sm] || 0) + (Number(order.grand_total) || 0);
+        (shippingMethods[sm] || 0) + (Number(order.grand_total ?? order.total_amount) || 0);
     });
 
     // Also fetch items, products & addresses to get Category breakdown, Top selling products & customer names
@@ -337,7 +337,7 @@ export class AnalyticsRepository {
         id: order.id,
         orderNumber: order.order_number,
         customerName,
-        amount: Number(order.grand_total) || 0,
+        amount: Number(order.grand_total ?? order.total_amount) || 0,
         status: order.status,
         paymentMethod: order.payment_method || "COD",
         paymentStatus: order.payment_status || "PENDING",
@@ -348,7 +348,7 @@ export class AnalyticsRepository {
     const totalSales =
       Math.round(
         validOrders.reduce(
-          (sum: number, o: any) => sum + (Number(o.grand_total) || 0),
+          (sum: number, o: any) => sum + (Number(o.grand_total ?? o.total_amount) || 0),
           0
         ) * 100
       ) / 100;
@@ -418,7 +418,7 @@ export class AnalyticsRepository {
       }
 
       if (normalizedStatus === "returned" || normalizedStatus === "cancelled") {
-        totalRefunds += Number(order.grand_total) || 0;
+        totalRefunds += Number(order.grand_total ?? order.total_amount) || 0;
         refundedOrdersCount++;
       }
     });
@@ -480,7 +480,7 @@ export class AnalyticsRepository {
     orders?.forEach((o: any) => {
       if (o.customer_id) {
         customerSpend[o.customer_id] =
-          (customerSpend[o.customer_id] || 0) + (Number(o.grand_total) || 0);
+          (customerSpend[o.customer_id] || 0) + (Number(o.grand_total ?? o.total_amount) || 0);
         orderCount[o.customer_id] = (orderCount[o.customer_id] || 0) + 1;
       }
     });

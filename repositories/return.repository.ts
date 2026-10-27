@@ -100,9 +100,10 @@ export class ReturnRepository {
     // Audit Log
     if (updated.order_id) {
       try {
+        const isActorUuid = actorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actorId);
         await supabase.from("order_notes").insert({
           order_id: updated.order_id,
-          author_id: actorId || null,
+          author_id: isActorUuid ? actorId : null,
           note: `[RETURN] Status changed to '${data.status}' for Return #${updated.return_number}`,
           is_customer_visible: false,
         });
@@ -156,9 +157,10 @@ export class ReturnRepository {
     // Audit Log
     if (updated.order_id) {
       try {
+        const isActorUuid = actorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actorId);
         await supabase.from("order_notes").insert({
           order_id: updated.order_id,
-          author_id: actorId || null,
+          author_id: isActorUuid ? actorId : null,
           note: `[RETURN] Refund status changed to '${data.status || data.refund_status}' for Return #${updated.return_number}`,
           is_customer_visible: false,
         });
