@@ -32,7 +32,7 @@ export default async function ManagerLayout({ children }: { children: ReactNode 
   return (
     <div className="fixed inset-0 flex h-full w-full overflow-hidden bg-muted/20">
       <style>{`html, body { overflow: hidden !important; height: 100% !important; margin: 0 !important; padding: 0 !important; }`}</style>
-      <ManagerSidebar />
+      <ManagerSidebar role={role} />
       <div className="flex min-w-0 min-h-0 flex-1 flex-col h-full overflow-hidden">
         <ManagerHeader user={sanitizedUser} />
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6 overscroll-contain">

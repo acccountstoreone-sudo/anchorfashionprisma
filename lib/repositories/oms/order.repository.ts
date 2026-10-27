@@ -48,7 +48,10 @@ export class OrderRepository {
     if (options?.customerId) {
       const isCustUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(options.customerId);
       if (isCustUuid) {
-        where.profileId = options.customerId;
+        where.OR = [
+          { profileId: options.customerId },
+          { customerId: options.customerId },
+        ];
       }
     }
     

@@ -304,4 +304,180 @@ describe("Financial Calculations Engine", () => {
       expect(netMarginPercent).toBe(16.5);
     });
   });
+
+  describe("Cumulative Partial Refund & Transaction Status Engine", () => {
+    interface RefundRecord {
+      amount: number;
+      status: "pending" | "processing" | "completed" | "failed" | "rejected";
+    }
+
+    function calculateRefundEligibility(
+      transactionAmount: number,
+      existingRefunds: RefundRecord[],
+      requestedAmount: number
+    ): {
+      isEligible: boolean;
+      priorRefundedAmount: number;
+      remainingRefundable: number;
+      newTxnStatus: "partially_refunded" | "refunded";
+      error?: string;
+    } {
+      const priorRefundedAmount = existingRefunds
+        .filter((r) => r.status === "completed" || r.status === "pending" || r.status === "processing")
+        .reduce((sum, r) => sum + r.amount, 0);
+
+      const remainingRefundable = Math.max(
+        0,
+        Math.round((transactionAmount - priorRefundedAmount) * 100) / 100
+      );
+
+      if (requestedAmount > remainingRefundable) {
+        return {
+          isEligible: false,
+          priorRefundedAmount,
+          remainingRefundable,
+          newTxnStatus: "partially_refunded",
+          error: `Refund amount (৳${requestedAmount}) exceeds remaining refundable balance (৳${remainingRefundable})`,
+        };
+      }
+
+      const totalRefundedNow = Math.round((priorRefundedAmount + requestedAmount) * 100) / 100;
+      const newTxnStatus =
+        totalRefundedNow >= transactionAmount ? "refunded" : "partially_refunded";
+
+      return {
+        isEligible: true,
+        priorRefundedAmount,
+        remainingRefundable,
+        newTxnStatus,
+      };
+    }
+
+    it("should allow first partial refund and mark status as partially_refunded", () => {
+      const result = calculateRefundEligibility(5000, [], 2000);
+      expect(result.isEligible).toBe(true);
+      expect(result.priorRefundedAmount).toBe(0);
+      expect(result.remainingRefundable).toBe(5000);
+      expect(result.newTxnStatus).toBe("partially_refunded");
+    });
+
+    it("should allow second partial refund and update remaining balance", () => {
+      const existing: RefundRecord[] = [{ amount: 2000, status: "completed" }];
+      const result = calculateRefundEligibility(5000, existing, 1500);
+      expect(result.isEligible).toBe(true);
+      expect(result.priorRefundedAmount).toBe(2000);
+      expect(result.remainingRefundable).toBe(3000);
+      expect(result.newTxnStatus).toBe("partially_refunded");
+    });
+
+    it("should mark status as refunded when final partial refund completes the full transaction amount", () => {
+      const existing: RefundRecord[] = [
+        { amount: 2000, status: "completed" },
+        { amount: 1500, status: "completed" },
+      ];
+      // Remaining is 1500
+      const result = calculateRefundEligibility(5000, existing, 1500);
+      expect(result.isEligible).toBe(true);
+      expect(result.remainingRefundable).toBe(1500);
+      expect(result.newTxnStatus).toBe("refunded");
+    });
+
+    it("should reject refund request that exceeds cumulative remaining balance", () => {
+      const existing: RefundRecord[] = [
+        { amount: 3000, status: "completed" },
+        { amount: 1000, status: "pending" },
+      ];
+      // Prior refunded = 4000, remaining = 1000
+      const result = calculateRefundEligibility(5000, existing, 1500);
+      expect(result.isEligible).toBe(false);
+      expect(result.remainingRefundable).toBe(1000);
+      expect(result.error).toContain("exceeds remaining refundable balance (৳1000)");
+    });
+
+    it("should ignore failed or rejected refunds when computing cumulative prior refunded amount", () => {
+      const existing: RefundRecord[] = [
+        { amount: 2000, status: "completed" },
+        { amount: 1500, status: "failed" },
+        { amount: 500, status: "rejected" },
+      ];
+      const result = calculateRefundEligibility(5000, existing, 3000);
+      expect(result.isEligible).toBe(true);
+      expect(result.priorRefundedAmount).toBe(2000);
+      expect(result.remainingRefundable).toBe(3000);
+      expect(result.newTxnStatus).toBe("refunded");
+    });
+  });
+
+  describe("Shipping Charge Calculation Engine with Weight & COD", () => {
+    function calculateShipping(params: {
+      baseRate: number;
+      perKgRate: number;
+      weightKg: number;
+      codCharge: number;
+      isCOD: boolean;
+      freeShippingThreshold?: number | null;
+      orderValue: number;
+    }) {
+      if (params.freeShippingThreshold && params.orderValue >= params.freeShippingThreshold) {
+        const cod = params.isCOD ? Math.round(params.codCharge * 100) / 100 : 0;
+        return {
+          baseRate: 0,
+          weightCharge: 0,
+          codCharge: cod,
+          total: cod,
+          isFreeShipping: true,
+        };
+      }
+
+      const baseRate = Math.round(params.baseRate * 100) / 100;
+      const weightCharge = Math.round(params.weightKg * params.perKgRate * 100) / 100;
+      const codCharge = params.isCOD ? Math.round(params.codCharge * 100) / 100 : 0;
+      const total = Math.round((baseRate + weightCharge + codCharge) * 100) / 100;
+
+      return {
+        baseRate,
+        weightCharge,
+        codCharge,
+        total,
+        isFreeShipping: false,
+      };
+    }
+
+    it("should calculate exact shipping fee for base rate with fractional weight and COD", () => {
+      const result = calculateShipping({
+        baseRate: 60,
+        perKgRate: 20,
+        weightKg: 2.35,
+        codCharge: 10,
+        isCOD: true,
+        orderValue: 1500,
+      });
+
+      // base: 60, weight: 2.35 * 20 = 47, cod: 10 -> total: 117
+      expect(result.baseRate).toBe(60);
+      expect(result.weightCharge).toBe(47);
+      expect(result.codCharge).toBe(10);
+      expect(result.total).toBe(117);
+      expect(result.isFreeShipping).toBe(false);
+    });
+
+    it("should waive base rate and weight charge when order value meets free shipping threshold", () => {
+      const result = calculateShipping({
+        baseRate: 60,
+        perKgRate: 20,
+        weightKg: 3.5,
+        codCharge: 15,
+        isCOD: true,
+        freeShippingThreshold: 3000,
+        orderValue: 3500,
+      });
+
+      expect(result.isFreeShipping).toBe(true);
+      expect(result.baseRate).toBe(0);
+      expect(result.weightCharge).toBe(0);
+      expect(result.codCharge).toBe(15);
+      expect(result.total).toBe(15);
+    });
+  });
 });
+

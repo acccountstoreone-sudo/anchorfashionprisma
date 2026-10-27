@@ -2,32 +2,17 @@
 
 import { ADMIN_ROLES, STAFF_ROLES } from "@/lib/constants/auth";
 import { DashboardRepository } from "@/lib/repositories/bi/dashboard.repository";
-import { createClient } from "@/lib/supabase/server";
+import { getServerSession, resolveUserRole } from "@/lib/auth/server";
 
 const dashboardRepo = new DashboardRepository();
 
 async function verifyAdmin() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { user } = await getServerSession();
   if (!user) {
     throw new Error("Unauthorized");
   }
-  
-  let role = user.user_metadata?.role || user.app_metadata?.role;
-  if (!role) {
-    try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("roles(name)")
-        .eq("id", user.id)
-        .single();
-      role = (profile?.roles as any)?.name;
-    } catch {
-      role = "CUSTOMER";
-    }
-  }
-  if (!role) role = "CUSTOMER";
 
+  const role = (user.role || (await resolveUserRole(user))).toUpperCase().trim();
   if (!ADMIN_ROLES.includes(role) && !STAFF_ROLES.includes(role)) {
     throw new Error("Unauthorized: Staff or Admin access required");
   }

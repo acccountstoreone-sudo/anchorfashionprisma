@@ -44,6 +44,14 @@ export class OrderStatusService {
       return true;
     }
 
+    // Customers can ONLY initiate cancellation or refund requests
+    if (normalizedRole === "customer" || normalizedRole === "user") {
+      const customerAllowedTargets = ["cancelled", "refund_requested"];
+      if (!customerAllowedTargets.includes(newStatus)) {
+        return false;
+      }
+    }
+
     const allowed = VALID_TRANSITIONS[currentStatus];
     if (!allowed) return false;
 

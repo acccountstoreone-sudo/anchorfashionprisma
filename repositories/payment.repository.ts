@@ -239,6 +239,22 @@ export class PaymentRepository {
     return data as PaymentRefund;
   }
 
+  async getRefundsByTransactionId(
+    transactionId: string
+  ): Promise<PaymentRefund[]> {
+    const supabase = await createAdminClient();
+    const { data, error } = await supabase
+      .from("payment_refunds")
+      .select("*")
+      .eq("transaction_id", transactionId);
+
+    if (error) {
+      console.warn(`Failed to get refunds for transaction ${transactionId}: ${error.message}`);
+      return [];
+    }
+    return (data || []) as PaymentRefund[];
+  }
+
   /**
    * Audit Logs
    */

@@ -82,7 +82,11 @@ export default async function CustomerPrintInvoicePage(props: { params: Promise<
   }
 
   // Authorization: Order owner, staff/management, or matching customer email can view invoice
-  if (order.customer_id && order.customer_id !== user.id) {
+  const isOwner =
+    order.customer_id === user.id ||
+    order.profile_id === user.id ||
+    (order as any).profileId === user.id;
+  if (!isOwner) {
     let role = user.user_metadata?.role || user.app_metadata?.role;
     if (!role) {
       const { data: profile } = await adminSupabase

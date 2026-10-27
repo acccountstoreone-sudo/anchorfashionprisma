@@ -106,9 +106,12 @@ export async function updateOrderStatusAction(input: UpdateOrderStatusInput) {
 
 export async function getOrderDetailsAction(id: string) {
   // SECURITY: server actions are public endpoints; authorize every call.
-  await verifyStaff();
+  await verifyAuthenticated();
   try {
     const { user } = await getServerSession();
+    if (!user) {
+      return { success: false, error: "Unauthorized" };
+    }
     const isStaff = await isStaffOrManager(user);
 
     const details = await orderService.getOrderDetails(id, null);
@@ -117,8 +120,14 @@ export async function getOrderDetailsAction(id: string) {
     }
 
     // Authorization: If not staff/manager and order has a customer_id, ensure caller owns it
-    if (!isStaff && details.customer_id && details.customer_id !== user?.id) {
-      return { success: false, error: "Unauthorized" };
+    if (!isStaff) {
+      const isOwner =
+        details.customer_id === user.id ||
+        (details as any).profile_id === user.id ||
+        (details as any).profileId === user.id;
+      if (!isOwner) {
+        return { success: false, error: "Unauthorized" };
+      }
     }
 
     return { success: true, data: details };
@@ -137,12 +146,15 @@ export async function fetchOrdersAction(params: {
   limit?: number;
 }) {
   // SECURITY: server actions are public endpoints; authorize every call.
-  await verifyStaff();
+  await verifyAuthenticated();
   try {
     const { user } = await getServerSession();
+    if (!user) {
+      return { success: false, error: "Unauthorized" };
+    }
     const isStaff = await isStaffOrManager(user);
 
-    if (!isStaff && user) {
+    if (!isStaff) {
       params.customerId = user.id;
     }
 

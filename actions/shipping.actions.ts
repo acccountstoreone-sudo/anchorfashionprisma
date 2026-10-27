@@ -33,11 +33,9 @@ type ActionResponse<T = void> =
 // Get current admin user
 // ---------------------------------------------------------------------------
 async function getCurrentUserId(): Promise<string | undefined> {
-  const supabase = await createClient();
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { getServerSession } = await import("@/lib/auth/server");
+    const { user } = await getServerSession();
     return user?.id;
   } catch {
     return undefined;

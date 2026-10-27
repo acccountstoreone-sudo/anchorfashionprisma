@@ -16,8 +16,10 @@ export function invalidateProductCache(slug?: string) {
       revalidateTag(`product-${slug}`, "max");
     }
     // Also revalidate key path segments
-    revalidatePath("/products");
+    revalidatePath("/");
+    revalidatePath("/(shop)", "page");
     revalidatePath("/(shop)", "layout");
+    revalidatePath("/products");
   } catch {
     // Outside request context (e.g. background job / CLI script), cache revalidation is safely skipped
   }

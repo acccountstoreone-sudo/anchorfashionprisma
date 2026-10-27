@@ -18,8 +18,22 @@ export class PaymentRefundService {
       );
     }
 
-    if (request.amount > transaction.amount) {
-      throw new Error("Refund amount exceeds transaction amount");
+    const existingRefunds = await paymentRepository.getRefundsByTransactionId(
+      transaction.id
+    );
+    const priorRefundedAmount = existingRefunds
+      .filter((r) => r.status === "completed" || r.status === "pending" || r.status === "processing")
+      .reduce((sum, r) => sum + Number(r.amount || 0), 0);
+
+    const remainingRefundable = Math.max(
+      0,
+      Math.round((transaction.amount - priorRefundedAmount) * 100) / 100
+    );
+
+    if (request.amount > remainingRefundable) {
+      throw new Error(
+        `Refund amount (৳${request.amount}) exceeds remaining refundable balance (৳${remainingRefundable})`
+      );
     }
 
     const providerEntity = await paymentRepository.getProviderByCode(
@@ -45,9 +59,10 @@ export class PaymentRefundService {
         processed_at: new Date().toISOString(),
       });
 
-      // Update Transaction status based on refund amount
+      // Update Transaction status based on total cumulative refund amount
+      const totalRefundedNow = Math.round((priorRefundedAmount + request.amount) * 100) / 100;
       const newTxnStatus =
-        request.amount === transaction.amount
+        totalRefundedNow >= transaction.amount
           ? "refunded"
           : "partially_refunded";
       await paymentRepository.updateTransaction(transaction.id, {

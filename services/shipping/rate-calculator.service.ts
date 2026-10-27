@@ -80,10 +80,10 @@ export class RateCalculatorService {
       };
     }
 
-    const baseRate = rate.base_rate;
-    const weightCharge = weightKg * rate.per_kg_rate;
-    const codCharge = isCOD ? rate.cod_charge : 0;
-    const total = baseRate + weightCharge + codCharge;
+    const baseRate = Math.round(rate.base_rate * 100) / 100;
+    const weightCharge = Math.round(weightKg * rate.per_kg_rate * 100) / 100;
+    const codCharge = isCOD ? Math.round(rate.cod_charge * 100) / 100 : 0;
+    const total = Math.round((baseRate + weightCharge + codCharge) * 100) / 100;
 
     return {
       baseRate,

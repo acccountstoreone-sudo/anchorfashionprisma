@@ -26,11 +26,9 @@ type ActionResponse<T = void> =
   | { success: false; error: string };
 
 async function getCurrentUser() {
-  const supabase = await createClient();
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { getServerSession } = await import("@/lib/auth/server");
+    const { user } = await getServerSession();
     return user;
   } catch {
     return null;

@@ -102,33 +102,167 @@ export class CustomerRepository {
 
   async getAddresses(userId: string): Promise<CustomerAddress[]> {
     const addresses = await prisma.customerAddress.findMany({
-      where: { customerId: userId },
+      where: {
+        OR: [{ customerId: userId }, { profileId: userId }],
+      },
       orderBy: { isDefault: "desc" },
     });
-    return addresses as unknown as CustomerAddress[];
+    return addresses.map((addr) => {
+      const parts = (addr.name || "").trim().split(" ");
+      const firstName = parts[0] || "";
+      const lastName = parts.slice(1).join(" ") || "";
+      const lines = (addr.addressLine || "").split(", ");
+      const line1 = lines[0] || addr.addressLine || "";
+      const line2 = lines.slice(1).join(", ") || null;
+
+      return {
+        id: addr.id,
+        customer_id: addr.customerId || addr.profileId || userId,
+        title: addr.title || "Home",
+        first_name: firstName,
+        last_name: lastName,
+        phone: addr.phone || "",
+        address_line_1: line1,
+        address_line_2: line2,
+        city: addr.city || "",
+        state: addr.state || null,
+        zip: addr.postalCode || "",
+        country: addr.country || "Bangladesh",
+        is_default_shipping: !!addr.isDefault,
+        is_default_billing: !!addr.isDefault,
+        created_at: addr.createdAt ? addr.createdAt.toISOString() : new Date().toISOString(),
+        updated_at: addr.updatedAt ? addr.updatedAt.toISOString() : new Date().toISOString(),
+      } as CustomerAddress;
+    });
   }
 
   async createAddress(address: any): Promise<CustomerAddress> {
+    const rawUserId = address.customer_id || address.customerId || address.profileId;
+    let customerId: string | null = null;
+    let profileId: string | null = null;
+
+    if (rawUserId) {
+      const profile = await prisma.profile.findUnique({ where: { id: rawUserId } });
+      if (profile) {
+        profileId = profile.id;
+        const customer = await prisma.customer.findFirst({ where: { profileId: profile.id } });
+        if (customer) customerId = customer.id;
+      } else {
+        const customer = await prisma.customer.findUnique({ where: { id: rawUserId } });
+        if (customer) {
+          customerId = customer.id;
+          profileId = customer.profileId;
+        }
+      }
+    }
+
+    const fullName = `${address.first_name || ""} ${address.last_name || ""}`.trim() || address.name || "Customer";
+    const addressLine = [address.address_line_1, address.address_line_2].filter(Boolean).join(", ") || address.addressLine || "Address";
+    const isDefault = address.is_default_shipping || address.is_default_billing || address.isDefault || false;
+
+    if (isDefault && (customerId || profileId)) {
+      await prisma.customerAddress.updateMany({
+        where: {
+          OR: [
+            ...(customerId ? [{ customerId }] : []),
+            ...(profileId ? [{ profileId }] : []),
+          ],
+        },
+        data: { isDefault: false },
+      });
+    }
+
     const newAddress = await prisma.customerAddress.create({
       data: {
-        ...address,
-        customerId: address.customer_id,
-        profileId: address.customer_id, // assuming 1:1 mapping
+        customerId,
+        profileId,
+        title: address.title || "Home",
+        name: fullName,
+        phone: address.phone || "",
+        addressLine,
+        city: address.city || "Dhaka",
+        state: address.state || null,
+        postalCode: address.zip || address.postalCode || null,
+        country: address.country || "Bangladesh",
+        isDefault: !!isDefault,
       },
     });
-    return newAddress as unknown as CustomerAddress;
+
+    const parts = (newAddress.name || "").trim().split(" ");
+    return {
+      id: newAddress.id,
+      customer_id: newAddress.customerId || newAddress.profileId || rawUserId || "",
+      title: newAddress.title,
+      first_name: parts[0] || "",
+      last_name: parts.slice(1).join(" ") || "",
+      phone: newAddress.phone,
+      address_line_1: newAddress.addressLine,
+      address_line_2: null,
+      city: newAddress.city,
+      state: newAddress.state,
+      zip: newAddress.postalCode || "",
+      country: newAddress.country,
+      is_default_shipping: !!newAddress.isDefault,
+      is_default_billing: !!newAddress.isDefault,
+      created_at: newAddress.createdAt.toISOString(),
+      updated_at: newAddress.updatedAt.toISOString(),
+    } as CustomerAddress;
   }
 
   async updateAddress(id: string, userId: string, updates: any): Promise<CustomerAddress> {
+    const data: any = {};
+    if (updates.first_name !== undefined || updates.last_name !== undefined) {
+      data.name = `${updates.first_name || ""} ${updates.last_name || ""}`.trim();
+    }
+    if (updates.name !== undefined) data.name = updates.name;
+    if (updates.phone !== undefined) data.phone = updates.phone;
+    if (updates.address_line_1 !== undefined) {
+      data.addressLine = [updates.address_line_1, updates.address_line_2].filter(Boolean).join(", ");
+    } else if (updates.addressLine !== undefined) {
+      data.addressLine = updates.addressLine;
+    }
+    if (updates.city !== undefined) data.city = updates.city;
+    if (updates.state !== undefined) data.state = updates.state;
+    if (updates.zip !== undefined) data.postalCode = updates.zip;
+    if (updates.postalCode !== undefined) data.postalCode = updates.postalCode;
+    if (updates.country !== undefined) data.country = updates.country;
+    if (updates.is_default_shipping !== undefined || updates.is_default_billing !== undefined || updates.isDefault !== undefined) {
+      data.isDefault = Boolean(updates.is_default_shipping || updates.is_default_billing || updates.isDefault);
+    }
+
     const updated = await prisma.customerAddress.update({
       where: { id },
-      data: updates,
+      data,
     });
-    return updated as unknown as CustomerAddress;
+
+    const parts = (updated.name || "").trim().split(" ");
+    return {
+      id: updated.id,
+      customer_id: updated.customerId || updated.profileId || userId,
+      title: updated.title,
+      first_name: parts[0] || "",
+      last_name: parts.slice(1).join(" ") || "",
+      phone: updated.phone,
+      address_line_1: updated.addressLine,
+      address_line_2: null,
+      city: updated.city,
+      state: updated.state,
+      zip: updated.postalCode || "",
+      country: updated.country,
+      is_default_shipping: !!updated.isDefault,
+      is_default_billing: !!updated.isDefault,
+      created_at: updated.createdAt.toISOString(),
+      updated_at: updated.updatedAt.toISOString(),
+    } as CustomerAddress;
   }
 
   async deleteAddress(id: string, userId: string): Promise<void> {
-    await prisma.customerAddress.delete({ where: { id } });
+    await prisma.customerAddress.deleteMany({
+      where: {
+        id,
+        OR: [{ customerId: userId }, { profileId: userId }],
+      },
+    });
   }
 
   async getNotifications(userId: string): Promise<CustomerNotification[]> {

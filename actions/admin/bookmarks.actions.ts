@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import { getServerSession } from "@/lib/auth/server";
 import { revalidatePath } from "next/cache";
 
 export interface UserBookmarkItem {
@@ -20,13 +20,9 @@ export async function getUserBookmarksAction(): Promise<{
   error?: string;
 }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { user } = await getServerSession();
 
-    if (userError || !user) {
+    if (!user) {
       return { data: [] };
     }
 
@@ -59,13 +55,9 @@ export async function addBookmarkAction(
   icon?: string
 ): Promise<{ success: boolean; data?: UserBookmarkItem; error?: string }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { user } = await getServerSession();
 
-    if (userError || !user) {
+    if (!user) {
       return { success: true };
     }
 
@@ -112,13 +104,9 @@ export async function removeBookmarkAction(
   identifier: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { user } = await getServerSession();
 
-    if (userError || !user) {
+    if (!user) {
       return { success: true };
     }
 

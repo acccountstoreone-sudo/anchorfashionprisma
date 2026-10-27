@@ -484,9 +484,7 @@ export async function createReviewAction(data: {
         .eq("id", userId)
         .maybeSingle();
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { user } = await getServerSession();
 
       await adminClient.from("customer_profiles").upsert({
         id: userId,

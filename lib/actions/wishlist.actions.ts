@@ -1,14 +1,11 @@
 "use server";
 
 import { WishlistService } from "../services/wishlist.service";
-import { createClient } from "../supabase/server";
+import { getServerSession } from "@/lib/auth/server";
 import { revalidatePath } from "next/cache";
 
 async function getUserId() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getServerSession();
   if (!user) throw new Error("Unauthorized");
   return user.id;
 }

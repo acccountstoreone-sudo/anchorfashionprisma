@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { MANAGER_ROLES, MARKETING_ROLES } from "@/lib/constants/auth";
 
 const sidebarNavItems = [
   {
@@ -80,9 +81,27 @@ const sidebarNavItems = [
   },
 ];
 
-export function ManagerSidebar() {
+interface ManagerSidebarProps {
+  role?: string;
+}
+
+export function ManagerSidebar({ role }: ManagerSidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const normalizedRole = String(role || "STAFF").toUpperCase().trim();
+  const isManager = (MANAGER_ROLES as readonly string[]).includes(normalizedRole);
+  const isMarketing = (MARKETING_ROLES as readonly string[]).includes(normalizedRole);
+
+  const filteredItems = sidebarNavItems.filter((item) => {
+    if (["/manager/reports", "/manager/settings"].includes(item.href)) {
+      return isManager;
+    }
+    if (["/manager/marketing", "/manager/cms"].includes(item.href)) {
+      return isManager || isMarketing;
+    }
+    return true; // Dashboard, Orders, Products, Inventory, Customers, Support, Tasks are accessible to all staff
+  });
 
   return (
     <div className={cn(
@@ -98,7 +117,7 @@ export function ManagerSidebar() {
             <Package className="h-6 w-6 text-primary" />
             {!isCollapsed && (
               <span className="text-lg font-bold tracking-tight">
-                Anchor Manager
+                Anchor Operations
               </span>
             )}
           </Link>
@@ -120,7 +139,7 @@ export function ManagerSidebar() {
             ) : (
               <div className="mb-2 mt-2 border-t border-muted-foreground/20 w-6 mx-auto" />
             )}
-            {sidebarNavItems.map((item, index) => {
+            {filteredItems.map((item, index) => {
               const Icon = item.icon;
               return (
                 <Link
