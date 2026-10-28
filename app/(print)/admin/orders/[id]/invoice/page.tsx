@@ -1,4 +1,3 @@
-import React from "react";
 import { getOrderDetailsAction } from "@/app/actions/oms/order.actions";
 import { notFound, redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";

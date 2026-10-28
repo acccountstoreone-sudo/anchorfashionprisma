@@ -1,5 +1,5 @@
 import { CartService as LibCartService } from "@/lib/services/cart.service";
-import { Cart, CartItem } from "@/types/checkout.types";
+import { Cart } from "@/types/checkout.types";
 
 export class CartService {
   async getCart(cartId: string): Promise<Cart | null> {

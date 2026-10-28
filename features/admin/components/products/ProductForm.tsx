@@ -24,18 +24,12 @@ import {
   TrendingUp,
   Barcode as BarcodeIcon,
   Calculator,
-  ArrowRight,
-  ArrowUpRight,
   ArrowLeft,
   SlidersHorizontal,
-  RefreshCw,
-  Check,
   AlertCircle,
-  AlertTriangle,
   FileText,
   FolderTree,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { InventoryPickerModal } from "@/components/admin/inventory/InventoryPickerModal";

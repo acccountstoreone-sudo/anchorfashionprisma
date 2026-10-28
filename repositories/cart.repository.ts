@@ -1,5 +1,5 @@
 import { CartRepository as LibCartRepository } from "@/lib/repositories/cart.repository";
-import { Cart, CartItem } from "@/types/checkout.types";
+import { Cart } from "@/types/checkout.types";
 
 export class CartRepository {
   async getCartById(cartId: string): Promise<Cart | null> {

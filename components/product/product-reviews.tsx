@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Star, CheckCircle2, ThumbsUp, ImageIcon, X, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { Star, CheckCircle2, ThumbsUp, ImageIcon, X } from "lucide-react";
 import { jost } from "@/lib/fonts";
 import { WriteReviewButton } from "@/features/customer/WriteReviewButton";
 import { Review } from "@/types/catalog.types";

@@ -2,13 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,27 +23,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Building2,
   Package,
-  Boxes,
-  ShieldCheck,
-  AlertTriangle,
-  XCircle,
-  Coins,
   MapPin,
   User,
   Phone,
   Mail,
   Calendar,
-  Layers,
   ArrowRightLeft,
   PackagePlus,
   PackageMinus,
   Scale,
-  Settings,
   History,
   FolderTree,
-  Eye,
   ExternalLink,
 } from "lucide-react";
 import { Warehouse, WarehouseZone } from "@/types/inventory.types";
@@ -73,8 +60,6 @@ export function WarehouseDetailClient({
   movements,
   allWarehouses,
 }: WarehouseDetailClientProps) {
-  const router = useRouter();
-
   // Dialog states
   const [stockInOpen, setStockInOpen] = useState(false);
   const [stockOutOpen, setStockOutOpen] = useState(false);

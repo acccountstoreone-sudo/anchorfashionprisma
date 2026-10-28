@@ -13,12 +13,7 @@ import {
   invalidateCollectionCache,
 } from "@/lib/cache/invalidate-catalog";
 import { LoyaltyService } from "@/services/loyalty.service";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-// ============================================================================
-// SCHEMAS
-// ============================================================================
 
 const IdSchema = z.object({ id: z.string().uuid() });
 

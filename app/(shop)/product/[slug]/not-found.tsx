@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Sparkles, Compass, ShoppingBag } from "lucide-react";
+import { Sparkles, Compass, ShoppingBag } from "lucide-react";
 import { jost } from "@/lib/fonts";
 
 export default function ProductNotFound() {

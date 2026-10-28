@@ -1,9 +1,5 @@
 "use server";
 
-// ============================================================================
-// Shipping Server Actions
-// ============================================================================
-
 import { revalidatePath } from "next/cache";
 import { ShippingService } from "@/services/shipping/shipping.service";
 import { LabelService } from "@/services/shipping/label.service";
@@ -20,7 +16,6 @@ import {
   AssignCourierData,
   CancelShipmentData,
 } from "@/schemas/shipping.schema";
-import { createClient } from "@/lib/supabase/server-client";
 import { verifyStaff } from "@/lib/security/roles";
 
 // ---------------------------------------------------------------------------

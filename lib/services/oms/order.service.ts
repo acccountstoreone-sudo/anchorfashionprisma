@@ -1,7 +1,7 @@
 import { OrderRepository } from "@/lib/repositories/oms/order.repository";
 import { OrderItemsRepository } from "@/lib/repositories/oms/order-items.repository";
 import { OrderStatusService } from "./order-status.service";
-import { Order, OrderStatus, OrderItem } from "@/types/oms";
+import { Order, OrderStatus } from "@/types/oms";
 import { CreateOrderInput } from "@/lib/validations/oms";
 
 export class OrderService {
@@ -10,8 +10,6 @@ export class OrderService {
   private statusService = new OrderStatusService();
 
   async createOrder(data: CreateOrderInput): Promise<Order> {
-    // Generate a secure, sequential order number in a real app,
-    // for now using a timestamp-based mock
     const orderNumber = `ORD-${Date.now()}`;
 
     const orderData: Partial<Order> = {

@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
+import { useState } from 'react';
 import { Heart, ShoppingBag, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

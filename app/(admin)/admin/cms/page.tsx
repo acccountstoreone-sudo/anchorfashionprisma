@@ -11,11 +11,9 @@ import { Button } from "@/components/ui/button";
 import {
   FileText,
   Image as ImageIcon,
-  Settings,
   PenTool,
   Globe,
   Layout,
-  Activity,
   HelpCircle,
   Sparkles,
   Layers,

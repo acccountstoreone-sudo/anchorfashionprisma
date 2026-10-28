@@ -3,6 +3,7 @@ import { InventoryService } from "../services/inventory.service";
 import { ReturnsService } from "../services/shipping/returns.service";
 import { AnalyticsRepository } from "../repositories/analytics.repository";
 
+
 // Test run constants
 const TEST_RUN_ID = `AUDIT_${Date.now()}`;
 const TEST_SKU_BASE = `PANJABI-${TEST_RUN_ID}`;
@@ -33,7 +34,6 @@ async function runCompleteEcommerceExpertAudit() {
 
   const inventoryService = new InventoryService();
   const returnsService = new ReturnsService();
-  const analyticsRepo = new AnalyticsRepository();
 
   // Test entities to clean up
   let createdCategoryId: string | null = null;

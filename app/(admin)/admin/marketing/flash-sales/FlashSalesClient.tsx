@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useState } from "react";
 import { FlashSaleRecord } from "@/lib/services/marketing/flash-sale.service";
 
 interface Props {
@@ -8,7 +7,7 @@ interface Props {
 }
 
 export function FlashSalesClient({ initialFlashSales }: Props) {
-  const [sales, setSales] = useState<FlashSaleRecord[]>(initialFlashSales);
+  const sales = initialFlashSales;
 
   return (
     <div className="p-6">

@@ -8,10 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createInventoryMasterIntakeAction, generateProductCodeAction } from "@/lib/actions/admin/inventory-master.actions";
-import { generateEAN13Sync } from "@/lib/utils/barcode";
 import { PrintBarcodeModal, BarcodeLabelData } from "@/components/admin/inventory/PrintBarcodeModal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -19,21 +17,15 @@ import {
   PackagePlus,
   Boxes,
   Sparkles,
-  Barcode as BarcodeIcon,
-  Calculator,
   Printer,
   CheckCircle2,
-  AlertCircle,
   Plus,
-  X,
   Loader2,
   RefreshCw,
   Percent,
   TrendingUp,
   Tag,
   Wand2,
-  Layers,
-  ArrowUpRight,
   ArrowRight,
 } from "lucide-react";
 

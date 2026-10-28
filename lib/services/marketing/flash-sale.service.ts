@@ -68,7 +68,7 @@ export class FlashSaleService {
   ): Promise<{ success: boolean; error?: string }> {
     const supabase = this.getAdminClient();
     
-    const { data, error } = await supabase.rpc("consume_flash_sale_stock", {
+    const { error } = await supabase.rpc("consume_flash_sale_stock", {
       p_flash_sale_id: flashSaleId,
       p_quantity: quantity,
     });
@@ -91,7 +91,7 @@ export class FlashSaleService {
   ): Promise<{ success: boolean; error?: string }> {
     const supabase = this.getAdminClient();
     
-    const { data, error } = await supabase.rpc("release_flash_sale_stock", {
+    const { error } = await supabase.rpc("release_flash_sale_stock", {
       p_flash_sale_id: flashSaleId,
       p_quantity: quantity,
     });

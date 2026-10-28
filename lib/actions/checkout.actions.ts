@@ -9,7 +9,7 @@ import {
   checkoutFormSchema,
 } from "@/schemas/checkout.schema";
 import { CheckoutStep } from "@/types/checkout.types";
-import { CodRiskService, CodRiskEvaluation } from "../services/fraud/cod-risk.service";
+import { CodRiskService } from "../services/fraud/cod-risk.service";
 import { CodOtpService } from "../services/fraud/cod-otp.service";
 import { prisma } from "@/lib/prisma";
 
@@ -27,7 +27,7 @@ async function getSessionIdentifiers() {
 
 export async function fetchCheckoutSessionAction(cartId: string) {
   try {
-    const { userId, sessionId } = await getSessionIdentifiers();
+    const { userId } = await getSessionIdentifiers();
     const guestEmail = null;
 
     const session = await CheckoutService.getOrInitializeSession(

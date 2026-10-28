@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -16,13 +16,9 @@ import {
   Zap,
   Mail,
   ShoppingCart,
-  Sparkles,
   ArrowRight,
   TrendingUp,
-  Clock,
   Plus,
-  Play,
-  Pause,
 } from "lucide-react";
 import { toast } from "sonner";
 

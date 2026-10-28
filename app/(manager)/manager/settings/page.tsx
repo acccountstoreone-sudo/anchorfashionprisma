@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Store, Globe, Bell, Shield, ExternalLink, Package, ShoppingCart, KeyRound } from "lucide-react";
+import { Store, Globe, Shield, Package, ShoppingCart, KeyRound } from "lucide-react";
 import { ChangePassword } from "@/components/customer/ChangePassword";
 
 export const metadata: Metadata = {

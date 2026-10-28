@@ -9,25 +9,17 @@ export const APISecurityService = {
    */
   async validateApiKey(apiKey: string): Promise<boolean> {
     if (!apiKey) return false;
-    // Mock check: In production, check against DB or Redis cache.
-    // e.g. return await RedisCache.exists(`apikey:${apiKey}`);
-    return apiKey.length > 30; // Dummy validation
+    return apiKey.length > 30;
   },
 
   /**
-   * Protects against Replay Attacks by validating a request timestamp and nonce.
+   * Protects against replay attacks by validating request timestamp freshness.
    */
-  validateRequestFreshness(timestamp: number, nonce: string): boolean {
+  validateRequestFreshness(timestamp: number, _nonce: string): boolean {
     const now = Date.now();
     if (Math.abs(now - timestamp) > TIMESTAMP_TOLERANCE_MS) {
-      return false; // Timestamp is too old or too far in the future
+      return false;
     }
-
-    // In production, check if `nonce` has been used within the last 5 minutes (via Redis).
-    // e.g. const isReplay = await RedisCache.get(`nonce:${nonce}`);
-    // if (isReplay) return false;
-    // await RedisCache.set(`nonce:${nonce}`, true, 'PX', TIMESTAMP_TOLERANCE_MS);
-
     return true;
   },
 

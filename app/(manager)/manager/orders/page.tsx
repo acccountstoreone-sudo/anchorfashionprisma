@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, Filter, Search } from "lucide-react";
+import { Filter, Search } from "lucide-react";
 import Link from "next/link";
 import { useOrders } from "@/hooks/oms/use-orders";
 import { OrderStatus } from "@/types/oms";

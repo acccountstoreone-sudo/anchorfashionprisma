@@ -38,7 +38,6 @@ import {
   ShieldCheck,
   Loader2,
   MessageSquare,
-  ThumbsUp,
   FilterX,
 } from "lucide-react";
 import {
@@ -113,7 +112,6 @@ export function ReviewsTable({ initialReviews }: ReviewsTableProps) {
   // Toggle approval from table row directly
   const handleToggleApproval = async (review: Review) => {
     setLoadingRowId(review.id);
-    const nextStatus = !review.is_approved;
 
     try {
       if (review.is_approved) {

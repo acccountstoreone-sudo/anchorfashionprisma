@@ -2,7 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin-client";
 import { prisma } from "@/lib/prisma";
 import { OrderRepository } from "@/lib/repositories/oms/order.repository";
 import { InventoryService, ReservationItem, InventoryError } from "@/services/inventory.service";
-import { CodRiskService } from "@/lib/services/fraud/cod-risk.service";
+
 import { OrderStatus, Order, OrderItem } from "@/types/oms";
 
 export interface PosOrderPayload {
@@ -367,25 +367,9 @@ export class PosService {
     const taxTotal = subtotal * 0.15;
     const grandTotal = subtotal + taxTotal + shippingFee - manualDiscount;
 
-    // 4. COD Fraud Shield Evaluation
-    let verificationStatus = "EXEMPT";
-    let riskLevel = "LOW";
-    let riskScore = 0;
-    let riskReasons: string[] = [];
-
+    // 4. COD Evaluation (POS orders bypass OTP verification)
     if (payload.paymentMethod === "COD") {
-      const riskEvaluation = await CodRiskService.evaluateRisk({
-        customerId: payload.customerId || null,
-        email: "",
-        phone: "",
-        totalAmount: grandTotal,
-        shippingAddress: null as any
-      }).catch(() => ({ riskLevel: "LOW", riskScore: 0, reasons: [] }));
-      
-      riskLevel = riskEvaluation.riskLevel;
-      riskScore = riskEvaluation.riskScore;
-      riskReasons = riskEvaluation.reasons || [];
-      verificationStatus = "POS_OVERRIDE"; // Manager created orders bypass OTP inherently
+      // In-person/manager POS orders bypass OTP inherently
     }
 
     // 5. Create Order

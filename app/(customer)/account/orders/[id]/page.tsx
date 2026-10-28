@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { OrderRepository } from "@/lib/repositories/oms/order.repository";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,10 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
-  Package,
   Truck,
-  Home,
-  XCircle,
   RefreshCcw,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";

@@ -354,7 +354,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
             <button
               onClick={(e) => handleQuickAdd(e)}
               disabled={isAddingToCart}
-              className="md:hidden flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-white shadow transition-transform active:scale-90"
+              className="md:hidden flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-white shadow-sm transition-transform active:scale-90"
               aria-label="Add to cart"
             >
               {isAddingToCart ? (

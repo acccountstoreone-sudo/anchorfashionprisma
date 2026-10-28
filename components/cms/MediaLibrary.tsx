@@ -2,7 +2,7 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Image as ImageIcon, Upload, Folder } from "lucide-react";
+import { Image as ImageIcon, Upload } from "lucide-react";
 
 export function MediaLibrary() {
   const mockMedia = [

@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCartStore } from "@/stores/use-cart-store";
-import { useSession } from "@/hooks/use-session";
-import { authClient } from "@/lib/auth/client";
+
 import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -39,7 +38,6 @@ export function FloatingPurchaseCard({
   const [isVisible, setIsVisible] = useState(false);
   const [isBuyNowLoading, setIsBuyNowLoading] = useState(false);
   const { addItem, isLoading } = useCartStore();
-  const { user } = useSession();
   const router = useRouter();
 
   useEffect(() => {

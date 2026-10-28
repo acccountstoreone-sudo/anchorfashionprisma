@@ -1,11 +1,10 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { StoreHeader } from "@/components/layout/store-header";
 import { StoreFooter } from "@/components/layout/store-footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Sparkles, ShieldCheck, Heart, Award, Gem, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Sparkles, ShieldCheck, Award, Gem } from "lucide-react";
 import { jost } from "@/lib/fonts";
 
 export const metadata: Metadata = {

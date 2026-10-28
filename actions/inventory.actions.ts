@@ -1,7 +1,7 @@
 "use server";
 
 import { InventoryService } from "@/services/inventory.service";
-import { InventoryLevel, InventoryMovement } from "@/types/inventory.types";
+import { InventoryLevel } from "@/types/inventory.types";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { revalidatePath } from "next/cache";
 import { verifyStaff } from "@/lib/security/roles";
@@ -593,12 +593,6 @@ export async function recordManualMovementAction(data: {
         });
       if (insertErr) throw insertErr;
     }
-
-    const standardType =
-      data.movementType === "IN" ? "RECEIVE" :
-      data.movementType === "OUT" ? "DAMAGE" :
-      data.movementType === "ADJUSTMENT" ? "ADJUST" :
-      data.movementType;
 
     try {
       await supabase.from("stock_movements").insert({

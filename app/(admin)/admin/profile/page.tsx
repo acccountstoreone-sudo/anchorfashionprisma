@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import {
-  UserCheck,
   Mail,
   Shield,
   Calendar,

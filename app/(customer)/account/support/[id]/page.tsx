@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Tag, Calendar, AlertCircle } from "lucide-react";
+import { ArrowLeft, Tag, Calendar } from "lucide-react";
 import { SupportTicketThread } from "@/features/customer/SupportTicketThread";
 
 export const metadata: Metadata = {
@@ -33,7 +33,6 @@ export default async function SupportTicketDetailsPage({
   }
 
   const ticket = res.data;
-  const statusUpper = (ticket.status || "OPEN").toUpperCase();
 
   const getStatusBadge = (status: string) => {
     switch (status.toUpperCase()) {

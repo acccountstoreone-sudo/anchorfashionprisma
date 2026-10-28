@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { type ComponentProps } from "react";
+
 
 // Import AdminSidebar dynamically with SSR disabled
 const DynamicAdminSidebar = dynamic(

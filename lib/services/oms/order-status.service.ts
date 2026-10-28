@@ -1,4 +1,4 @@
-import { OrderStatus, Order } from "@/types/oms";
+import { OrderStatus } from "@/types/oms";
 
 // Define valid transitions as a state machine
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {

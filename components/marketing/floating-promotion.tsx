@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Gift, Check, Copy } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 
 interface PromotionData {
   id: string;
@@ -50,8 +50,8 @@ export function FloatingPromotion() {
   if (!isVisible || isDismissed || !promotion) return null;
 
   return (
-    <div className="fixed bottom-24 md:bottom-4 right-4 z-40 animate-in slide-in-from-bottom-5 fade-in duration-500">
-      <div className="relative bg-white shadow-2xl rounded-xl border border-gray-100 p-4 pr-10 w-[300px]">
+    <div className="fixed bottom-24 md:bottom-4 right-4 z-40 animate-in slide-in-from-bottom-5 fade-in duration-500 max-w-[calc(100vw-2rem)]">
+      <div className="relative bg-white shadow-2xl rounded-xl border border-gray-100 p-4 pr-10 w-full sm:w-[300px]">
         <button
           onClick={() => {
             setIsVisible(false);

@@ -167,7 +167,7 @@ export class CouponService {
     try {
       const supabase = this.getAdminClient();
       
-      const { data, error } = await supabase.rpc("consume_coupon_atomic", {
+      const { error } = await supabase.rpc("consume_coupon_atomic", {
         p_coupon_code: code.trim(),
         p_customer_id: customerId || null,
         p_order_id: orderId,
@@ -196,6 +196,10 @@ export class CouponService {
       const { error } = await supabase.rpc("release_coupon_atomic", {
         p_order_id: orderId
       });
+
+      if (error) {
+        console.warn("Failed to release coupon atomically:", error);
+      }
 
       return true;
     } catch (err: any) {

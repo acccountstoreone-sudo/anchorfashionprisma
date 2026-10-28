@@ -18,7 +18,6 @@ export default async function VerifyEmailPage({
 }: VerifyEmailPageProps) {
   const params = await searchParams;
   const error = params.error;
-  const code = params.code;
 
   return (
     <div className="flex flex-col items-center justify-center space-y-4 text-center">

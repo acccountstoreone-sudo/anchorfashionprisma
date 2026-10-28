@@ -8,7 +8,6 @@ import {
   Heart,
   User,
   Menu,
-  ChevronDown,
   Phone,
 } from "lucide-react";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";

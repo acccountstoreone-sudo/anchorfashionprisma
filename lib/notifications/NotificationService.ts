@@ -1,5 +1,4 @@
 import { EmailProvider } from "./EmailProvider";
-import { PushProvider } from "./PushProvider";
 import { TemplateEngine } from "./TemplateEngine";
 import prisma from "@/lib/prisma";
 
@@ -29,7 +28,6 @@ export class NotificationService {
       };
 
       const isEmailEnabled = true;
-      const isPushEnabled = true;
 
       const channels: string[] = template.channels || [];
       const subject = TemplateEngine.hydrate(

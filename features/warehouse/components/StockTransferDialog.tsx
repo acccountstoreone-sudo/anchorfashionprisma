@@ -21,10 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowRightLeft, Loader2, AlertCircle } from "lucide-react";
+import { ArrowRightLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Warehouse, WarehouseZone, WarehouseBin } from "@/types/inventory.types";
-import { stockTransferAction, getWarehouseZones, getZoneBins, getWarehouseInventoryAction } from "@/actions/warehouse.actions";
+import { Warehouse, WarehouseZone } from "@/types/inventory.types";
+import { stockTransferAction, getWarehouseZones, getWarehouseInventoryAction } from "@/actions/warehouse.actions";
 
 interface StockTransferDialogProps {
   open: boolean;

@@ -1,4 +1,3 @@
-import React from "react";
 import { Metadata } from "next";
 import { FlashSaleService } from "@/lib/services/marketing/flash-sale.service";
 import { ProductRepository } from "@/lib/repositories/catalog/product.repository";
@@ -17,9 +16,6 @@ export const dynamic = "force-dynamic";
 
 export default async function FlashDealsPage() {
   const flashSales = await FlashSaleService.getActiveFlashSales();
-
-  // Fetch product details for these flash sales
-  const productIds = flashSales.map((fs) => fs.product_id);
   
   // We need to fetch the actual products. 
   // For simplicity, we'll fetch them individually or use a custom query.

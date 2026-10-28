@@ -1,7 +1,6 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { LoyaltyRepository } from "@/repositories/loyalty.repository";
 import { LoyaltyAccount, LoyaltyTransaction } from "@/types/customer.types";
-import { WalletService } from "@/services/wallet.service";
 
 export interface RewardCatalogItem {
   id: string;

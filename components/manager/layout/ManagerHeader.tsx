@@ -44,19 +44,7 @@ import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
-const mobileNavItems = [
-  { title: "Dashboard", href: "/manager", icon: LayoutDashboard },
-  { title: "Orders", href: "/manager/orders", icon: ShoppingCart },
-  { title: "Products", href: "/manager/products", icon: Package },
-  { title: "Inventory", href: "/manager/inventory", icon: Boxes },
-  { title: "Customers", href: "/manager/customers", icon: Users },
-  { title: "Marketing", href: "/manager/marketing", icon: Megaphone },
-  { title: "CMS", href: "/manager/cms", icon: LayoutTemplate },
-  { title: "Support", href: "/manager/support", icon: LifeBuoy },
-  { title: "Reports", href: "/manager/reports", icon: BarChart3 },
-  { title: "Tasks", href: "/manager/tasks", icon: CheckSquare },
-  { title: "Settings", href: "/manager/settings", icon: Settings },
-];
+
 
 export function ManagerHeader({ user }: { user?: any }) {
   const router = useRouter();

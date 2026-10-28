@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -35,8 +35,6 @@ import {
   X,
   ChevronRight,
   Plus,
-  LayoutGrid,
-  List,
 } from "lucide-react";
 
 export interface CategoryOption {

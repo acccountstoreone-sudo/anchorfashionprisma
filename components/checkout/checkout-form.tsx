@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -29,8 +29,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ArrowRight, ShieldCheck, Lock, Smartphone, Landmark, Banknote, CreditCard } from "lucide-react";
-import Image from "next/image";
+import { Loader2, ArrowRight, Lock, Landmark, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { AllPaymentConfigs } from "@/lib/actions/payment.actions";
 import { ManualPaymentFields } from "@/components/checkout/manual-payment-fields";
@@ -110,9 +109,7 @@ export function CheckoutForm({
     },
   });
 
-  const billingSameAsShipping = form.watch(
-    "payment.billing_address_same_as_shipping"
-  );
+
   const activeStep = currentStep === "COMPLETED" ? "REVIEW" : currentStep;
 
   // Sync form with external store when loaded/hydrated
@@ -468,7 +465,7 @@ export function CheckoutForm({
             </div>
           </div>
 
-          <div className="mt-4 p-4 border border-[#222] rounded-lg bg-[#111]">
+          <div className="mt-4 p-4 border border-zinc-200 dark:border-zinc-800 rounded-lg bg-zinc-50 dark:bg-zinc-900/60">
             <FormField
               control={form.control}
               name="information.create_account"
@@ -481,10 +478,10 @@ export function CheckoutForm({
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel className="cursor-pointer font-medium">
+                    <FormLabel className="cursor-pointer font-medium text-foreground">
                       Save details & create an account
                     </FormLabel>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Check this box to easily track your order and checkout faster next time.
                     </p>
                   </div>

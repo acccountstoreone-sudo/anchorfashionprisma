@@ -9,17 +9,10 @@ import {
   Printer,
   Sparkles,
   Search,
-  Filter,
   Download,
   Boxes,
   TrendingUp,
-  Percent,
-  DollarSign,
   Building2,
-  CheckCircle2,
-  AlertCircle,
-  Eye,
-  RefreshCw,
   ExternalLink,
   ChevronRight,
   ChevronDown,
@@ -28,12 +21,11 @@ import {
   Coins,
   Tag,
   BarChart3,
-  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
 import { createPost, getCategories } from "@/actions/blog.actions";
 import { uploadImageAction } from "@/lib/actions/upload.actions";
 import { BlogCategory } from "@/types/blog.types";
-import { ArrowLeft, Save, Upload, Image as ImageIcon, Loader2, X } from "lucide-react";
+import { ArrowLeft, Save, Image as ImageIcon, Loader2, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";

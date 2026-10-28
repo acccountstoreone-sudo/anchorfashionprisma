@@ -1,7 +1,6 @@
 import { PaymentProviderFactory } from "./payment.factory";
 import { PaymentRepository } from "@/repositories/payment.repository";
 import { PaymentProviderRepository } from "@/repositories/payment-provider.repository";
-import { PaymentProviderCode, PaymentSession } from "@/types/payment.types";
 import { InitPaymentInput, RefundPaymentInput } from "@/schemas/payment.schema";
 
 export class PaymentService {
@@ -144,7 +143,7 @@ export class PaymentService {
     );
 
     // Create Refund Record
-    const refundRecord = await this.paymentRepo.createRefund({
+    await this.paymentRepo.createRefund({
       transaction_id: transaction.id,
       amount: input.amount,
       reason: input.reason,

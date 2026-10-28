@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { CheckoutFormValues } from "@/schemas/checkout.schema";
 import { PaymentGatewayConfig } from "@/lib/actions/payment.actions";
@@ -12,7 +12,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Copy, Check, Info, Landmark, Smartphone, ShieldAlert, ShieldCheck, CreditCard, Lock } from "lucide-react";
 import { toast } from "sonner";
 

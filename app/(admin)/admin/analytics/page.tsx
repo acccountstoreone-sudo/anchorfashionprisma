@@ -2,7 +2,6 @@ import { Metadata } from "next";
 import Link from "next/link";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -15,11 +14,7 @@ import {
   DollarSign,
   ShoppingCart,
   Tag,
-  Briefcase,
-  Building2,
-  Warehouse,
   TrendingUp,
-  Percent,
 } from "lucide-react";
 import { AnalyticsService } from "@/services/analytics.service";
 import { StatCard } from "@/features/analytics/components/StatCard";

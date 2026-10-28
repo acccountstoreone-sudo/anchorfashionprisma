@@ -1,8 +1,6 @@
 import { AddressFormValues } from "@/schemas/checkout.schema";
 
-// ==========================================
-// CART TYPES
-// ==========================================
+// Cart Types
 
 export interface CartItem {
   id: string;
@@ -43,9 +41,7 @@ export interface Cart {
   items?: CartItem[];
 }
 
-// ==========================================
-// WISHLIST TYPES
-// ==========================================
+// Wishlist Types
 
 export interface WishlistItem {
   id: string;
@@ -75,9 +71,7 @@ export interface Wishlist {
   items?: WishlistItem[];
 }
 
-// ==========================================
-// CHECKOUT SESSIONS
-// ==========================================
+// Checkout Sessions
 
 export type CheckoutStep =
   "INFORMATION" | "SHIPPING" | "PAYMENT" | "REVIEW" | "COMPLETED";
@@ -98,9 +92,7 @@ export interface CheckoutSession {
   updated_at: string;
 }
 
-// ==========================================
-// ORDER TYPES
-// ==========================================
+// Order Types
 
 export type OrderStatus =
   | "PENDING_PAYMENT"
@@ -205,9 +197,7 @@ export interface OrderStatusHistory {
   created_at: string;
 }
 
-// ==========================================
-// COUPON TYPES
-// ==========================================
+// Coupon Types
 
 export type CouponType = "PERCENTAGE" | "FIXED" | "FREE_SHIPPING";
 
@@ -229,9 +219,7 @@ export interface Coupon {
   updated_at: string;
 }
 
-// ==========================================
-// PAYMENT PAYLOADS
-// ==========================================
+// Payment Payloads
 
 export interface PaymentPayload {
   order_id: string;

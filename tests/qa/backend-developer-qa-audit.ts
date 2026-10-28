@@ -1,7 +1,5 @@
 import { prisma } from "../../lib/prisma";
 import { InventoryService } from "../../services/inventory.service";
-import { OrderRepository } from "../../lib/repositories/order.repository";
-import { CouponService } from "../../services/coupon.service";
 import { createAdminClient } from "../../lib/supabase/admin-client";
 
 interface StepResult {
@@ -38,7 +36,6 @@ async function runBackendDeveloperAudit() {
 
   let createdProduct: any = null;
   let testVariant: any = null;
-  let testOrderId: string | null = null;
 
   try {
     // -------------------------------------------------------------------------
@@ -58,7 +55,6 @@ async function runBackendDeveloperAudit() {
         reservationExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
       },
     });
-    testOrderId = testOrder.id;
 
     const hasExpiresAt = !!testOrder.reservationExpiresAt;
     record("1.1 Order Created with reservationExpiresAt", hasExpiresAt, `Expires At: ${testOrder.reservationExpiresAt?.toISOString()}`);
@@ -99,7 +95,6 @@ async function runBackendDeveloperAudit() {
 
     // Clean up test order 1
     await prisma.order.delete({ where: { id: testOrder.id } });
-    testOrderId = null;
 
     // -------------------------------------------------------------------------
     // TEST 2: Product Intake & Initial Stock Level Verification
@@ -131,7 +126,7 @@ async function runBackendDeveloperAudit() {
     testVariant = createdProduct.variants[0];
 
     // Seed inventory level
-    const invLevel = await prisma.inventoryLevel.create({
+    await prisma.inventoryLevel.create({
       data: {
         variantId: testVariant.id,
         warehouseId: warehouse.id,
@@ -148,7 +143,7 @@ async function runBackendDeveloperAudit() {
     // TEST 3: Atomic Stock Reservation
     // -------------------------------------------------------------------------
     console.log("\n▶ [TEST 3] Atomic Stock Reservation via InventoryService");
-    const reservationOrderId = `order-res-${testSuffix}`;
+    const reservationOrderId = testOrder.id;
     await inventoryService.reserveOrderInventory(reservationOrderId, [
       {
         variant_id: testVariant.id,

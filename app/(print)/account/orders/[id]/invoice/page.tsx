@@ -1,4 +1,3 @@
-import React from "react";
 import { notFound, redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { InvoiceToolbar } from "@/components/print/invoice-toolbar";

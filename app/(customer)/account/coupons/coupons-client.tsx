@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Ticket, Copy, CheckCircle2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 export function CouponsClient({ coupons }: { coupons: any[] }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);

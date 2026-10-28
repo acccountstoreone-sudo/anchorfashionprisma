@@ -5,9 +5,6 @@ import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,9 +33,6 @@ import {
   ChevronRight,
   Scale,
   ArrowLeft,
-  Coins,
-  Boxes,
-  MapPin,
   PackagePlus,
   PackageMinus,
   ArrowRightLeft,
@@ -63,7 +57,7 @@ export function WarehouseInventoryClient({
   zones,
   allWarehouses,
 }: WarehouseInventoryClientProps) {
-  const [items, setItems] = useState<any[]>(initialItems);
+  const items = initialItems;
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [zoneFilter, setZoneFilter] = useState("all");

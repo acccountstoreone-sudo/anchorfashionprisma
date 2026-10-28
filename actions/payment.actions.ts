@@ -5,7 +5,6 @@ import { paymentRefundService } from "@/services/payment-refund.service";
 import {
   paymentInitializeSchema,
   refundRequestSchema,
-  providerConfigSchema,
 } from "@/validations/payment.schema";
 import { createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";

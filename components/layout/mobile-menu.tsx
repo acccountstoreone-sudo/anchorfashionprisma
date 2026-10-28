@@ -26,10 +26,8 @@ import {
   ExternalLink,
   Flame,
   CheckCircle2,
-  Clock,
   Layers,
   Compass,
-  Percent,
 } from "lucide-react";
 import {
   Sheet,

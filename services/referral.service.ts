@@ -1,4 +1,4 @@
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { LoyaltyService } from "./loyalty.service";
 import crypto from "crypto";
 
@@ -22,10 +22,6 @@ export interface ReferralAttribution {
 }
 
 export class ReferralService {
-  private static async getAdminClient() {
-    return await createAdminClient();
-  }
-
   /**
    * Generates a unique, stable alphanumeric referral code for a customer.
    */
@@ -39,58 +35,63 @@ export class ReferralService {
    * Gets or creates a referral code for a given customer.
    */
   static async getOrCreateReferralCode(customerId: string): Promise<ReferralCode> {
-    const supabase = await this.getAdminClient();
+    const existing = await prisma.referral_codes.findFirst({
+      where: { user_id: customerId, is_active: true },
+    });
 
-    // Check if one already exists
-    const { data: existing } = await supabase
-      .from("referral_codes")
-      .select("*")
-      .eq("customer_id", customerId)
-      .single();
-
-    if (existing) return existing;
-
-    // Get user details to generate a nice code
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("first_name, last_name, email")
-      .eq("id", customerId)
-      .single();
-
-    const baseName = profile?.first_name || profile?.email?.split("@")[0] || "USER";
-    const newCode = this.generateUniqueCode(baseName);
-
-    // Insert new code
-    const { data: created, error } = await supabase
-      .from("referral_codes")
-      .insert({
-        customer_id: customerId,
-        code: newCode,
-        is_active: true,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to create referral code: ${error.message}`);
+    if (existing) {
+      return {
+        id: existing.id,
+        customer_id: existing.user_id,
+        code: existing.code,
+        is_active: existing.is_active ?? true,
+      };
     }
 
-    return created;
+    // Get user details to generate a readable code
+    const profile = await prisma.profile.findUnique({
+      where: { id: customerId },
+      select: { firstName: true, lastName: true, email: true },
+    });
+
+    const baseName = profile?.firstName || profile?.email?.split("@")[0] || "USER";
+    const newCode = this.generateUniqueCode(baseName);
+
+    const created = await prisma.referral_codes.create({
+      data: {
+        user_id: customerId,
+        code: newCode,
+        is_active: true,
+      },
+    });
+
+    return {
+      id: created.id,
+      customer_id: created.user_id,
+      code: created.code,
+      is_active: created.is_active ?? true,
+    };
   }
 
   /**
    * Get referral code object by the string code.
    */
   static async getCodeByString(code: string): Promise<ReferralCode | null> {
-    const supabase = await this.getAdminClient();
-    const { data } = await supabase
-      .from("referral_codes")
-      .select("*")
-      .ilike("code", code)
-      .eq("is_active", true)
-      .single();
-    
-    return data || null;
+    const record = await prisma.referral_codes.findFirst({
+      where: {
+        code: { equals: code.trim(), mode: "insensitive" },
+        is_active: true,
+      },
+    });
+
+    if (!record) return null;
+
+    return {
+      id: record.id,
+      customer_id: record.user_id,
+      code: record.code,
+      is_active: record.is_active ?? true,
+    };
   }
 
   /**
@@ -98,8 +99,6 @@ export class ReferralService {
    * Called during the registration/OTP verification process.
    */
   static async attributeReferral(referralCodeStr: string, referredCustomerId: string): Promise<void> {
-    const supabase = await this.getAdminClient();
-    
     const referralCode = await this.getCodeByString(referralCodeStr);
     if (!referralCode) {
       console.warn(`Referral code not found or inactive: ${referralCodeStr}`);
@@ -113,29 +112,27 @@ export class ReferralService {
     }
 
     // Check for existing attribution to prevent duplicates
-    const { data: existingAttribution } = await supabase
-      .from("referral_attributions")
-      .select("id")
-      .eq("referred_customer_id", referredCustomerId)
-      .single();
+    const existing = await prisma.referral_attributions.findFirst({
+      where: { referred_user_id: referredCustomerId },
+    });
 
-    if (existingAttribution) {
+    if (existing) {
       console.warn(`Customer ${referredCustomerId} is already attributed to a referrer.`);
       return;
     }
 
     // Insert attribution
-    const { error } = await supabase
-      .from("referral_attributions")
-      .insert({
-        referrer_customer_id: referralCode.customer_id,
-        referred_customer_id: referredCustomerId,
-        referral_code_id: referralCode.id,
-        status: "PENDING"
+    try {
+      await prisma.referral_attributions.create({
+        data: {
+          referrer_id: referralCode.customer_id,
+          referred_user_id: referredCustomerId,
+          referral_code: referralCode.code,
+          status: "PENDING",
+        },
       });
-
-    if (error) {
-      console.error(`Failed to attribute referral: ${error.message}`);
+    } catch (err: any) {
+      console.error(`Failed to attribute referral: ${err.message}`);
     }
   }
 
@@ -144,66 +141,44 @@ export class ReferralService {
    * Awards loyalty points to the referrer.
    */
   static async qualifyReferral(orderId: string): Promise<void> {
-    const supabase = await this.getAdminClient();
-
     // 1. Get the order to find the customer
-    const { data: order } = await supabase
-      .from("orders")
-      .select("customer_id")
-      .eq("id", orderId)
-      .single();
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { customerId: true },
+    });
 
-    if (!order) return;
+    const customerId = order?.customerId;
+    if (!customerId) return;
 
     // 2. Check if this customer was referred and attribution is PENDING
-    const { data: attribution } = await supabase
-      .from("referral_attributions")
-      .select("*")
-      .eq("referred_customer_id", order.customer_id)
-      .eq("status", "PENDING")
-      .single();
+    const attribution = await prisma.referral_attributions.findFirst({
+      where: {
+        referred_user_id: customerId,
+        status: "PENDING",
+      },
+    });
 
-    if (!attribution) return; // Not a referred customer or already processed
+    if (!attribution) return;
 
-    // 3. Mark as QUALIFIED/REWARDED and issue points
-    // (using Optimistic Concurrency to prevent duplicate rewards)
-    const { data: updatedAttribution, error: updateError } = await supabase
-      .from("referral_attributions")
-      .update({
-        status: "REWARDED",
-        qualified_at: new Date().toISOString(),
-        rewarded_at: new Date().toISOString()
-      })
-      .eq("id", attribution.id)
-      .eq("status", "PENDING")
-      .select()
-      .single();
-
-    if (updateError || !updatedAttribution) {
-      console.warn(`Failed to update attribution status for ${attribution.id}. Maybe already rewarded.`);
-      return;
-    }
-
-    // 4. Award points to the referrer
+    // 3. Mark as REWARDED and issue points
     try {
-      const rewardPoints = 500; // Define business logic points here
-      
-      const { pointsEarned } = await LoyaltyService.earnPoints({
-        userId: attribution.referrer_customer_id,
+      await prisma.referral_attributions.update({
+        where: { id: attribution.id },
+        data: {
+          status: "REWARDED",
+        },
+      });
+
+      const rewardPoints = 500;
+      await LoyaltyService.earnPoints({
+        userId: attribution.referrer_id,
         points: rewardPoints,
         description: `Referral reward for inviting a new customer`,
         referenceType: "REFERRAL",
-        referenceId: attribution.id // Idempotent reference
+        referenceId: attribution.id,
       });
-
-      console.warn(`Successfully rewarded referrer ${attribution.referrer_customer_id} with ${pointsEarned} points.`);
     } catch (err) {
       console.error(`Error rewarding points for referral ${attribution.id}:`, err);
-      // Rollback status if point issuance fails
-      await supabase
-        .from("referral_attributions")
-        .update({ status: "PENDING", qualified_at: null, rewarded_at: null })
-        .eq("id", attribution.id);
     }
   }
 
@@ -211,65 +186,50 @@ export class ReferralService {
    * Reverses a referral reward if the qualifying order is cancelled or refunded.
    */
   static async reverseReferralReward(orderId: string): Promise<void> {
-    const supabase = await this.getAdminClient();
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { customerId: true },
+    });
 
-    const { data: order } = await supabase
-      .from("orders")
-      .select("customer_id")
-      .eq("id", orderId)
-      .single();
-
-    if (!order) return;
+    const customerId = order?.customerId;
+    if (!customerId) return;
 
     // Find if there's a REWARDED attribution for this referred customer
-    const { data: attribution } = await supabase
-      .from("referral_attributions")
-      .select("*")
-      .eq("referred_customer_id", order.customer_id)
-      .eq("status", "REWARDED")
-      .single();
+    const attribution = await prisma.referral_attributions.findFirst({
+      where: {
+        referred_user_id: customerId,
+        status: "REWARDED",
+      },
+    });
 
     if (!attribution) return;
 
     // Update status to REVERSED
-    const { data: updated, error } = await supabase
-      .from("referral_attributions")
-      .update({ status: "REVERSED" })
-      .eq("id", attribution.id)
-      .eq("status", "REWARDED")
-      .select()
-      .single();
+    await prisma.referral_attributions.update({
+      where: { id: attribution.id },
+      data: { status: "REVERSED" },
+    });
 
-    if (error || !updated) return;
-
-    // We must manually deduct points from the referrer's loyalty account
+    // Deduct points from the referrer's loyalty account
     try {
-      // Find the earn transaction to know how many points to reverse
-      const { data: txn } = await supabase
-        .from("loyalty_transactions")
-        .select("points")
-        .eq("reference_type", "REFERRAL")
-        .eq("reference_id", attribution.id)
-        .single();
-        
-      if (txn) {
-        // We'll create a manual debit
-        const account = await LoyaltyService.getAccount(attribution.referrer_customer_id);
-        const newBalance = Math.max(0, account.points_balance - txn.points);
-        
-        await supabase
-          .from("loyalty_accounts")
-          .update({ points_balance: newBalance })
-          .eq("id", account.id);
-          
-        await supabase.from("loyalty_transactions").insert({
-          loyalty_account_id: account.id,
-          type: "REDEEM", // Use REDEEM or a specific ADJ_DEBIT type
-          points: txn.points,
-          description: "Referral reward reversed due to cancelled/refunded order",
-          reference_type: "REFERRAL_REVERSAL",
-          reference_id: attribution.id
-        });
+      const account = await LoyaltyService.getAccount(attribution.referrer_id);
+      if (account) {
+        const rewardPoints = 500;
+        const newBalance = Math.max(0, account.points_balance - rewardPoints);
+
+        await prisma.$executeRawUnsafe(
+          `UPDATE loyalty_accounts SET points_balance = $1 WHERE id = $2::uuid`,
+          newBalance,
+          account.id
+        );
+
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO loyalty_transactions (id, loyalty_account_id, type, points, description, reference_type, reference_id, created_at)
+           VALUES (gen_random_uuid(), $1::uuid, 'REDEEM', $2, 'Referral reward reversed due to cancelled/refunded order', 'REFERRAL_REVERSAL', $3, NOW())`,
+          account.id,
+          rewardPoints,
+          attribution.id
+        );
       }
     } catch (err) {
       console.error("Failed to reverse referral points:", err);
@@ -280,38 +240,30 @@ export class ReferralService {
    * Gets stats for the referral dashboard
    */
   static async getReferralStats(customerId: string) {
-    const supabase = await this.getAdminClient();
-    
     const referralCode = await this.getOrCreateReferralCode(customerId);
-    
-    const { data: attributions, error } = await supabase
-      .from("referral_attributions")
-      .select(`
-        id,
-        status,
-        attributed_at,
-        referred:profiles!referral_attributions_referred_customer_id_fkey(first_name, last_name, email)
-      `)
-      .eq("referrer_customer_id", customerId)
-      .order("attributed_at", { ascending: false });
-      
-    if (error) {
-      console.error("Failed to fetch referral stats:", error);
-    }
 
-    const pendingCount = attributions?.filter((a: any) => a.status === "PENDING").length || 0;
-    const rewardedCount = attributions?.filter((a: any) => a.status === "REWARDED").length || 0;
-    const totalEarned = rewardedCount * 500; // Hardcoded point rule match
+    const attributions = await prisma.referral_attributions.findMany({
+      where: { referrer_id: customerId },
+      orderBy: { created_at: "desc" },
+    });
+
+    const pendingCount = attributions.filter((a) => a.status === "PENDING").length;
+    const rewardedCount = attributions.filter((a) => a.status === "REWARDED").length;
+    const totalEarned = rewardedCount * 500;
 
     return {
       referralCode: referralCode.code,
       stats: {
-        totalInvited: attributions?.length || 0,
+        totalInvited: attributions.length,
         pending: pendingCount,
         rewarded: rewardedCount,
-        pointsEarned: totalEarned
+        pointsEarned: totalEarned,
       },
-      history: attributions || []
+      history: attributions.map((a) => ({
+        id: a.id,
+        status: a.status || "PENDING",
+        attributed_at: a.created_at?.toISOString() || new Date().toISOString(),
+      })),
     };
   }
 }

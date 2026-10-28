@@ -379,34 +379,23 @@ export class InventoryService {
       });
     }
 
-    // Step B: Apply Neon reservations atomically via PostgreSQL routine
-    try {
-      await prisma.$executeRaw`
-        SELECT reserve_order_inventory(
-          ${orderId}::uuid,
-          ${JSON.stringify(items)}::jsonb
-        );
-      `;
+    // Step B: Apply Neon reservations atomically via PostgreSQL routine or transactional fallback
+    let reservedViaProc = false;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
 
-      // Record stock movements for observability
-      for (const res of prismaReservations) {
-        try {
-          await prisma.stockMovement.create({
-            data: {
-              variantId: res.variantId,
-              warehouseId: res.warehouseId,
-              movementType: "OUT",
-              quantity: -res.quantity,
-              previousQuantity: res.previousAvailable,
-              newQuantity: Math.max(0, res.previousAvailable - res.quantity),
-              referenceType: "ORDER",
-              referenceId: orderId,
-              notes: `Order reservation for order ${orderId}`,
-            },
-          });
-        } catch (_) {}
-      }
-    } catch (procErr: any) {
+    if (isUuid) {
+      try {
+        await prisma.$executeRaw`
+          SELECT reserve_order_inventory(
+            ${orderId}::uuid,
+            ${JSON.stringify(items)}::jsonb
+          );
+        `;
+        reservedViaProc = true;
+      } catch (_) {}
+    }
+
+    if (!reservedViaProc) {
       // Fallback: atomic transactional update with row lock & condition
       await prisma.$transaction(async (tx) => {
         for (const res of prismaReservations) {
@@ -425,6 +414,25 @@ export class InventoryService {
           }
         }
       });
+    }
+
+    // Record stock movements for observability
+    for (const res of prismaReservations) {
+      try {
+        await prisma.stockMovement.create({
+          data: {
+            variantId: res.variantId,
+            warehouseId: res.warehouseId,
+            movementType: "OUT",
+            quantity: -res.quantity,
+            previousQuantity: res.previousAvailable,
+            newQuantity: Math.max(0, res.previousAvailable - res.quantity),
+            referenceType: "ORDER",
+            referenceId: orderId,
+            notes: `Order reservation for order ${orderId}`,
+          },
+        });
+      } catch (_) {}
     }
 
     // Step C: Best-effort sync to legacy Supabase tables (non-fatal)

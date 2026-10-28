@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { playfair, jost } from "@/lib/fonts";
+import { playfair } from "@/lib/fonts";
 
 export const AnchorFashionLogo = ({
   className,
@@ -13,11 +12,6 @@ export const AnchorFashionLogo = ({
   isLoading?: boolean;
   noLink?: boolean;
 }) => {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const innerContent = (
     <>

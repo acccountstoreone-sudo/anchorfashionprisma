@@ -148,7 +148,6 @@ export async function createTaskAction(data: {
         if (assigneeEmail) {
           const { EmailProvider } = await import("@/lib/notifications/EmailProvider");
           const { EmailTemplates } = await import("@/lib/notifications/EmailTemplates");
-          const assigneeName = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || "Team Member";
           const dashboardUrl = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/admin/tasks` : "https://anchor.com.bd/admin/tasks";
           const formattedDate = data.due_date ? new Date(data.due_date).toLocaleDateString() : "No due date";
           

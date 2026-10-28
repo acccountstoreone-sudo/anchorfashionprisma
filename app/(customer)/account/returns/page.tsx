@@ -4,15 +4,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ReturnsService } from "@/services/shipping/returns.service";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   RefreshCcw,
-  Package,
   ArrowRight,
-  Clock,
-  CheckCircle2,
-  XCircle,
   ShoppingBag,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";

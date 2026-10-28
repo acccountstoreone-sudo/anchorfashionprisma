@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export function OrderSummary() {
   const { cart } = useCartStore();
-  const { formData, session, fetchSession } = useCheckoutStore();
+  const { formData, session } = useCheckoutStore();
   const { toast } = useToast();
   const [couponCode, setCouponCode] = useState("");
   const [isApplying, setIsApplying] = useState(false);

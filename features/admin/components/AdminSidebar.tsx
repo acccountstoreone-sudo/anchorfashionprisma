@@ -31,7 +31,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { AnchorFashionLogo } from "@/components/shared/logo";
 import { LogoutButton } from "@/components/auth/logout-button";
 

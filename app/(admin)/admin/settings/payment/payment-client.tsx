@@ -28,7 +28,7 @@ import {
   updatePaymentConfig,
 } from "@/lib/actions/payment.actions";
 import { toast } from "sonner";
-import { Loader2, Smartphone, Landmark, Banknote, CreditCard, ShieldCheck } from "lucide-react";
+import { Loader2, Smartphone, Landmark, Banknote, CreditCard } from "lucide-react";
 
 export function PaymentClient({
   initialConfigs,

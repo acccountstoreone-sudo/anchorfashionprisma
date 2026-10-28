@@ -3,7 +3,6 @@ import {
   CRMCustomer,
   CRMLead,
   CRMNote,
-  CommunicationLog,
 } from "@/types/crm.types";
 
 export class CRMService {

@@ -11,7 +11,7 @@ export class StripeProvider implements PaymentProvider {
   name = "Stripe";
 
   private secretKey: string;
-  private isSandbox: boolean;
+  readonly isSandbox: boolean;
 
   constructor(config: Record<string, any>, isSandbox: boolean) {
     this.secretKey = config.secretKey || "";

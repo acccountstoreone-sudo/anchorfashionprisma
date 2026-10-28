@@ -170,11 +170,7 @@ export class CodOtpService {
     // Save session in cache and DB
     await this.saveSession(updatedSession);
 
-    // -------------------------------------------------------------
-    // Dispatch OTP via Configured Providers
-    // -------------------------------------------------------------
-    let emailDispatched = false;
-    let smsDispatched = false;
+    // Dispatch OTP via configured providers
 
     // 1. Email Dispatch via live Resend provider
     if (params.email) {
@@ -233,9 +229,7 @@ export class CodOtpService {
           text: `Your Anchor Fashion Cash on Delivery verification code is ${rawOtp}. Valid for ${config.otp_expiry_minutes} minutes.`,
         });
 
-        if (!sendResult.error) {
-          emailDispatched = true;
-        } else {
+        if (sendResult.error) {
           console.warn("[CodOtpService] Resend email dispatch returned error:", sendResult.error);
         }
       } catch (mailErr) {
@@ -246,11 +240,10 @@ export class CodOtpService {
     // 2. SMS Dispatch attempt (with graceful provider notification)
     if (params.phone) {
       try {
-        const smsRes = await this.smsProvider.sendSms(
+        await this.smsProvider.sendSms(
           params.phone,
           `Anchor Fashion: Your order verification code is ${rawOtp}. Valid for ${config.otp_expiry_minutes} mins.`
         );
-        smsDispatched = smsRes.success;
       } catch (smsErr) {
         // SMS errors are non-fatal when email is dispatched
       }

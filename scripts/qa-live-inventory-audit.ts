@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { generateUniqueProductCode, formatVariantSku, detectApparelSystemForCategory } from "../lib/utils/product-code";
-import { generateEAN13Sync } from "../lib/utils/barcode";
+
 import { createInventoryMasterIntakeAction, toggleProductPublishStatusAction } from "../lib/actions/admin/inventory-master.actions";
 import { CatalogRepository } from "../repositories/catalog.repository";
 

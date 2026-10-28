@@ -5,7 +5,6 @@ import { CheckoutFormValues } from "@/schemas/checkout.schema";
 import { Order, OrderItem, PaymentPayload, OrderStatus, RiskLevel } from "@/types/checkout.types";
 import { InventoryService, ReservationItem } from "@/services/inventory.service";
 import { WarehouseService } from "@/services/warehouse.service";
-import { createAdminClient } from "@/lib/supabase/admin-client";
 import { prisma } from "@/lib/prisma";
 
 export class OrderService {
@@ -96,10 +95,6 @@ export class OrderService {
     const dateStr = new Date().toISOString().split("T")[0].replace(/-/g, "");
     const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
     const orderNumber = `AF-${dateStr}-${randomStr}`;
-
-    const shippingAddr = checkoutData.information.shipping_address;
-    const customerName = `${shippingAddr.first_name} ${shippingAddr.last_name}`.trim();
-    const customerPhone = shippingAddr.phone || null;
 
     const reservationExpiresAt =
       checkoutData.payment.payment_method === "COD"

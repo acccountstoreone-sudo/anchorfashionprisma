@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   DEFAULT_CURATED_CATEGORIES,
-  CuratedCategoriesSettings,
   CuratedCategorySlot,
 } from "@/types/curated-categories.types";
 import { Category } from "@/types/catalog.types";

@@ -6,7 +6,6 @@ import { revalidatePath } from "next/cache";
 import {
   PromotionRepository,
   PromotionRecord,
-  CreatePromotionInput,
 } from "@/lib/repositories/marketing/promotion.repository";
 import {
   CouponRepository,
@@ -21,9 +20,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { verifyStaff } from "@/lib/security/roles";
 
-// ============================================================================
-// COUPONS ACTIONS
-// ============================================================================
+// --- Coupons Actions ---
 
 export async function getCouponsAction(): Promise<{
   success: boolean;

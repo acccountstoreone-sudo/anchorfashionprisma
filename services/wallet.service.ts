@@ -15,7 +15,7 @@ export class WalletService {
    */
   static async getWallet(userId: string): Promise<CustomerWallet> {
     const supabase = await this.getClient();
-    let { data: wallet, error } = await supabase
+    let { data: wallet } = await supabase
       .from("customer_wallets")
       .select("*")
       .eq("customer_id", userId)

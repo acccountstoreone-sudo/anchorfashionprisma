@@ -18,7 +18,6 @@ export async function POST(request: Request) {
       total_amount,
       delivery_fee,
       items,
-      user_id,
     } = body;
 
     // Validate required fields

@@ -1,7 +1,6 @@
 "use client";
 
 import { use, useState } from "react";
-import { useRouter } from "next/navigation";
 import { 
   useReturnDetail, 
   useApproveReturn, 
@@ -24,7 +23,6 @@ import { ArrowLeft, RefreshCw, AlertCircle, CheckCircle2, Wallet } from "lucide-
 
 export default function AdminReturnDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const router = useRouter();
   const { data: returnReq, isLoading, error, refetch } = useReturnDetail(id);
 
   const approveReturn = useApproveReturn();

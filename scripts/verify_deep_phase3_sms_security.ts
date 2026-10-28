@@ -32,7 +32,6 @@ async function runSmsSecurityTests() {
   }
 
   const testOrderId = orders[0].id;
-  const fakeOrderId = "00000000-0000-0000-0000-000000000000";
 
   // 1. Unauthenticated request to send-confirmation-sms -> 401
   {
@@ -158,7 +157,6 @@ async function runSmsSecurityTests() {
   // 7. Test Staff access
   {
     const staffUser = { id: "staff_uuid", app_metadata: { role: "staff" }, user_metadata: {} };
-    const orderA = { id: testOrderId, customer_id: "user_a_customer_uuid", created_by: "user_a_customer_uuid" };
 
     const role = (staffUser.app_metadata?.role || "").toLowerCase();
     const isStaffOrAdmin = [

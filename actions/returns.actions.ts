@@ -1,9 +1,5 @@
 "use server";
 
-// ============================================================================
-// Returns Server Actions
-// ============================================================================
-
 import { revalidatePath } from "next/cache";
 import { ReturnsService } from "@/services/shipping/returns.service";
 import {
@@ -13,7 +9,6 @@ import {
   returnFiltersSchema,
   submitCustomerReturnSchema,
 } from "@/schemas/shipping.schema";
-import { createClient } from "@/lib/supabase/server-client";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import {
   ReturnEligibilityResult,

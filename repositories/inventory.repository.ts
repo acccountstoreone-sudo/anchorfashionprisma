@@ -332,8 +332,6 @@ export class InventoryRepository {
     reason: string,
     notes?: string
   ): Promise<void> {
-    const supabase = this.getAdminClient();
-
     if (quantity <= 0) {
       throw new Error(`Quantity must be greater than zero`);
     }

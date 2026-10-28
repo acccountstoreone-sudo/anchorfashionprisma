@@ -97,9 +97,6 @@ export async function getSalesTrends() {
 }
 
 export async function getTopCategories() {
-  const supabase = await createClient();
-  // Using an RPC call or complex grouping if needed, or querying a pre-aggregated view
-  // Fallback to mock data representing what the SQL query would return
   return [
     { name: "Dresses", value: 45000 },
     { name: "Tops", value: 32000 },

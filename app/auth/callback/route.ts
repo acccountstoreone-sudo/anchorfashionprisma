@@ -6,7 +6,6 @@ import { STAFF_ROLES } from "@/lib/constants/auth";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
   const rawNext = searchParams.get("next") ?? "/account/profile";
   const next = rawNext === "/reset-password" ? "/auth/reset-password" : rawNext;
 

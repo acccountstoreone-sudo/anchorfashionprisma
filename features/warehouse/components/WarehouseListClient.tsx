@@ -38,13 +38,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Building2,
   Search,
-  SlidersHorizontal,
   Download,
   MoreHorizontal,
   Eye,
-  Edit,
   Package,
   ArrowRightLeft,
   History,
@@ -56,13 +53,11 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Warehouse } from "@/types/inventory.types";
 import {
   AddWarehouseButton,
-  ManageWarehouseSettingsButton,
 } from "./WarehousePageActions";
 import {
   deleteWarehouse,
@@ -81,19 +76,15 @@ export function WarehouseListClient({
 }: WarehouseListClientProps) {
   const router = useRouter();
 
-  // State
-  const [warehouses, setWarehouses] = useState<Warehouse[]>(initialWarehouses);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [locationFilter, setLocationFilter] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "code" | "stock" | "created_at">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
   // Modals state
-  const [selectedWarehouseForEdit, setSelectedWarehouseForEdit] = useState<Warehouse | null>(null);
   const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
@@ -122,18 +113,9 @@ export function WarehouseListClient({
         if (wh.operational_type !== typeFilter && wh.type !== typeFilter) return false;
       }
 
-      // Location
-      if (locationFilter.trim()) {
-        const loc = locationFilter.toLowerCase();
-        const matchesLoc = (wh.city || "").toLowerCase().includes(loc) ||
-          (wh.state || "").toLowerCase().includes(loc) ||
-          (wh.address || "").toLowerCase().includes(loc);
-        if (!matchesLoc) return false;
-      }
-
       return true;
     });
-  }, [initialWarehouses, search, statusFilter, typeFilter, locationFilter]);
+  }, [initialWarehouses, search, statusFilter, typeFilter]);
 
   const sortedWarehouses = useMemo(() => {
     const list = [...filteredWarehouses];

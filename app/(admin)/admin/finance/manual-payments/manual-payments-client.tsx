@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -40,18 +40,15 @@ import {
   rejectManualPaymentAction,
 } from "@/lib/actions/payment.actions";
 import {
-  Smartphone,
   Landmark,
   CheckCircle2,
   XCircle,
-  Clock,
   Copy,
   Check,
   Search,
   ExternalLink,
   Loader2,
   RefreshCw,
-  CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";

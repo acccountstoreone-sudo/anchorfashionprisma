@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -31,8 +31,6 @@ import {
   Lock,
   MessageSquare,
   Loader2,
-  Calendar,
-  AlertCircle,
   ExternalLink,
   Edit3,
   Trash2,

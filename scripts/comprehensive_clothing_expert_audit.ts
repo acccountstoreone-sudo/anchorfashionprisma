@@ -1,7 +1,7 @@
 import { prisma } from "../lib/prisma";
 import { ProductRepository } from "../lib/repositories/catalog/product.repository";
 import { generateEAN13Sync } from "../lib/utils/barcode";
-import { formatVariantSku, APPAREL_SIZE_SYSTEMS, detectApparelSystemForCategory } from "../lib/utils/product-code";
+import { detectApparelSystemForCategory } from "../lib/utils/product-code";
 
 // Apparel size rank map (same as in product-variant-selector.tsx)
 const APPAREL_SIZE_RANK: Record<string, number> = {

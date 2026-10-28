@@ -8,15 +8,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   ShoppingBag,
-  Heart,
-  Clock,
   MessageSquare,
-  Mail,
   Trophy,
-  MoreVertical,
   Activity,
 } from "lucide-react";
 import { fetchCustomerDetailsAction } from "@/app/actions/crm/customer.actions";

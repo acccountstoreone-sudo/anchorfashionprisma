@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useTransition } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -17,18 +17,13 @@ import {
   Eye,
   Check,
   X,
-  Database,
-  RefreshCw,
   Sparkles,
-  Layers,
   ArrowUpDown,
   Calendar,
-  HardDrive,
-  FileCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -65,7 +60,6 @@ interface MediaLibraryViewProps {
 
 export function MediaLibraryView({ initialMedia }: MediaLibraryViewProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
 
   // Search & Filters State
   const [searchQuery, setSearchQuery] = useState("");

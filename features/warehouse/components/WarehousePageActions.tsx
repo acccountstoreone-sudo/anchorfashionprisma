@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Plus, Settings, Loader2, Building2, MapPin, Phone, SlidersHorizontal, FileText, CheckCircle2 } from "lucide-react";
+import { Plus, Settings, Loader2, Building2, MapPin, Phone, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,

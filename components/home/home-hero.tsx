@@ -137,7 +137,6 @@ export function HomeHero({ slides: propSlides }: { slides?: HeroSlide[] }) {
           const headline = slide.title ?? slide.headline;
           const subheadline = slide.subtitle ?? slide.subheadline;
           const ctaText = slide.cta_text || "Discover More";
-          const isVideo = slide.isVideo || imageUrl.endsWith(".mp4") || imageUrl.includes("/video-files/");
 
           return (
             <div

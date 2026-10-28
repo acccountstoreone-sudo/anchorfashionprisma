@@ -1,11 +1,8 @@
-// ============================================================================
-// Enterprise Shipping & Fulfillment — Type Definitions
-// Anchor Fashion — Phase 11
-// ============================================================================
+/**
+ * Shipping & Fulfillment type definitions.
+ */
 
-// ============================================================================
-// ENUMS
-// ============================================================================
+// Enums
 
 export type ShipmentStatus =
   | "created"
@@ -59,9 +56,7 @@ export type ShippingEventType =
   | "cancelled"
   | "webhook_received";
 
-// ============================================================================
-// DOMAIN ENTITIES
-// ============================================================================
+// Domain Entities
 
 export interface CourierProviderRecord {
   id: string;
@@ -260,9 +255,7 @@ export interface ReturnItem {
   created_at: string;
 }
 
-// ============================================================================
-// EXTENDED COURIER PROVIDER INTERFACE
-// ============================================================================
+// Extended Courier Provider Interface
 
 export interface TrackingUpdate {
   status: string;
@@ -344,9 +337,7 @@ export interface NormalizedWebhookEvent {
   raw: Record<string, any>;
 }
 
-// ============================================================================
-// INPUT / DTO TYPES
-// ============================================================================
+// Input / DTO Types
 
 export interface CreateShipmentInput {
   orderId: string;
@@ -468,9 +459,7 @@ export interface ShippingChargeCalculation {
   rate: ShippingRate | null;
 }
 
-// ============================================================================
-// TRACKING TIMELINE
-// ============================================================================
+// Tracking Timeline
 
 export interface TrackingTimeline {
   shipmentNumber: string;
@@ -492,9 +481,7 @@ export interface TrackingTimelineEvent {
   isCurrent: boolean;
 }
 
-// ============================================================================
-// PAGINATION & FILTERS
-// ============================================================================
+// Pagination & Filters
 
 export interface ShipmentFilters {
   status?: ShipmentStatus;
@@ -524,9 +511,7 @@ export interface PaginatedResult<T> {
   totalPages: number;
 }
 
-// ============================================================================
-// AGGREGATED VIEW TYPES
-// ============================================================================
+// Aggregated View Types
 
 export interface ShipmentWithDetails extends Shipment {
   items?: ShipmentItem[];
@@ -548,9 +533,7 @@ export interface ReturnWithItems extends ReturnRequest {
   items?: ReturnItem[];
 }
 
-// ============================================================================
-// ANALYTICS
-// ============================================================================
+// Analytics
 
 export interface DeliveryAnalytics {
   date: string;
@@ -577,9 +560,7 @@ export interface CourierPerformance {
   avgDeliveryHours: number | null;
 }
 
-// ============================================================================
-// MANIFEST
-// ============================================================================
+// Manifest
 
 export interface ManifestEntry {
   shipmentNumber: string;

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Cart, CartItem } from "@/types/checkout.types";
+import { Cart } from "@/types/checkout.types";
 import {
   fetchCartAction,
   addToCartAction,

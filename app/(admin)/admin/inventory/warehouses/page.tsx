@@ -8,7 +8,6 @@ import {
   Layers,
   AlertTriangle,
   Boxes,
-  TrendingUp,
   Coins,
 } from "lucide-react";
 

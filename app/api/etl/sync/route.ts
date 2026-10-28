@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { dataWarehouseService } from "@/lib/data-warehouse";
 
 export async function POST(request: Request) {
   try {
@@ -31,8 +30,6 @@ export async function POST(request: Request) {
     );
 
     if (syncType === "sales") {
-      // Simulate loading sales facts
-      // dataWarehouseService.loadFactSales(...)
       console.warn(`[ETL] Synchronized sales facts for ${dateKey}`);
     } else if (syncType === "inventory") {
       // Simulate loading inventory movements

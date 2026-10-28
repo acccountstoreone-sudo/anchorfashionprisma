@@ -1,8 +1,7 @@
-// ============================================================================
-// Steadfast Courier Provider — Full Implementation
-// API: https://portal.packzy.com/api/v1
-// ============================================================================
-
+/**
+ * Steadfast Courier Provider implementation
+ * API: https://portal.packzy.com/api/v1
+ */
 import {
   ICourierProvider,
   ConsignmentRequest,
@@ -13,7 +12,6 @@ import {
   NormalizedWebhookEvent,
   ShipmentStatus,
 } from "@/types/shipping.types";
-import crypto from "crypto";
 
 export class SteadfastProvider implements ICourierProvider {
   readonly id = "steadfast" as const;

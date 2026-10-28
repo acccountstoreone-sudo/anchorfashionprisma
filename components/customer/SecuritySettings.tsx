@@ -9,7 +9,6 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -19,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Monitor, Smartphone, Globe, ShieldCheck } from "lucide-react";
+import { Monitor, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export function SecuritySettings({

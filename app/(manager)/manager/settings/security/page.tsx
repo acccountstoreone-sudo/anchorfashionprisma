@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { ChangePassword } from "@/components/customer/ChangePassword";
 import Link from "next/link";
-import { Shield, ArrowLeft, KeyRound } from "lucide-react";
+import { ArrowLeft, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {

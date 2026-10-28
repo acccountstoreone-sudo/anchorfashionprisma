@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import crypto from "crypto";
 
-const CSRF_COOKIE_NAME = "csrf_token";
-const CSRF_HEADER_NAME = "x-csrf-token";
+export const CSRF_COOKIE_NAME = "csrf_token";
+export const CSRF_HEADER_NAME = "x-csrf-token";
 
 /**
  * Enterprise CSRF Protection Utility

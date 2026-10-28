@@ -12,7 +12,6 @@ import { Metadata } from "next";
 import { StoreHeader } from "@/components/layout/store-header";
 import { StoreFooter } from "@/components/layout/store-footer";
 import { createAdminClient } from "@/lib/supabase/admin-client";
-import { SSLCommerzService } from "@/lib/services/payment/sslcommerz.service";
 
 export const dynamic = "force-dynamic";
 

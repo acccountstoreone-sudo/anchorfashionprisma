@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, Loader2, CheckCircle2 } from "lucide-react";
+import { Upload, Loader2 } from "lucide-react";
 import { uploadMedia } from "@/actions/cms.actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";

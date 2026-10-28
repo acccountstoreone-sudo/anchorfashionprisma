@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Ruler } from "lucide-react";
 import { SizeChart } from "@/types/catalog.types";
 
@@ -17,7 +16,7 @@ interface SizeGuideModalProps {
   selectedSize?: string;
   onSelectSize?: (size: string) => void;
   availableSizes?: string[];
-  trigger?: React.ReactNode;
+  trigger?: ReactNode;
 }
 
 const DEFAULT_APPAREL_CHARTS = {

@@ -1,6 +1,5 @@
 import { StoreHeader } from "@/components/layout/store-header";
 import { StoreFooter } from "@/components/layout/store-footer";
-import { CatalogRepository } from "@/repositories/catalog.repository";
 import { getStoreInfo } from "@/lib/actions/settings.actions";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { FloatingPromotion } from "@/components/marketing/floating-promotion";

@@ -1,6 +1,5 @@
 import { CheckoutRepository } from "../repositories/checkout.repository";
 import { CheckoutSession, CheckoutStep } from "@/types/checkout.types";
-import { CartService } from "./cart.service";
 
 export class CheckoutService {
   /**

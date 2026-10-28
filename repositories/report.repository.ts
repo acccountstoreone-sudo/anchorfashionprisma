@@ -2,8 +2,6 @@ import { createAdminClient } from "@/lib/supabase/admin-client";
 import { prisma } from "@/lib/prisma";
 import {
   CustomReportConfig,
-  ReportDimension,
-  ReportMetric,
   ReportQueryResult,
 } from "@/types/report.types";
 import {
@@ -172,9 +170,6 @@ export class ReportRepository {
       default:
         fromDate.setDate(now.getDate() - 7);
     }
-
-    const fromDateStr = fromDate.toISOString().split("T")[0];
-    const toDateStr = toDate.toISOString().split("T")[0];
 
     // 2. Fetch authoritative analytics data from Neon PostgreSQL orders
     let rawData: any[] = [];

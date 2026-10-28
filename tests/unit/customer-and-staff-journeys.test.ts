@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { AUTH_ROLES, STAFF_ROLES, MANAGER_ROLES, ADMIN_ROLES, MARKETING_ROLES } from "@/lib/constants/auth";
+import { MANAGER_ROLES, MARKETING_ROLES } from "@/lib/constants/auth";
 import { OrderStatusService } from "@/lib/services/oms/order-status.service";
 
 describe("Customer, Staff & Manager Journey Unit Tests", () => {

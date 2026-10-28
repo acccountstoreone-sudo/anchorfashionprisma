@@ -82,7 +82,7 @@ export class MarketingService {
     }
 
     // 3. Atomically claim status to 'sending' (or fallback 'running' if check constraint not yet migrated)
-    const lockStatus = await this.setCampaignStatusSafely(
+    await this.setCampaignStatusSafely(
       campaignId,
       "sending",
       "running"

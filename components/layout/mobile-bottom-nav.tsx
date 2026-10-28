@@ -48,6 +48,16 @@ export function MobileBottomNav({ user: propUser }: { user?: any }) {
     { label: "Cart", href: "/cart", icon: ShoppingCart },
   ];
 
+  // Avoid overlay collision with PDP dedicated sticky purchase bar and checkout flow
+  const isPdp =
+    (pathname.startsWith("/product/") && pathname !== "/product") ||
+    (pathname.startsWith("/products/") && pathname !== "/products");
+  const isCheckout = pathname.startsWith("/checkout") || pathname.startsWith("/order-confirmation");
+
+  if (isPdp || isCheckout) {
+    return null;
+  }
+
   return (
     <div className="fixed bottom-0 left-0 z-50 h-[72px] w-full border-t border-gray-100 bg-white/90 backdrop-blur-md pb-safe md:hidden">
       <div className="mx-auto grid h-full max-w-lg grid-cols-5 font-medium">

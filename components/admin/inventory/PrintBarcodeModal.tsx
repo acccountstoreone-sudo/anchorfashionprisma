@@ -29,10 +29,8 @@ import {
   RotateCcw,
   CheckSquare,
   Square,
-  Filter,
   Plus,
   Minus,
-  FileSpreadsheet,
   Zap,
 } from "lucide-react";
 

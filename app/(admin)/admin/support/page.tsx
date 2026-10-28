@@ -10,7 +10,6 @@ import {
   MessageSquare,
   Ticket,
   Clock,
-  CheckCircle2,
   AlertTriangle,
   Users,
 } from "lucide-react";

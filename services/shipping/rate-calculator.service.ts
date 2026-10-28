@@ -1,12 +1,7 @@
-// ============================================================================
-// Rate Calculator Service
-// ============================================================================
-
 import { DeliveryZoneRepository } from "@/repositories/delivery-zone.repository";
 import {
   ShippingChargeCalculation,
   DeliveryZone,
-  ShippingRate,
 } from "@/types/shipping.types";
 
 export class RateCalculatorService {

@@ -9,7 +9,6 @@ import {
 } from "@/schemas/checkout.schema";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server-client";
-import { redirect } from "next/navigation";
 import { CouponService } from "@/services/coupon.service";
 
 async function getUserId(): Promise<string | undefined> {
@@ -150,7 +149,6 @@ export async function processCheckoutAction(
   data: any
 ) {
   const checkoutService = new CheckoutService();
-  const userId = await getUserId();
 
   try {
     // 1. Initialize session if not exist (or just use existing)

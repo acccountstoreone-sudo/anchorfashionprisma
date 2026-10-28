@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const user = await verifyStaff();
 
     const body = await req.json();
-    const { orderId, courierId, weight = 0.5, note, items } = body;
+    const { orderId, courierId, weight = 0.5, note } = body;
 
     if (!orderId || !courierId) {
       return NextResponse.json(

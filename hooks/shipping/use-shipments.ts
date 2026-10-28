@@ -1,9 +1,5 @@
 "use client";
 
-// ============================================================================
-// Shipping Hooks — TanStack Query
-// ============================================================================
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchShipmentsAction,
@@ -12,15 +8,10 @@ import {
   cancelShipmentAction,
   generateLabelAction,
   syncTrackingAction,
-  refreshTrackingAction,
   createShipmentAction,
   reassignCourierAction,
 } from "@/actions/shipping.actions";
 import { ShipmentFilters } from "@/types/shipping.types";
-
-// ============================================================================
-// Query Keys
-// ============================================================================
 
 export const shipmentKeys = {
   all: ["shipments"] as const,

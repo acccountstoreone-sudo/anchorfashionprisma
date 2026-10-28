@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -10,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Download, Filter, Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Filter, Plus, Edit } from "lucide-react";
 import Link from "next/link";
 import { ExportProductsButton } from "./ExportProductsButton";
 import { ManagerProductSearch } from "./ManagerProductSearch";

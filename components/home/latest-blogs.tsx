@@ -1,9 +1,9 @@
-import React from "react";
+
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Calendar, Clock, BookOpen, Sparkles } from "lucide-react";
 import { getPosts } from "@/actions/blog.actions";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 
 export async function LatestBlogs() {

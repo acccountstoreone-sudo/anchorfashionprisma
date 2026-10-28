@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { BlogPost, BlogCategory, BlogTag } from "@/types/blog.types";
 

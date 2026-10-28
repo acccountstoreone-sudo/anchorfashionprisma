@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  BarChart3,
   Mail,
   Smartphone,
   TrendingUp,

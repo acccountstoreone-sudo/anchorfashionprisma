@@ -1,11 +1,8 @@
 import {
   Users,
   UserPlus,
-  Activity,
   Trophy,
   ArrowUpRight,
-  ArrowDownRight,
-  Search,
   Filter,
 } from "lucide-react";
 import {
@@ -15,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CustomerSearch } from "@/features/crm/components/customer-search";
 import { CustomerSegmentsTable } from "@/features/crm/components/CustomerSegmentsTable";

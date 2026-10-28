@@ -7,7 +7,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  ArrowRight,
 } from "lucide-react";
 import { getStoreInfo, getSocialLinks } from "@/lib/actions/settings.actions";
 import { jost } from "@/lib/fonts";

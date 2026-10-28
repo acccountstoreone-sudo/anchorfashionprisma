@@ -1,4 +1,4 @@
-import * as React from "react";
+
 import { StatsCard } from "@/components/data-display/stats-card";
 import { Users } from "lucide-react";
 

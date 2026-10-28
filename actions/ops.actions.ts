@@ -6,7 +6,6 @@ import {
   SystemMetricSchema,
   SystemLogSchema,
 } from "@/schemas/operations.schemas";
-import { HealthCheck, SystemMetric, SystemLog } from "@/types/operations.types";
 import { verifyStaff } from "@/lib/security/roles";
 
 export async function logSystemEvent(

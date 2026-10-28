@@ -1,8 +1,6 @@
 "use client";
 
-import React from 'react';
-import { X, Heart, ShoppingBag } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { X, Heart } from 'lucide-react';
 import ProductCard from './ProductCard';
 
 interface Product {

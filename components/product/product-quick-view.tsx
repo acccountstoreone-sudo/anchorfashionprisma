@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -22,7 +22,6 @@ import {
   Heart,
   ShoppingBag,
   Star,
-  Check,
   ArrowRight,
   Minus,
   Plus,
@@ -50,7 +49,6 @@ export function ProductQuickView({
   const { wishlist, addItem: addWishlistItem, removeItemByProductId } = useWishlistStore();
 
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -58,7 +56,7 @@ export function ProductQuickView({
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   // Reset states when product changes
-  React.useEffect(() => {
+  useEffect(() => {
     setActiveImageIndex(0);
     setFailedImages({});
   }, [product?.id, isOpen]);
@@ -110,6 +108,19 @@ export function ProductQuickView({
         .filter(Boolean)
     )
   );
+
+  const selectedVariant = useMemo(() => {
+    if (!variants || variants.length === 0) return null;
+    return (
+      variants.find((v: any) => {
+        const vSize = v.attributes?.size || v.attributes?.Size || v.size;
+        const vColor = v.attributes?.color || v.attributes?.Color || v.color;
+        if (selectedSize && vSize !== selectedSize) return false;
+        if (selectedColor && vColor !== selectedColor) return false;
+        return true;
+      }) || null
+    );
+  }, [variants, selectedSize, selectedColor]);
 
   const isWished =
     wishlist?.items?.some((item) => item.product_id === product.id) || false;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useTransition } from "react";
+import { useEffect, useTransition } from "react";
 import {
   Dialog,
   DialogContent,

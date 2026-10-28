@@ -1,4 +1,4 @@
-import { Anchor, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {

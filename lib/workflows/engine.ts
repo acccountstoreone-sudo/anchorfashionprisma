@@ -67,9 +67,6 @@ export async function executeWorkflows(event: WorkflowEvent) {
         }
       }
     }
-
-    // 4. Ideally, save the logs to an audit table here.
-    // await supabase.from('workflow_logs').insert(logs);
   } catch (err) {
     console.error("Workflow Engine Error:", err);
     throw err;

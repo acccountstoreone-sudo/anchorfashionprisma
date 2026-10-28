@@ -95,7 +95,6 @@ export async function createInventoryMasterIntakeAction(input: InventoryMasterIn
       categoryId,
       basePrice,
       costPrice,
-      totalQuantity,
       colorVariants,
       publishImmediately = false,
       warehouseId,
@@ -115,7 +114,6 @@ export async function createInventoryMasterIntakeAction(input: InventoryMasterIn
       select: { id: true, name: true, slug: true },
     });
 
-    const catSlugPart = (category?.slug || "cat").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
     const prodSlugPart = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     
     // Unique slug generator
@@ -599,7 +597,7 @@ export async function dispatchToBranchAction(input: {
       prisma.$transaction(
         async (tx) => {
           // 1. Decrement warehouse stock
-          const updatedLevel = await tx.inventoryLevel.update({
+          await tx.inventoryLevel.update({
             where: { id: level.id },
             data: {
               quantityAvailable: level.quantityAvailable - quantity,
@@ -1019,7 +1017,7 @@ export async function toggleProductPublishStatusAction(productId: string) {
 
     const newStatus = product.status === "ACTIVE" ? "DRAFT" : "ACTIVE";
 
-    const updated = await prisma.product.update({
+    await prisma.product.update({
       where: { id: productId },
       data: { status: newStatus },
       select: { id: true, status: true, name: true, slug: true },

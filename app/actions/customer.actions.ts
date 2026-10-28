@@ -452,7 +452,6 @@ export async function createReviewAction(data: {
   await verifyAuthenticated();
   try {
     const userId = await getUserId();
-    const supabase = await createClient();
     const adminClient = createAdminClient();
 
     if (data.rating < 1 || data.rating > 5) {

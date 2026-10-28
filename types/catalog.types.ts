@@ -1,15 +1,11 @@
 import { z } from "zod";
 
-// ============================================================================
-// ENUMS & CONSTANTS
-// ============================================================================
+// Enums & Constants
 export const ProductStatus = z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]);
 export const Gender = z.enum(["MEN", "WOMEN", "UNISEX", "KIDS"]);
 export const MediaType = z.enum(["IMAGE", "VIDEO", "360_VIEW"]);
 
-// ============================================================================
-// BASE SCHEMAS
-// ============================================================================
+// Base Schemas
 export const TagSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, "Name is required").max(100),
@@ -183,9 +179,7 @@ export const ProductSchema = z.object({
 });
 
 
-// ============================================================================
-// TYPES
-// ============================================================================
+// Types
 export type Tag = z.infer<typeof TagSchema>;
 export type ProductSeo = z.infer<typeof ProductSeoSchema>;
 export type ProductVariant = z.infer<typeof ProductVariantSchema>;
@@ -196,9 +190,7 @@ export type ProductStatusType = z.infer<typeof ProductStatus>;
 export type GenderType = z.infer<typeof Gender>;
 export type MediaTypeType = z.infer<typeof MediaType>;
 
-// ============================================================================
-// MUTATION SCHEMAS (Create/Update)
-// ============================================================================
+// Mutation Schemas (Create/Update)
 export const CreateProductSchema = ProductSchema.omit({
   id: true,
   createdAt: true,
@@ -233,9 +225,7 @@ export const CreateProductSchema = ProductSchema.omit({
 
 export type CreateProductInput = z.infer<typeof CreateProductSchema>;
 
-// ============================================================================
-// CATALOG ENTITY TYPES (Category, Brand, Collection, Attribute, Review)
-// ============================================================================
+// Catalog Entity Types (Category, Brand, Collection, Attribute, Review)
 
 export type Category = {
   id: string;
@@ -312,9 +302,7 @@ export type Review = {
   product: { name: string; slug: string } | null;
 };
 
-// ============================================================================
-// SIZE CHART TYPES
-// ============================================================================
+// Size Chart Types
 
 export type SizeChartMeasurements = {
   units: string[];
@@ -333,9 +321,7 @@ export type SizeChart = {
   updated_at: string;
 };
 
-// ============================================================================
-// MUTATION INPUT TYPES
-// ============================================================================
+// Mutation Input Types
 
 export type CreateCategoryInput = {
   name: string;

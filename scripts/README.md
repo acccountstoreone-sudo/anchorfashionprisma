@@ -49,9 +49,3 @@ Synchronizes product entries with the `product_categories` relationship junction
 ```bash
 npx tsx scripts/sync_categories.ts
 ```
-
----
-
-## 📁 Subdirectories
-
-- **`debug/`**: Internal diagnostics and one-off session verification utilities for testing Neon Auth token exchanges and HTTP headers.

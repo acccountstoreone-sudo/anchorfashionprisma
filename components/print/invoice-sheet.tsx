@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+
 import { ClientBarcode } from "@/components/ui/ClientBarcode";
 import { ClientQRCode } from "@/components/ui/ClientQRCode";
 

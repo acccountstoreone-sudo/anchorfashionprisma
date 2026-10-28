@@ -23,7 +23,7 @@ export function getOptimisticUpdateHelpers<T>(
       // Return a context object with the snapshotted value
       return { previousData };
     },
-    onError: (err: any, newTodo: any, context: any) => {
+    onError: (_err: unknown, _variables: unknown, context: any) => {
       // Rollback on error
       if (context?.previousData) {
         queryClient.setQueryData(queryKey, context.previousData);

@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, Clock, ArrowLeft, RefreshCw, LifeBuoy } from "lucide-react";
+import { AlertCircle, Clock, ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function AuthCodeErrorContent() {

@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { Megaphone, Mail, Percent, Tag, DollarSign } from "lucide-react";
+import { Mail, Tag, DollarSign } from "lucide-react";
 import { StatCard } from "@/features/analytics/components/StatCard";
 import { AnalyticsFilters } from "@/features/analytics/components/AnalyticsFilters";
 import { StatusDistributionChart } from "@/features/analytics/components/Charts";

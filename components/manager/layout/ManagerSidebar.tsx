@@ -19,7 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { LogoutButton } from "@/components/auth/logout-button";
 import { MANAGER_ROLES, MARKETING_ROLES } from "@/lib/constants/auth";
 

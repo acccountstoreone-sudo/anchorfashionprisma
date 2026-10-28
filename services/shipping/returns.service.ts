@@ -1,10 +1,7 @@
-// ============================================================================
-// Returns Service — Customer Self-Service & Reverse Logistics
-// Anchor Fashion — Prompt 11/20
-// ============================================================================
-
+/**
+ * Returns Service - Customer Self-Service & Reverse Logistics
+ */
 import { ReturnRepository } from "@/repositories/return.repository";
-import { ShipmentRepository } from "@/repositories/shipment.repository";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { prisma } from "@/lib/prisma";
 import { EmailProvider } from "@/lib/notifications/EmailProvider";
@@ -49,11 +46,9 @@ const DEFAULT_POLICY_SETTINGS: ReturnPolicySettings = {
 
 export class ReturnsService {
   private returnRepo: ReturnRepository;
-  private shipmentRepo: ShipmentRepository;
 
   constructor() {
     this.returnRepo = new ReturnRepository();
-    this.shipmentRepo = new ShipmentRepository();
   }
 
   private generateReturnNumber(): string {
@@ -957,7 +952,7 @@ export class ReturnsService {
     }
 
     // 2. Mark return as completed and refund processed
-    const updated = await this.returnRepo.updateReturn(returnRecord.id, {
+    await this.returnRepo.updateReturn(returnRecord.id, {
       status: "completed",
       refund_status: "PROCESSED",
       completed_at: new Date().toISOString(),

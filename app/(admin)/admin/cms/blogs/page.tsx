@@ -1,4 +1,3 @@
-import React from "react";
 import { getPosts } from "@/actions/blog.actions";
 import { CmsBlogsClient } from "@/features/admin/components/cms/CmsBlogsClient";
 

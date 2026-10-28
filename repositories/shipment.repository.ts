@@ -1,15 +1,9 @@
-// ============================================================================
-// Shipment Repository
-// ============================================================================
-
 import { createAdminClient } from "@/lib/supabase/admin-client";
-import { createClient } from "@/lib/supabase/server-client";
 import {
   Shipment,
   ShipmentItem,
   ShipmentTrackingEvent,
   ShipmentLabel,
-  ShipmentEvent,
   ShipmentWithDetails,
   ShipmentFilters,
   PaginatedResult,

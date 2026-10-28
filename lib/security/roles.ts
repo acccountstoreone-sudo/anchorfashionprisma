@@ -1,6 +1,5 @@
 import { getServerSession, resolveUserRole } from "@/lib/auth/server";
 import {
-  AUTH_ROLES,
   ADMIN_ROLES,
   MANAGER_ROLES,
   MARKETING_ROLES,

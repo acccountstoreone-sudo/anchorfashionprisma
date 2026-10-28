@@ -7,7 +7,7 @@ interface MissingFkIndex {
   referenced_table: string;
 }
 
-interface RedundantIndex {
+export interface RedundantIndex {
   table_name: string;
   redundant_index: string;
   covering_index: string;

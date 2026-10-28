@@ -2,8 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { CustomerService } from "@/services/customer.service";
-import { updateProfileSchema, addressSchema } from "@/schemas/customer.schema";
-import { createClient } from "@/lib/supabase/server";
 import { verifySelfOrStaff } from "@/lib/security/roles";
 
 export async function updateProfileAction(userId: string, formData: FormData) {

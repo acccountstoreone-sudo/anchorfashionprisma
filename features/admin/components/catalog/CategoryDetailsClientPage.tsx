@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Search, Tag, Trash2, Save, ExternalLink } from "lucide-react";
+import { ArrowLeft, Plus, Search, Tag, Trash2, Save } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -256,7 +256,7 @@ export function CategoryDetailsClientPage({ category, categoryProducts, allProdu
 
       {/* Add Products Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-2xl bg-background rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
             <div className="p-4 border-b flex justify-between items-center bg-card">
               <h3 className="text-lg font-bold">Add Products to {category.name}</h3>

@@ -399,7 +399,7 @@ export async function getProcurementOrderDetails(poId: string) {
 
     if (poErr) return { success: false, error: poErr.message };
 
-    const { data: items, error: itemsErr } = await supabase
+    const { data: items } = await supabase
       .from("procurement_items")
       .select("*, variants(id, sku, name)")
       .eq("po_id", poId);

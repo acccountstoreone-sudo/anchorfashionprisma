@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { ShoppingBag, XCircle, RotateCcw, Box, DollarSign } from "lucide-react";
+import { ShoppingBag, RotateCcw, Box, DollarSign } from "lucide-react";
 import { StatCard } from "@/features/analytics/components/StatCard";
 import { AnalyticsFilters } from "@/features/analytics/components/AnalyticsFilters";
 import {

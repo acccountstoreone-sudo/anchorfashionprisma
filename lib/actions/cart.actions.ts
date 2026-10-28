@@ -1,7 +1,7 @@
 "use server";
 
 import { CartService } from "../services/cart.service";
-import { auth, getServerSession } from "@/lib/auth/server";
+import { getServerSession } from "@/lib/auth/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 

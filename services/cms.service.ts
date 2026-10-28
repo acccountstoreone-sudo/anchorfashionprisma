@@ -1,9 +1,5 @@
 import { CMSRepository } from "@/repositories/cms.repository";
-import {
-  cmsPageSchema,
-  cmsSectionSchema,
-  cmsNavigationSchema,
-} from "@/validators/cms.schema";
+import { cmsPageSchema } from "@/validators/cms.schema";
 import { CMSPage, CMSSection, CMSNavigation, CMSPageBlock } from "@/types/cms.types";
 
 const cmsRepository = new CMSRepository();

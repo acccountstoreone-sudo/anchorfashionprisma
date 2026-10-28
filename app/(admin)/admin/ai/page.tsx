@@ -3,7 +3,6 @@ import {
   Bot,
   Cpu,
   MessageSquareCode,
-  History,
   Settings2,
   ShieldAlert,
   Coins,

@@ -7,12 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Ruler,
   Truck,
-  Search,
-  HelpCircle,
-  ArrowRight,
-  Phone,
-  Mail,
-  ShieldCheck,
   CheckCircle2,
   Package,
   Clock,

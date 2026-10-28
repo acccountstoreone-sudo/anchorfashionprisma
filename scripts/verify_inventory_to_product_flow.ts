@@ -4,7 +4,7 @@ import {
   getInventoryMasterListAction,
   generateProductCodeAction,
 } from "../lib/actions/admin/inventory-master.actions";
-import { updateAdminProductAction } from "../lib/actions/admin/products.actions";
+
 import { ProductRepository } from "../lib/repositories/catalog/product.repository";
 import { CatalogRepository } from "../repositories/catalog.repository";
 

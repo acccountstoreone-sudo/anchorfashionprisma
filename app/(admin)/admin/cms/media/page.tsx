@@ -1,4 +1,3 @@
-import React from "react";
 import { getMedia } from "@/actions/cms.actions";
 import { MediaLibraryView } from "@/components/cms/MediaLibraryView";
 

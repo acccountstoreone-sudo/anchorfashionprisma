@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server-client";
 import { createAdminClient } from "@/lib/supabase/admin-client";
 import { CourierProviderRecord } from "@/types/shipping.types";
 import { CourierRegistry } from "@/services/courier/courier-registry";
@@ -11,7 +10,6 @@ import {
   encryptCredentialsObject,
   decryptCredentialsObject,
   maskCredentialsObject,
-  isEncryptedValue,
 } from "@/utils/encryption.util";
 import { verifyManager } from "@/lib/security/roles";
 

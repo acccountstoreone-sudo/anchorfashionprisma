@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+
 import { ArrowRight, Instagram } from "lucide-react";
 import { jost } from "@/lib/fonts";
 

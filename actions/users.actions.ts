@@ -93,7 +93,7 @@ export async function createUserAction(data: {
     const supabase = createAdminClient();
 
     // 1. Find role or create fallback if missing
-    let { data: role, error: roleError } = await supabase
+    let { data: role } = await supabase
       .from("roles")
       .select("id, name")
       .eq("name", data.roleName)

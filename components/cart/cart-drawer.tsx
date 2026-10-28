@@ -14,7 +14,7 @@ import { CartItem } from "./cart-item";
 import { useRouter } from "next/navigation";
 import { ShoppingBag, Loader2, ArrowRight, Heart } from "lucide-react";
 import Image from "next/image";
-import { ProductCard } from "@/components/product/product-card";
+
 import { usePersonalizationStore } from "@/stores/use-personalization-store";
 
 export function CartDrawer() {
@@ -156,8 +156,8 @@ export function CartDrawer() {
         </div>
 
         {cart && cart.items && cart.items.length > 0 && (
-          <div className="mt-auto space-y-4 border-t pt-4 bg-white z-10 relative">
-            <div className="flex items-center justify-between font-medium text-[#1A1A1A]">
+          <div className="mt-auto space-y-4 border-t pt-4 bg-background z-10 relative">
+            <div className="flex items-center justify-between font-medium text-foreground">
               <span>Subtotal</span>
               <span>৳{subtotal.toLocaleString()}</span>
             </div>

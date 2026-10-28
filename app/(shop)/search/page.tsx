@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { CatalogRepository } from "@/repositories/catalog.repository";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductSearchBar } from "@/components/product/product-search-bar";

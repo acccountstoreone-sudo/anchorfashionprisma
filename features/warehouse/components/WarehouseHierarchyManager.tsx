@@ -43,14 +43,12 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  ChevronRight,
   FolderTree,
   Loader2,
-  CheckCircle2,
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
-import { WarehouseZone, WarehouseBin, WarehouseRack } from "@/types/inventory.types";
+import { WarehouseZone, WarehouseBin } from "@/types/inventory.types";
 import {
   createWarehouseZoneAction,
   updateWarehouseZoneAction,
@@ -58,7 +56,6 @@ import {
   createRackAction,
   deleteRackAction,
   createWarehouseBinAction,
-  updateWarehouseBinAction,
   deleteWarehouseBinAction,
 } from "@/actions/warehouse.actions";
 

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Phone, MapPin, Clock, MessageSquare, Sparkles, ShieldCheck } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Sparkles } from "lucide-react";
 import { StoreHeader } from "@/components/layout/store-header";
 import { StoreFooter } from "@/components/layout/store-footer";
 import { ContactForm } from "@/components/contact/ContactForm";

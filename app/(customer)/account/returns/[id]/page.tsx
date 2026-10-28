@@ -3,21 +3,15 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ReturnsService } from "@/services/shipping/returns.service";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
-  RefreshCcw,
   CheckCircle2,
-  Clock,
-  Truck,
   Package,
-  ShieldCheck,
   AlertCircle,
-  Wallet,
-  CreditCard,
-  Image as ImageIcon,
+  Truck,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 

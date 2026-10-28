@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ShoppingBag, Heart, Search, Loader2 } from 'lucide-react';
 import ProductCard from '@/components/store/ProductCard';
 import CartDrawer from '@/components/store/CartDrawer';

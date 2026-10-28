@@ -2,7 +2,6 @@ import { PaymentsOverview } from "@/components/admin/payments/PaymentsOverview";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
-  CreditCard,
   Server,
   ArrowRightLeft,
   RefreshCw,

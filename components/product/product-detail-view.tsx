@@ -15,9 +15,6 @@ import {
   Truck,
   RefreshCw,
   ShieldCheck,
-  Ruler,
-  Info,
-  Sparkles,
   Share2,
   Check,
   Flame,
@@ -26,9 +23,7 @@ import {
   PackageCheck,
   Clock,
   Layers,
-  Award,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { jost } from "@/lib/fonts";
 import { toast } from "sonner";
@@ -76,7 +71,6 @@ export function ProductDetailView({
   const [currentSku, setCurrentSku] = useState<string>(product.sku || "");
   const initialStock =
     product.total_available_stock ?? (product.is_in_stock ? 10 : 0);
-  const [currentStock, setCurrentStock] = useState<number>(initialStock);
   const [isOutOfStock, setIsOutOfStock] = useState<boolean>(
     !product.is_in_stock || initialStock <= 0
   );
@@ -121,7 +115,6 @@ export function ProductDetailView({
       setCurrentPrice(info.price);
       setComparePrice(info.compareAtPrice);
       setCurrentSku(info.sku);
-      setCurrentStock(info.stock);
       setIsOutOfStock(info.isOutOfStock);
       setSelectedVariantId(info.variant?.id || null);
 

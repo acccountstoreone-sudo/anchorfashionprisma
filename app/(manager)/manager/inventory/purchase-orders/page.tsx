@@ -11,7 +11,7 @@ import {
 import { Plus, FileText } from "lucide-react";
 import { getPurchaseOrdersAction } from "@/app/actions/manager/procurement.actions";
 import Link from "next/link";
-import { formatDistanceToNow, format } from "date-fns";
+import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = {

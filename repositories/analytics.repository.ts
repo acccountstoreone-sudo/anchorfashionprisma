@@ -26,10 +26,6 @@ export class AnalyticsRepository {
     const previousFrom = new Date(currentFrom);
     previousFrom.setDate(previousFrom.getDate() - periodDays);
     
-    const currentFromStr = currentFrom.toISOString().split("T")[0];
-    const currentToStr = currentTo.toISOString().split("T")[0];
-    const previousFromStr = previousFrom.toISOString().split("T")[0];
-
     // Revenue and Orders: Calculated directly from orders table
     const { data: orders } = await supabase
       .from("orders")

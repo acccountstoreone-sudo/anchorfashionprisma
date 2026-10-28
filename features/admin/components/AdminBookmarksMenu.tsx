@@ -62,7 +62,7 @@ export function AdminBookmarksMenu() {
   const pathname = usePathname();
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [mounted, setMounted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+
 
   useEffect(() => {
     setMounted(true);

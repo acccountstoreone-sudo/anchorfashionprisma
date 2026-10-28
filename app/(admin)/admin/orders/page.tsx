@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useOrders, useOrderMetrics } from "@/hooks/oms/use-orders";
 import { updateOrderStatusAction } from "@/app/actions/oms/order.actions";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -44,7 +44,6 @@ import {
   Download,
   RotateCcw,
   Search,
-  Filter,
   ShoppingBag,
   Clock,
   PackageCheck,
@@ -60,7 +59,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  TrendingUp,
   MapPin,
   Loader2,
   MessageSquare,
@@ -90,7 +88,7 @@ function AdminOrdersContent({ defaultTab = "all" }: { defaultTab?: TabKey }) {
   const [statusReason, setStatusReason] = useState("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (tabFromUrl && tabFromUrl !== activeTab) {
       setActiveTab(tabFromUrl);
       setPage(1);
@@ -98,7 +96,7 @@ function AdminOrdersContent({ defaultTab = "all" }: { defaultTab?: TabKey }) {
   }, [tabFromUrl]);
 
   // Debounce search input
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchInput);
       setPage(1);
@@ -123,7 +121,7 @@ function AdminOrdersContent({ defaultTab = "all" }: { defaultTab?: TabKey }) {
   }, [activeTab]);
 
   // Fetch Orders
-  const { data, isLoading, isFetching, error, refetch } = useOrders({
+  const { data, isLoading, isFetching, refetch } = useOrders({
     page,
     limit: pageSize,
     status: statusParam,
@@ -886,7 +884,7 @@ function AdminOrdersContent({ defaultTab = "all" }: { defaultTab?: TabKey }) {
 
 export default function AdminOrdersPage(props: { defaultTab?: TabKey }) {
   return (
-    <React.Suspense
+    <Suspense
       fallback={
         <div className="flex h-96 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -894,7 +892,7 @@ export default function AdminOrdersPage(props: { defaultTab?: TabKey }) {
       }
     >
       <AdminOrdersContent {...props} />
-    </React.Suspense>
+    </Suspense>
   );
 }
 

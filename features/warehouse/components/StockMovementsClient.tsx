@@ -31,16 +31,9 @@ import {
   History,
   Search,
   Download,
-  ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
-  TrendingDown,
-  Building2,
-  Calendar,
-  Layers,
   ArrowRightLeft,
-  Filter,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Warehouse } from "@/types/inventory.types";
@@ -56,7 +49,7 @@ export function StockMovementsClient({
   allWarehouses,
   initialWarehouseId = "all",
 }: StockMovementsClientProps) {
-  const [movements, setMovements] = useState<any[]>(initialMovements);
+  const movements = initialMovements;
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [warehouseFilter, setWarehouseFilter] = useState(initialWarehouseId);

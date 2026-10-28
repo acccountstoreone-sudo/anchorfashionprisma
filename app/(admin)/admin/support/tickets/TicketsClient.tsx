@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -25,7 +25,6 @@ import {
   MoreHorizontal,
   AlertCircle,
   Search,
-  CheckCircle,
   ArrowUpRight,
   UserCheck,
   LifeBuoy,
@@ -94,7 +93,7 @@ export function TicketsClient({
   const [deletingTicket, setDeletingTicket] = useState<any | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  React.useEffect(() => {
+  useEffect(() => {
     setTickets(initialTickets);
   }, [initialTickets]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -29,11 +28,9 @@ import {
   Upload,
   AlertCircle,
   CheckCircle2,
-  Package,
   ShieldCheck,
   Wallet,
   CreditCard,
-  Image as ImageIcon,
   X,
   Loader2,
 } from "lucide-react";
@@ -94,7 +91,7 @@ export function ReturnRequestDialog({
   } | null>(null);
 
   // Initialize selected items when eligibility data loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (eligibility?.items) {
       const initial: Record<string, { selected: boolean; quantity: number }> = {};
       for (const item of eligibility.items) {
@@ -173,7 +170,7 @@ export function ReturnRequestDialog({
   };
 
   // Calculate dynamic estimated refund
-  const estimatedRefund = React.useMemo(() => {
+  const estimatedRefund = useMemo(() => {
     if (!eligibility?.items) return 0;
     let total = 0;
     for (const item of eligibility.items) {

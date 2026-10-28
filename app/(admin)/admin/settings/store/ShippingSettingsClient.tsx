@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { upsertShippingRate, toggleShippingRate } from "@/lib/actions/shipping.actions";
 import { Save, Truck, MapPin, PackageCheck, AlertCircle } from "lucide-react";

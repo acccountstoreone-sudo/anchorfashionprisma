@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Card,
   CardHeader,
@@ -21,7 +20,7 @@ interface Workflow {
 }
 
 export default function WorkflowsPage() {
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const workflows: Workflow[] = [];
 
   return (
     <div className="space-y-6 duration-500 animate-in fade-in zoom-in">
@@ -96,7 +95,7 @@ export default function WorkflowsPage() {
               </Button>
             </div>
           ) : (
-            <div className="rounded-md border bg-card">
+            <div className="rounded-md border bg-card overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50 text-muted-foreground">

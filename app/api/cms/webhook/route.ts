@@ -10,13 +10,12 @@ export async function POST(req: Request) {
   try {
     const payload = await req.json();
 
-    // In a real scenario, you'd verify a secret token from Supabase here
     const authHeader = req.headers.get("Authorization");
-    if (authHeader !== `Bearer ${process.env.CMS_WEBHOOK_SECRET}`) {
-      // return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (process.env.CMS_WEBHOOK_SECRET && authHeader !== `Bearer ${process.env.CMS_WEBHOOK_SECRET}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { table, record, type } = payload;
+    const { table, record } = payload;
 
     // Example logic based on which table was modified
     if (table === "cms_blog_posts") {

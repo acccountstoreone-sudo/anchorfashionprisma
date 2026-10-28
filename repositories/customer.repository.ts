@@ -3,7 +3,6 @@ import {
   CustomerProfile,
   CustomerAddress,
   CustomerReview,
-  CustomerNotification,
 } from "@/types/customer.types";
 
 export class CustomerRepository {

@@ -4,7 +4,6 @@ import {
   ProductListParams,
 } from "@/repositories/catalog.repository";
 import { BrandRepository } from "@/lib/repositories/catalog/brand.repository";
-import { CategoryRepository } from "@/lib/repositories/catalog/category.repository";
 import { CollectionRepository } from "@/lib/repositories/catalog/collection.repository";
 import {
   getHeroSlides,
